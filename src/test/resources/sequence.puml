@@ -1,6 +1,6 @@
 @startuml
-start
+  start
 :Hello world;
 :groovy goodness;
-stop
+  stop
 @enduml
