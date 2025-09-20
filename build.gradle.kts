@@ -21,6 +21,7 @@ dependencies {
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")
   implementation("ch.qos.logback:logback-classic:${logbackVersion}")
+  implementation("org.apache.commons:commons-lang3:3.18.0")
 
   testImplementation(platform("org.junit:junit-bom:$junitVersion"))
   testImplementation("org.junit.jupiter:junit-jupiter")

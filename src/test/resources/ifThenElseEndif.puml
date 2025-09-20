@@ -1,4 +1,3 @@
-/*
 @startuml
 start
 
@@ -10,14 +9,3 @@ endif
 
 stop
 @enduml
-*/
-
-start()
-
-iff ('actions ready?' ) then ('yes')
-  action('process all')
-elsee ('no')
-  action('process none')
-endif()
-
-stop()
