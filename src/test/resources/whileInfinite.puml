@@ -1,0 +1,17 @@
+/*
+@startuml
+start
+while (true)
+ :do something;
+endwhile
+-[hidden]->
+detach
+@enduml
+*/
+
+start()
+whilee ('true')
+ action('do something')
+endwhile()
+// -[hidden]->
+detach()

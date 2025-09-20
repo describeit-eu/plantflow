@@ -1,0 +1,33 @@
+/*
+@startuml
+start
+switch (test?)
+case ( conditionA )
+  :Action 1;
+case ( conditionB )
+  :Action 2;
+case ( conditionC )
+  :Action 3;
+case ( conditionD )
+  :Action 4;
+case ( conditionE )
+  :Action 5;
+endswitch
+stop
+@enduml
+*/
+
+start()
+switchh ('test?')
+casee ( 'conditionA')
+  action('Action 1')
+casee ('conditionB')
+  action('Action 2')
+casee ('conditionC')
+  action('Action 3')
+casee ('conditionD')
+  action('Action 4')
+casee ('conditionE')
+  action('Action 5')
+endswitch()
+stop()

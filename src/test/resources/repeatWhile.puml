@@ -1,0 +1,21 @@
+/*
+@startuml
+
+start
+repeat
+  :read data;
+  :generate diagrams;
+repeat while (more data?) is (yes) not (no)
+end
+
+@enduml
+*/
+
+start()
+
+repeat()
+  action('read data')
+  action('generate diagrams')
+repeat() whilee('more data?') is('yes') not('no')
+
+end()

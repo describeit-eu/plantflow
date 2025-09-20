@@ -1,0 +1,13 @@
+/*
+@startuml
+start
+:Hello world;
+:groovy goodness;
+stop
+@enduml
+*/
+
+start()
+action("Hello world")
+action("groovy goodness")
+stop()

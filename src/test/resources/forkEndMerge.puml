@@ -1,0 +1,27 @@
+/*
+@startuml
+start
+fork
+  :action 1;
+fork again
+  :action 2;
+fork again
+  :action 3;
+fork again
+  :action 4;
+end merge
+stop
+@enduml
+*/
+
+start()
+fork()
+  action('action 1')
+forkAgain()
+  action('action 2')
+forkAgain()
+  action('action 3')
+forkAgain()
+  action('action 4')
+endMerge()
+stop()
