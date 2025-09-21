@@ -3,11 +3,17 @@ package eu.describeit.plantflow.engine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
+import static eu.describeit.plantflow.engine.PlantFlowDelegate.RunMode.DRY
+
 @CompileStatic
 @Slf4j
 class PlantFlowDelegate {
+  enum RunMode {CALCULATE_NEXT, EXECUTE, DRY}
+
   List<PlantFlowAction> pflowActions
-  boolean dryRun = pflowActions == null
+  List<PlantFlowAction> nextActions
+
+  RunMode runMode = DRY
 
   def start() {
     log.info('start()')
