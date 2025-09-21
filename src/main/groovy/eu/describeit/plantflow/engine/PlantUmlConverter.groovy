@@ -31,6 +31,7 @@ final class PlantUmlConverter {
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
         case ~/^if.*/      : pflow.append(convertLineIfThen(tabSize, lineTrimmed)); break
         case ~/^else.*/    : pflow.append(convertLineElse(tabSize, lineTrimmed)); break
+        case ~/^repeat.*/  : pflow.append(convertLineRepeat(tabSize, lineTrimmed)); break
         default :
           // throw error
           log.error('convertToPlantFlowDsl() - ???? line:{}', lineTrimmed)
@@ -71,6 +72,15 @@ final class PlantUmlConverter {
 
     def exprValue = substringBetween(line, '(', ')').trim()
     String newLine = "elsee (\"${exprValue}\")"
+
+    return tab(tabSize) + newLine
+  }
+
+  private static String convertLineRepeat(int tabSize, String line) {
+    log.info('convertLineRepeat() - line:"{}" , tabSize:{}', line, tabSize)
+
+    def exprData = substringsBetween(line, '(', ')').collect {it.trim()}
+    String newLine = "repeatWhile(\"${exprData[0]}\") is(\"${exprData[1]}\") not(\"${exprData[2]}\")"
 
     return tab(tabSize) + newLine
   }
