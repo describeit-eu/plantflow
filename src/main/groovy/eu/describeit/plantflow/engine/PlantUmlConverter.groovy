@@ -29,14 +29,15 @@ final class PlantUmlConverter {
         case ''            : pflow.append(tab(tabSize)); break
         case linesToMethod : pflow.append(convertLineToMethod(tabSize, lineTrimmed)); break
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
-        case ~/^if.*/      : pflow.append(convertLineIfThen(tabSize, lineTrimmed)); break
-        case ~/^else.*/    : pflow.append(convertLineWithExpression(tabSize, lineTrimmed, "elsee")); break
-        case ~/^repeat.*/  : pflow.append(convertLineRepeatWhile(tabSize, lineTrimmed)); break
-        case ~/^switch.*/  : pflow.append(convertLineWithExpression(tabSize, lineTrimmed, "switchh")); break
-        case ~/^case.*/    : pflow.append(convertLineWithExpression(tabSize, lineTrimmed, "casee")); break
+        case ~/^if.*/      : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "iff", 'then')); break
+        case ~/^repeat.*/  : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "repeatWhile", 'is', 'not')); break
+        case ~/^else.*/    : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "elsee")); break
+        case ~/^switch.*/  : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "switchh")); break
+        case ~/^case.*/    : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "casee")); break
         default :
           // throw error
           log.error('convertToPlantFlowDsl() - ???? line:{}', lineTrimmed)
+          throw new IllegalArgumentException()
           break
       }
       pflow.append('\n')
@@ -51,40 +52,32 @@ final class PlantUmlConverter {
 
   private static String convertLineToMethod(int tabSize, String line) {
     log.info('convertLineToMethod() - line:"{}" , tabSize:{}', line, tabSize)
+
     return tab(tabSize) + toCamelCase(line, false, ' ' as char) + "()"
   }
 
   private static String convertLineToActionMethod(int tabSize, String line) {
     log.info('convertLineToActionMethod() - line:"{}" , tabSize:{}', line, tabSize)
+
     String actionName = substringBetween(line, ':', ';')
+
     return tab(tabSize) + 'action("' + actionName + '")'
   }
 
+  private static String convertLineWithExpressions(int tabSize, String line, String... exprPieces) {
+    log.info('convertLineWithExpressions() - line:"{}" , tabSize:{} , exprPieces:{}', line, tabSize, exprPieces)
 
-  private static String convertLineIfThen(int tabSize, String line) {
-    log.info('convertLineIfThen() - line:"{}" , tabSize:{}', line, tabSize)
+    List<String> exprData = substringsBetween(line, '(', ')').collect { it.trim() }
 
-    def exprData = substringsBetween(line, '(', ')').collect {it.trim()}
-    String newLine = "iff (\"${exprData[0]}\") then (\"${exprData[1]}\")"
+    assert exprPieces
+    assert exprPieces.length != exprData.size()
 
-    return tab(tabSize) + newLine
-  }
+    StringBuilder newLine = new StringBuilder()
 
-  private static String convertLineRepeatWhile(int tabSize, String line) {
-    log.info('convertLineRepeatWhile() - line:"{}" , tabSize:{}', line, tabSize)
+    exprPieces.eachWithIndex { String expr, int idx ->
+      newLine.append("$expr (\"${exprData[idx]}\") ")
+    }
 
-    def exprData = substringsBetween(line, '(', ')').collect {it.trim()}
-    String newLine = "repeatWhile(\"${exprData[0]}\") is(\"${exprData[1]}\") not(\"${exprData[2]}\")"
-
-    return tab(tabSize) + newLine
-  }
-
-  private static String convertLineWithExpression(int tabSize, String line, String methodName) {
-    log.info('convertLineWithExpression() - line:"{}" , tabSize:{}, methodName:{}', line, tabSize, methodName)
-
-    def exprValue = substringBetween(line, '(', ')').trim()
-    String newLine = "${methodName} (\"${exprValue}\")"
-
-    return tab(tabSize) + newLine
+    return tab(tabSize) + newLine.toString().trim()
   }
 }
