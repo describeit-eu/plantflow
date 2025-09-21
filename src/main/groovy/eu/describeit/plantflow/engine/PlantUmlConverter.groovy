@@ -31,6 +31,8 @@ final class PlantUmlConverter {
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
         case ~/^if.*/      : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "iff", 'then')); break
         case ~/^repeat.*/  : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "repeatWhile", 'is', 'not')); break
+        case ~/^while.*/   : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "whilee", 'is')); break
+        case ~/^endwhile.*/: pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "endwhile")); break
         case ~/^else.*/    : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "elsee")); break
         case ~/^switch.*/  : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "switchh")); break
         case ~/^case.*/    : pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, "casee")); break
@@ -70,7 +72,7 @@ final class PlantUmlConverter {
     List<String> exprData = substringsBetween(line, '(', ')').collect { it.trim() }
 
     assert exprPieces
-    assert exprPieces.length != exprData.size()
+    assert exprPieces.length == exprData.size()
 
     StringBuilder newLine = new StringBuilder()
 

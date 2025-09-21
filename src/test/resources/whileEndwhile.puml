@@ -1,5 +1,5 @@
 @startuml
-while (check filesize ?) is (not empty)
+whilee (check filesize ?) is (not empty)
   :read file;
 endwhile (empty)
 :close file;

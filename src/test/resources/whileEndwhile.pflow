@@ -1,6 +1,4 @@
-start()
 whilee ("check filesize ?") is ("not empty")
   action("read file")
 endwhile ("empty")
 action("close file")
-end()
