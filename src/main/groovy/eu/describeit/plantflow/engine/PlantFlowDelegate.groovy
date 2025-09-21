@@ -6,6 +6,7 @@ import groovy.util.logging.Slf4j
 @CompileStatic
 @Slf4j
 class PlantFlowDelegate {
+
   List<String> actions
 
   def start() {
@@ -65,6 +66,11 @@ class PlantFlowDelegate {
 
   def repeat() {
     log.info("repeat()")
+    return this
+  }
+
+  def repeatWhile(String expression) {
+    log.info("repeatWhile() - expression:{}", expression)
     return this
   }
 
