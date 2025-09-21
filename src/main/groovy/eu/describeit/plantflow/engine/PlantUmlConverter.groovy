@@ -30,10 +30,10 @@ final class PlantUmlConverter {
         case linesToMethod : pflow.append(convertLineToMethod(tabSize, lineTrimmed)); break
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
         case ~/^if.*/      : pflow.append(convertLineIfThen(tabSize, lineTrimmed)); break
-        case ~/^else.*/    : pflow.append(convertLineElse(tabSize, lineTrimmed)); break
-        case ~/^repeat.*/  : pflow.append(convertLineRepeat(tabSize, lineTrimmed)); break
-        case ~/^switch.*/  : pflow.append(convertLineSwitch(tabSize, lineTrimmed)); break
-        case ~/^case.*/    : pflow.append(convertLineCase(tabSize, lineTrimmed)); break
+        case ~/^else.*/    : pflow.append(convertLineWithExpression(tabSize, lineTrimmed, "elsee")); break
+        case ~/^repeat.*/  : pflow.append(convertLineRepeatWhile(tabSize, lineTrimmed)); break
+        case ~/^switch.*/  : pflow.append(convertLineWithExpression(tabSize, lineTrimmed, "switchh")); break
+        case ~/^case.*/    : pflow.append(convertLineWithExpression(tabSize, lineTrimmed, "casee")); break
         default :
           // throw error
           log.error('convertToPlantFlowDsl() - ???? line:{}', lineTrimmed)
@@ -60,6 +60,7 @@ final class PlantUmlConverter {
     return tab(tabSize) + 'action("' + actionName + '")'
   }
 
+
   private static String convertLineIfThen(int tabSize, String line) {
     log.info('convertLineIfThen() - line:"{}" , tabSize:{}', line, tabSize)
 
@@ -69,17 +70,8 @@ final class PlantUmlConverter {
     return tab(tabSize) + newLine
   }
 
-  private static String convertLineElse(int tabSize, String line) {
-    log.info('convertLineElse() - line:"{}" , tabSize:{}', line, tabSize)
-
-    def exprValue = substringBetween(line, '(', ')').trim()
-    String newLine = "elsee (\"${exprValue}\")"
-
-    return tab(tabSize) + newLine
-  }
-
-  private static String convertLineRepeat(int tabSize, String line) {
-    log.info('convertLineRepeat() - line:"{}" , tabSize:{}', line, tabSize)
+  private static String convertLineRepeatWhile(int tabSize, String line) {
+    log.info('convertLineRepeatWhile() - line:"{}" , tabSize:{}', line, tabSize)
 
     def exprData = substringsBetween(line, '(', ')').collect {it.trim()}
     String newLine = "repeatWhile(\"${exprData[0]}\") is(\"${exprData[1]}\") not(\"${exprData[2]}\")"
@@ -87,20 +79,11 @@ final class PlantUmlConverter {
     return tab(tabSize) + newLine
   }
 
-  private static String convertLineSwitch(int tabSize, String line) {
-    log.info('convertLineSwitch() - line:"{}" , tabSize:{}', line, tabSize)
+  private static String convertLineWithExpression(int tabSize, String line, String methodName) {
+    log.info('convertLineWithExpression() - line:"{}" , tabSize:{}, methodName:{}', line, tabSize, methodName)
 
     def exprValue = substringBetween(line, '(', ')').trim()
-    String newLine = "switchh (\"${exprValue}\")"
-
-    return tab(tabSize) + newLine
-  }
-
-  private static String convertLineCase(int tabSize, String line) {
-    log.info('convertLineCase() - line:"{}" , tabSize:{}', line, tabSize)
-
-    def exprValue = substringBetween(line, '(', ')').trim()
-    String newLine = "casee (\"${exprValue}\")"
+    String newLine = "${methodName} (\"${exprValue}\")"
 
     return tab(tabSize) + newLine
   }
