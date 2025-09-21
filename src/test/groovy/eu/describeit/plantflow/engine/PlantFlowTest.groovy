@@ -1,11 +1,13 @@
 package eu.describeit.plantflow.engine
 
+import groovy.transform.CompileStatic
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 import java.util.stream.Stream
 
-class PlantFlowExecutorTest {
+@CompileStatic
+class PlantFlowTest {
   static Stream<String> provideTestFileNames() {
     return Stream.of(
         'forkEndMerge',
@@ -20,8 +22,7 @@ class PlantFlowExecutorTest {
 
   @ParameterizedTest
   @MethodSource('provideTestFileNames')
-  void executePflow(String fileName) {
-
-    new PlantFlowExecutor().execute("${fileName}.pflow")
+  void dryRun(String fileName) {
+    new PlantFlow("${fileName}.pflow", null).dryRun()
   }
 }

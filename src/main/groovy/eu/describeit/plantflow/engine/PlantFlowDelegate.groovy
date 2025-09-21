@@ -6,32 +6,30 @@ import groovy.util.logging.Slf4j
 @CompileStatic
 @Slf4j
 class PlantFlowDelegate {
-
-  List<String> actions
+  List<PlantFlowAction> pflowActions
+  boolean dryRun = pflowActions == null
 
   def start() {
-    actions = []
-    log.info('start() - actions:{}', actions)
+    log.info('start()')
   }
 
   def stop() {
     // link with end()
-    log.info('stop() - actions:{}', actions)
+    log.info('stop()')
   }
 
   def end() {
     // link with stop()
-    log.info('end() - actions:{}', actions)
+    log.info('end()')
   }
 
   def detach() {
     // for infinite loop it behaves like end()/stop()
-    log.info('detach() - actions:{}', actions)
+    log.info('detach()')
   }
 
   def action(String name) {
     log.info("action() name:{}", name)
-    actions += name
   }
 
   def iff(String expression) {
