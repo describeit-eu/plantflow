@@ -11,7 +11,7 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
-  static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge', 'endif', 'repeat']
+  static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge', 'endif', 'repeat', 'endswitch']
 
   static String getResourceText(String file) {
     return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
@@ -32,6 +32,8 @@ final class PlantUmlConverter {
         case ~/^if.*/      : pflow.append(convertLineIfThen(tabSize, lineTrimmed)); break
         case ~/^else.*/    : pflow.append(convertLineElse(tabSize, lineTrimmed)); break
         case ~/^repeat.*/  : pflow.append(convertLineRepeat(tabSize, lineTrimmed)); break
+        case ~/^switch.*/  : pflow.append(convertLineSwitch(tabSize, lineTrimmed)); break
+        case ~/^case.*/    : pflow.append(convertLineCase(tabSize, lineTrimmed)); break
         default :
           // throw error
           log.error('convertToPlantFlowDsl() - ???? line:{}', lineTrimmed)
@@ -81,6 +83,24 @@ final class PlantUmlConverter {
 
     def exprData = substringsBetween(line, '(', ')').collect {it.trim()}
     String newLine = "repeatWhile(\"${exprData[0]}\") is(\"${exprData[1]}\") not(\"${exprData[2]}\")"
+
+    return tab(tabSize) + newLine
+  }
+
+  private static String convertLineSwitch(int tabSize, String line) {
+    log.info('convertLineSwitch() - line:"{}" , tabSize:{}', line, tabSize)
+
+    def exprValue = substringBetween(line, '(', ')').trim()
+    String newLine = "switchh (\"${exprValue}\")"
+
+    return tab(tabSize) + newLine
+  }
+
+  private static String convertLineCase(int tabSize, String line) {
+    log.info('convertLineCase() - line:"{}" , tabSize:{}', line, tabSize)
+
+    def exprValue = substringBetween(line, '(', ')').trim()
+    String newLine = "casee (\"${exprValue}\")"
 
     return tab(tabSize) + newLine
   }

@@ -1,6 +1,6 @@
 start()
 switchh ("test?")
-casee ( "conditionA")
+casee ("conditionA")
   action("Action 1")
 casee ("conditionB")
   action("Action 2")
