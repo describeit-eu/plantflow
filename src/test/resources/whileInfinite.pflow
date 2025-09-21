@@ -2,5 +2,5 @@ start()
 whilee ("true")
  action("do something")
 endwhile()
-// -[hidden]->
+
 detach()

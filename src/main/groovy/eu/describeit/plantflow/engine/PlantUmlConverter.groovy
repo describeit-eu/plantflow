@@ -12,16 +12,18 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
-  static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge', 'endif', 'repeat', 'endswitch']
+  static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge',
+                              'endif', 'repeat', 'endswitch', 'endwhile', 'detach']
 
   private static enum ExpressionCase {
-    IF      (~ /^if.*/       , ["iff", 'then']),
-    REPEAT  (~ /^repeat.*/   , ["repeatWhile", 'is', 'not']),
-    WHILE   (~ /^while.*/    , ["whilee", 'is']),
-    ENDWHILE(~ /^endwhile.*/ , ["endwhile"]),
-    ELSE    (~ /^else.*/     , ["elsee"]),
-    SWITCH  (~ /^switch.*/   , ["switchh"]),
-    CASE    (~ /^case.*/     , ["casee"])
+    IF          (~ /^if\b.*\bthen\b.*$/      , ["iff", 'then']),
+    REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
+    WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
+    WHILE       (~ /^while.*$/               , ["whilee"]),
+    ENDWHILE    (~ /^endwhile.*/           , ["endwhile"]),
+    ELSE        (~ /^else.*/                 , ["elsee"]),
+    SWITCH      (~ /^switch.*/               , ["switchh"]),
+    CASE        (~ /^case.*/                 , ["casee"])
 
     final Pattern matcher
     final List<String> exprPieces
@@ -48,7 +50,8 @@ final class PlantUmlConverter {
       String lineTrimmed = line.trim()
 
       switch (lineTrimmed) {
-        case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', lineTrimmed); break
+        case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case ~/^-.*>$/ : log.info('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : pflow.append(tab(tabSize)); break
         case linesToMethod : pflow.append(convertLineToMethod(tabSize, lineTrimmed)); break
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
@@ -62,7 +65,7 @@ final class PlantUmlConverter {
           }
           break
       }
-      pflow.append('\n')
+      pflow.append(System.lineSeparator())
     }
 
     return pflow.toString()
@@ -90,11 +93,9 @@ final class PlantUmlConverter {
     log.info('convertLineWithExpressions() - line:"{}" , tabSize:{} , exprPieces:{}', line, tabSize, exprPieces)
 
     List<String> exprData = substringsBetween(line, '(', ')').collect { it.trim() }
-
     assert exprPieces.size() == exprData.size()
 
     StringBuilder newLine = new StringBuilder()
-
     exprPieces.eachWithIndex { String expr, int idx ->
       newLine.append("$expr (\"${exprData[idx]}\") ")
     }
