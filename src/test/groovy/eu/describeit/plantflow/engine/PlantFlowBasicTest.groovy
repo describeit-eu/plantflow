@@ -9,7 +9,7 @@ import java.util.stream.Stream
 import static eu.describeit.plantflow.engine.PlantUmlConverter.getResourceText
 
 @CompileStatic
-class PlantUmlConverterTest {
+class PlantFlowBasicTest {
 
   static Stream<String> provideTestFileNames() {
     return Stream.of(
@@ -32,5 +32,11 @@ class PlantUmlConverterTest {
     def resultPflow = PlantUmlConverter.convertToPlantFlowDsl(puml)
 
     assert resultPflow.contains(expectedPflow)
+  }
+
+  @ParameterizedTest
+  @MethodSource('provideTestFileNames')
+  void dryRun(String fileName) {
+    new PlantFlow("${fileName}.pflow", null).dryRun()
   }
 }

@@ -4,6 +4,9 @@ import groovy.transform.CompileStatic
 
 @CompileStatic
 interface PlantFlowAction {
-  void execute();
-  void isEnabled();
+  String getName()
+  boolean isActive()
+
+  void activate()
+  void execute()
 }

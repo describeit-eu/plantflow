@@ -3,7 +3,7 @@ package eu.describeit.plantflow.engine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
-import static eu.describeit.plantflow.engine.PlantFlowDelegate.RunMode.DRY
+import static eu.describeit.plantflow.engine.PlantFlowDelegate.RunMode.*
 
 @CompileStatic
 @Slf4j
@@ -35,7 +35,14 @@ class PlantFlowDelegate {
   }
 
   def action(String name) {
-    log.info("action() name:{}", name)
+    if (runMode != DRY) {
+      def action = getAction(name)
+      log.info("action() found name:{}", name)
+
+      if (action.active) {
+        action.activate()
+      }
+    }
   }
 
   def iff(String expression) {
@@ -107,5 +114,9 @@ class PlantFlowDelegate {
 
   def endMerge() {
     log.info("endMerge()")
+  }
+
+  private PlantFlowAction getAction(String name) {
+    return pflowActions.find {it.name == name}
   }
 }
