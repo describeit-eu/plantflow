@@ -3,9 +3,6 @@ package eu.describeit.plantflow.engine
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 
-import static eu.describeit.plantflow.engine.PlantFlowDelegate.RunMode.CALCULATE_NEXT
-import static eu.describeit.plantflow.engine.PlantFlowDelegate.RunMode.DRY
-
 @CompileStatic
 class PlantFlow {
   List<PlantFlowAction> pflowActions
@@ -30,13 +27,11 @@ class PlantFlow {
   }
 
   List<PlantFlowAction> calculateNext() {
-    delegate.runMode = CALCULATE_NEXT
     pflowScript.run();
     return delegate.nextActions
   }
 
   void dryRun() {
-    delegate.runMode = DRY
     pflowScript.run();
   }
 }

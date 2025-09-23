@@ -3,17 +3,11 @@ package eu.describeit.plantflow.engine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
-import static eu.describeit.plantflow.engine.PlantFlowDelegate.RunMode.*
-
 @CompileStatic
 @Slf4j
 class PlantFlowDelegate {
-  enum RunMode {CALCULATE_NEXT, EXECUTE, DRY}
-
   List<PlantFlowAction> pflowActions
   List<PlantFlowAction> nextActions
-
-  RunMode runMode = DRY
 
   def start() {
     log.info('start()')
@@ -35,14 +29,7 @@ class PlantFlowDelegate {
   }
 
   def action(String name) {
-    if (runMode != DRY) {
-      def action = getAction(name)
-      log.info("action() found name:{}", name)
-
-      if (action.active) {
-        action.activate()
-      }
-    }
+    log.info("action() found name:{}", name)
   }
 
   def iff(String expression) {

@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.engine
+package eu.describeit.plantflow.converter
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -12,6 +12,7 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
+
   static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge',
                               'endif', 'repeat', 'endswitch', 'endwhile', 'detach']
 
@@ -20,7 +21,7 @@ final class PlantUmlConverter {
     REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
     WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
     WHILE       (~ /^while.*$/               , ["whilee"]),
-    ENDWHILE    (~ /^endwhile.*/           , ["endwhile"]),
+    ENDWHILE    (~ /^endwhile.*/             , ["endwhile"]),
     ELSE        (~ /^else.*/                 , ["elsee"]),
     SWITCH      (~ /^switch.*/               , ["switchh"]),
     CASE        (~ /^case.*/                 , ["casee"])
@@ -51,7 +52,7 @@ final class PlantUmlConverter {
 
       switch (lineTrimmed) {
         case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ~/^-.*>$/ : log.info('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case ~/^-.*>$/     : log.info('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : pflow.append(tab(tabSize)); break
         case linesToMethod : pflow.append(convertLineToMethod(tabSize, lineTrimmed)); break
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
