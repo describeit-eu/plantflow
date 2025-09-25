@@ -9,7 +9,24 @@ class PlantFlowDelegate {
   List<PlantFlowAction> pflowActions
   List<PlantFlowAction> nextActions
 
+  def action(String name) {
+    def anAction = getAction(name)
+
+    if (anAction) {
+      log.info("action() - found name:{}", anAction.name)
+      if (anAction.activate()) {
+        nextActions << anAction
+        return true
+      } else {
+        return false
+      }
+    }
+
+    throw new MissingPropertyException("Action '$name' was not found")
+  }
+
   def start() {
+    nextActions = []
     log.info('start()')
   }
 
@@ -26,10 +43,6 @@ class PlantFlowDelegate {
   def detach() {
     // for infinite loop it behaves like end()/stop()
     log.info('detach()')
-  }
-
-  def action(String name) {
-    log.info("action() found name:{}", name)
   }
 
   def iff(String expression) {

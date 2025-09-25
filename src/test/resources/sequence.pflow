@@ -1,4 +1,0 @@
-  start()
-action("Hello world")
-action("groovy goodness")
-  stop()

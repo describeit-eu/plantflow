@@ -7,6 +7,7 @@ val slf4jVersion     = "2.0.17"
 val logbackVersion   = "1.5.18"
 
 val junitVersion = "5.13.4"
+val spockVersion = "2.4-M6-groovy-4.0"
 
 group = "eu.describeit"
 version = "1.0-SNAPSHOT"
@@ -28,9 +29,8 @@ dependencies {
   testImplementation(platform("org.junit:junit-bom:$junitVersion"))
   testImplementation("org.junit.jupiter:junit-jupiter")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-  testImplementation(platform("org.spockframework:spock-bom:2.3-groovy-4.0"))
+  testImplementation(platform("org.spockframework:spock-bom:$spockVersion"))
   testImplementation("org.spockframework:spock-core")
-
 }
 
 tasks.test {

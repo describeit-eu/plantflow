@@ -7,6 +7,6 @@ interface PlantFlowAction {
   String getName()
   boolean isActive()
 
-  void activate()
+  boolean activate()
   void execute()
 }

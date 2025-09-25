@@ -12,6 +12,7 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
+  enum ConvertMode {CALCULATE, EXECUTE}
 
   static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge',
                               'endif', 'repeat', 'endswitch', 'endwhile', 'detach']
@@ -43,7 +44,7 @@ final class PlantUmlConverter {
     return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
   }
 
-  static String convertToPlantFlowDsl(final String pumlText) {
+  static String convertToPlantFlowDsl(final ConvertMode mode, final String pumlText) {
     def pflow = new StringBuffer();
 
     pumlText.eachLine { String line ->
@@ -87,7 +88,7 @@ final class PlantUmlConverter {
 
     String actionName = substringBetween(line, ':', ';')
 
-    return tab(tabSize) + 'action("' + actionName + '")'
+    return "if (action(\"${actionName}\")) { stop(); return }"
   }
 
   private static String convertLineWithExpressions(int tabSize, String line, List<String> exprPieces) {

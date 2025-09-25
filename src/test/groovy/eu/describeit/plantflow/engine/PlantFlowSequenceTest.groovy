@@ -6,23 +6,39 @@ class PlantFlowSequenceTest extends Specification {
 
   void 'basic scenario'() {
     given:
-    def action1 = Mock(PlantFlowAction) {
+    PlantFlowAction action1 = Mock() {
       getName() >> 'Hello world'
-      isActive() >> false
-      1 * activate()
     }
 
-    def action2 = Mock(PlantFlowAction) {
+    PlantFlowAction action2 = Mock() {
       getName() >> 'groovy goodness'
-      isActive() >> false
     }
-    def pflow = new PlantFlow("sequence.pflow", [action1, action2])
+    def pflow = new PlantFlow("sequence_calculate.pflow", [action1, action2])
 
-    when:
+    when: '1.'
     def nextActions = pflow.calculateNext()
 
     then:
+    1 * action1.activate() >> true
+    0 * action2.activate() >> false
     nextActions
-    nextActions.size() == 1
+    nextActions[0].name == 'Hello world'
+
+    when: '2.'
+    nextActions = pflow.calculateNext()
+
+    then:
+    1 * action1.activate() >> false
+    1 * action2.activate() >> true
+    nextActions
+    nextActions[0].name == 'groovy goodness'
+
+    when: '3.'
+    nextActions = pflow.calculateNext()
+
+    then:
+    1 * action1.activate() >> false
+    1 * action2.activate() >> false
+    nextActions.size() == 0
   }
 }
