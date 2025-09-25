@@ -14,25 +14,30 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 final class PlantUmlConverter {
   enum ConvertMode {CALCULATE, EXECUTE}
 
-  static def linesToMethod = ['start', 'stop', 'end', 'fork', 'fork again', 'end merge',
-                              'endif', 'repeat', 'endswitch', 'endwhile', 'detach']
+  static final List<String> linesToMethod = [
+      'start', 'stop', 'end', 'fork', 'fork again', 'end merge', 'repeat', 'endswitch', 'endwhile', 'detach'
+  ]
+
+  static final Map<String, String> linesMap = [
+      endif: '}'
+  ]
 
   private static enum ExpressionCase {
-    IF          (~ /^if\b.*\bthen\b.*$/      , ["iff", 'then']),
+    IF_THEN     (~ /^if\b.*\bthen\b.*$/      , 'if (eval("%s") == "%s" ) {'),
     REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
     WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
     WHILE       (~ /^while.*$/               , ["whilee"]),
     ENDWHILE    (~ /^endwhile.*/             , ["endwhile"]),
-    ELSE        (~ /^else.*/                 , ["elsee"]),
+    ELSE        (~ /^else.*/                 , '} else { //%s'),
     SWITCH      (~ /^switch.*/               , ["switchh"]),
     CASE        (~ /^case.*/                 , ["casee"])
 
     final Pattern matcher
-    final List<String> exprPieces
+    final Object expression
 
-    ExpressionCase(Pattern pattern, List<String> exprPieces) {
+    ExpressionCase(Pattern pattern, Object expression) {
       this.matcher = pattern
-      this.exprPieces = exprPieces
+      this.expression = expression
     }
 
     static ExpressionCase match(String line) {
@@ -56,14 +61,20 @@ final class PlantUmlConverter {
         case ~/^-.*>$/     : log.info('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : pflow.append(tab(tabSize)); break
         case linesToMethod : pflow.append(convertLineToMethod(tabSize, lineTrimmed)); break
+        case linesMap*.key : pflow.append(tab(tabSize)).append(linesMap[line]); break
         case ~/^:.*;$/     : pflow.append(convertLineToActionMethod(tabSize, lineTrimmed)); break
 
         default :
           def exprCase = ExpressionCase.match(lineTrimmed)
-          if (exprCase) {
-            pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, exprCase.exprPieces))
-          } else {
-            throw new IllegalArgumentException('Uncovered case for line:' + lineTrimmed )
+          switch (exprCase.expression) {
+            case String:
+              pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, exprCase.expression as String))
+              break
+            case List:
+              pflow.append(convertLineWithExpressions(tabSize, lineTrimmed, exprCase.expression as List<String>))
+              break
+            default:
+              throw new IllegalArgumentException('Uncovered case for line:' + lineTrimmed )
           }
           break
       }
@@ -88,7 +99,13 @@ final class PlantUmlConverter {
 
     String actionName = substringBetween(line, ':', ';')
 
-    return "if (action(\"${actionName}\")) { stop(); return }"
+    return tab(tabSize) + "if (action(\"${actionName}\")) { stop(); return }"
+  }
+
+  private static String convertLineWithExpressions(int tabSize, String line, String expression) {
+    log.info('convertLineWithExpressions() - line:"{}", tabSize:{}, expression:{}', line, tabSize, expression)
+    List<String> exprData = substringsBetween(line, '(', ')').collect { it.trim() }
+    return tab(tabSize) + String.format(expression, exprData as String[])
   }
 
   private static String convertLineWithExpressions(int tabSize, String line, List<String> exprPieces) {

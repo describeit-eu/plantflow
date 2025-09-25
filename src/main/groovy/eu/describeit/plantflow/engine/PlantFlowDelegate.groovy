@@ -6,6 +6,7 @@ import groovy.util.logging.Slf4j
 @CompileStatic
 @Slf4j
 class PlantFlowDelegate {
+
   List<PlantFlowAction> pflowActions
   List<PlantFlowAction> nextActions
 
@@ -23,6 +24,11 @@ class PlantFlowDelegate {
     }
 
     throw new MissingPropertyException("Action '$name' was not found")
+  }
+
+  def eval(String expression) {
+    log.info("eval() - expression:{}", expression)
+    return 'yes'
   }
 
   def start() {
@@ -43,23 +49,6 @@ class PlantFlowDelegate {
   def detach() {
     // for infinite loop it behaves like end()/stop()
     log.info('detach()')
-  }
-
-  def iff(String expression) {
-    log.info("iff() - expression:{}", expression)
-    return this
-  }
-
-  def then(String expressionValue) {
-    log.info("then() - expressionValue:{}", expressionValue)
-  }
-
-  def elsee(String expressionValue) {
-    log.info("elsee() - expressionValue:{}", expressionValue)
-  }
-
-  def endif() {
-    log.info("endif()")
   }
 
   def switchh(String expression) {

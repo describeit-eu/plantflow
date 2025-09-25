@@ -1,0 +1,9 @@
+start()
+
+if (eval("actions ready?") == "yes" ) {
+  if (action("process all")) { stop(); return }
+} else { //no
+  if (action("process none")) { stop(); return }
+}
+
+stop()

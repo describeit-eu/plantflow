@@ -16,9 +16,9 @@ class PlantFlowBasicTest {
   static Stream<String> provideTestFileNames() {
     return Stream.of(
         'sequence',
+        'ifThenElseEndif',
 /*
         'forkEndMerge',
-        'ifThenElseEndif', 
         'repeatWhile',
         'switchCaseEndswitch',
         'whileEndwhile',
@@ -40,7 +40,7 @@ class PlantFlowBasicTest {
 
 //  @ParameterizedTest
   @MethodSource('provideTestFileNames')
-  void calculate(String fileName) {
+  void dryRun(String fileName) {
     new PlantFlow("${fileName}_calculate.pflow", null).dryRun()
   }
 }
