@@ -1,6 +1,5 @@
 package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.converter.PlantUmlConverter
 import groovy.transform.CompileStatic
 import org.junit.jupiter.params.ParameterizedTest
@@ -12,7 +11,7 @@ import static eu.describeit.plantflow.converter.PlantUmlConverter.ConvertMode.CA
 import static eu.describeit.plantflow.converter.PlantUmlConverter.getResourceText
 
 @CompileStatic
-class PlantFlowBasicTest {
+class PlantFlowConverterTest {
 
   static Stream<String> provideTestFileNames() {
     return Stream.of(
@@ -37,11 +36,5 @@ class PlantFlowBasicTest {
     def resultPflow = PlantUmlConverter.convertToPlantFlowDsl(CALCULATE, puml)
 
     assert resultPflow.contains(expectedPflow)
-  }
-
-//  @ParameterizedTest
-  @MethodSource('provideTestFileNames')
-  void dryRun(String fileName) {
-    new PlantFlow("${fileName}_calculate.pflow", null).dryRun()
   }
 }
