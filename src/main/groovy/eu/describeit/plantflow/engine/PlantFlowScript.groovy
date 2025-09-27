@@ -5,7 +5,7 @@ import groovy.util.logging.Slf4j
 
 @CompileStatic
 @Slf4j
-class PlantFlowDelegate {
+abstract class PlantFlowScript extends DelegatingScript {
 
   List<PlantFlowAction> pflowActions
   List<PlantFlowAction> nextActions

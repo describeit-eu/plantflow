@@ -1,5 +1,6 @@
 package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.converter.PlantUmlConverter
 import groovy.transform.CompileStatic
 import org.junit.jupiter.params.ParameterizedTest

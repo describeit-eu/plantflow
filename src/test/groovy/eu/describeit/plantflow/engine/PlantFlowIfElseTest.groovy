@@ -1,5 +1,6 @@
 package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.PlantFlow
 import spock.lang.Specification
 
 class PlantFlowIfElseTest extends Specification {

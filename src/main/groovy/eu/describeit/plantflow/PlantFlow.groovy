@@ -1,34 +1,35 @@
-package eu.describeit.plantflow.engine
+package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.PlantFlowAction
+import eu.describeit.plantflow.engine.PlantFlowScript
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 
 @CompileStatic
 class PlantFlow {
   List<PlantFlowAction> pflowActions
-  DelegatingScript pflowScript
-  PlantFlowDelegate delegate
+  PlantFlowScript pflowScript
 
   PlantFlow(String pflowName, List<PlantFlowAction> actions) {
     pflowActions = actions
-    delegate = new PlantFlowDelegate(pflowActions: pflowActions)
     initPflowScript(pflowName)
   }
 
   private void initPflowScript(String pflowName) {
     CompilerConfiguration cc = new CompilerConfiguration();
-    cc.setScriptBaseClass(DelegatingScript.class.getName());
+    cc.setScriptBaseClass(PlantFlowScript.class.getName());
 
     def engine = new GroovyScriptEngine("src/test/resources")
     engine.setConfig(cc)
 
-    pflowScript = (DelegatingScript) engine.createScript(pflowName, new Binding())
-    pflowScript.setDelegate(delegate);
+    pflowScript = (PlantFlowScript) engine.createScript(pflowName, new Binding())
+    pflowScript.setDelegate(pflowScript);
+    pflowScript.pflowActions = pflowActions
   }
 
   List<PlantFlowAction> calculateNext() {
     pflowScript.run();
-    return delegate.nextActions
+    return pflowScript.nextActions
   }
 
   void dryRun() {
