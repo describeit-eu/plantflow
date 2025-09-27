@@ -34,7 +34,7 @@ final class PlantUmlConverter {
 
       switch (lineTrimmed) {
         case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ~/^-.*>$/     : log.info('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case ~/^-.*>$/     : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : lineConverted = ''; break
         case linesToMethod : lineConverted = convertLineToMethod(lineTrimmed); break
         case linesMap*.key : lineConverted = linesMap[line]; break

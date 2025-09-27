@@ -1,6 +1,6 @@
 start()
 
-if (eval("new String('yes')") == "yes") { // is
+if (eval("new String('yes')") == "yes") { // equals
   if (action("process all")) { stop(); return }
 }
 

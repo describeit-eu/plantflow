@@ -34,14 +34,14 @@ class PlantFlowIfEndifTest extends Specification {
     nextActions.size() == 0
   }
 
-  void 'if Is Then Endif'() {
+  void 'if Then Endif'() {
     given:
     PlantFlowAction action1 = Mock() {
       getName() >> 'process all'
     }
-    def pflow = new PlantFlow("ifIsThenEndif.pflow", [action1])
+    def pflow = new PlantFlow(fileName, [action1])
 
-    when: '1.'
+    when:
     def nextActions = pflow.calculateNext()
 
     then:
@@ -49,11 +49,14 @@ class PlantFlowIfEndifTest extends Specification {
     nextActions
     nextActions[0].name == 'process all'
 
-    when: '2.'
+    when:
     nextActions = pflow.calculateNext()
 
     then:
     1 * action1.activate() >> false
     nextActions.size() == 0
+
+    where:
+    fileName << ['ifIsThenEndif.pflow', 'ifEqualsThenEndif.pflow']
   }
 }

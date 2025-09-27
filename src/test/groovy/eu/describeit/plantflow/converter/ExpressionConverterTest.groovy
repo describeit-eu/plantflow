@@ -33,10 +33,10 @@ class ExpressionConverterTest extends Specification {
     where:
     expression     || line                                        || expected
     IF_THEN        || 'if (a > b) then (explain)'                 || 'if (eval("a > b")) { // explain'
-    IF_IS_THEN     || 'if (status) is (OK) then'                  || 'if (eval("status") == "OK") {'
-    IF_IS_THEN     || 'if (func(status)) is (OK) then'            || 'if (eval("func(status)") == "OK") {'
-    IF_EQUALS_THEN || 'if (status) equals (OK) then'              || 'if (eval("status") == "OK") {'
-    IF_EQUALS_THEN || 'if (func(status)) equals (OK) then'        || 'if (eval("func(status)") == "OK") {'
+    IF_IS_THEN     || 'if (status) is (OK) then'                  || 'if (eval("status") == "OK") { // is'
+    IF_IS_THEN     || 'if (func(status)) is (OK) then'            || 'if (eval("func(status)") == "OK") { // is'
+    IF_EQUALS_THEN || 'if (status) equals (OK) then'              || 'if (eval("status") == "OK") { // equals'
+    IF_EQUALS_THEN || 'if (func(status)) equals (OK) then'        || 'if (eval("func(status)") == "OK") { // equals'
     ELSE           || 'else (because)'                            || '} else { // because'
     REPEAT_WHilE   || 'repeat while (data?) is (yes) not (no)'    || 'repeatWhile ("data?") is ("yes") not ("no")'
   }
