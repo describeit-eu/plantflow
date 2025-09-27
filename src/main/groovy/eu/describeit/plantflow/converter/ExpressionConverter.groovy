@@ -27,30 +27,35 @@ enum ExpressionConverter {
   }
 
   static String convert(String line) {
-    def converter = match(line)
+    ExpressionConverter converter = match(line)
+    if (!converter) throw new IllegalArgumentException('Unknown expression for line:' + line)
 
-    switch (converter.expression) {
+    return converter.convertLine(line)
+  }
+
+  static ExpressionConverter match(String line) {
+    return values().find { ExpressionConverter ec -> (line ==~ ec.matcher) } as ExpressionConverter
+  }
+
+  String convertLine(String line) {
+    switch (expression) {
       case String:
-        return convertExpressionString(line, converter.expression as String)
+        return convertExpressionString(line, expression as String)
       case List:
-        return convertExpressionList(line, converter.expression as List<String>)
+        return convertExpressionList(line, expression as List<String>)
       default:
         throw new IllegalArgumentException('Uncovered case for line:' + line)
     }
   }
 
-  static private ExpressionConverter match(String line) {
-    return values().find { ExpressionConverter ec -> (line ==~ ec.matcher) } as ExpressionConverter
-  }
-
   static private String convertExpressionString(String line, String exprString) {
-    log.info('convertLine() - line:"{}", exprString:{}', line, exprString)
+    log.info('convertExpressionString() - line:"{}", exprString:{}', line, exprString)
     List<String> exprData = StringUtils.substringsBetween(line, '(', ')').collect { it.trim() }
     return String.format(exprString, exprData as String[])
   }
 
   static private String convertExpressionList(String line, List<String> exprPieces) {
-    log.info('convertLineWithExpressions() - line:"{}" , exprPieces:{}', line, exprPieces)
+    log.info('convertExpressionList() - line:"{}" , exprPieces:{}', line, exprPieces)
 
     List<String> exprData = StringUtils.substringsBetween(line, '(', ')').collect { it.trim() }
     assert exprPieces.size() == exprData.size()
