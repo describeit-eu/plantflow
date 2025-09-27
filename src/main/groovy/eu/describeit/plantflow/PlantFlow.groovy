@@ -23,24 +23,24 @@ class PlantFlow {
   }
 
   private void initPflowScript(String pflowName) {
-    CompilerConfiguration cc = new CompilerConfiguration();
-    cc.setScriptBaseClass(PlantFlowScript.class.getName());
+    CompilerConfiguration cc = new CompilerConfiguration()
+    cc.setScriptBaseClass(PlantFlowScript.class.getName())
 
     def engine = new GroovyScriptEngine("src/test/resources")
     engine.setConfig(cc)
 
     pflowScript = (PlantFlowScript) engine.createScript(pflowName, pflowBinding)
 
-    pflowScript.setDelegate(pflowScript);
+    pflowScript.setDelegate(pflowScript)
     pflowScript.actions = pflowActions
   }
 
   List<PlantFlowAction> calculateNext() {
-    pflowScript.run();
+    pflowScript.run()
     return pflowScript.nextActions
   }
 
   void dryRun() {
-    pflowScript.run();
+    pflowScript.run()
   }
 }

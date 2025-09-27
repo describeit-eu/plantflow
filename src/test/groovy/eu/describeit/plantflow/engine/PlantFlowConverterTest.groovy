@@ -7,7 +7,6 @@ import org.junit.jupiter.params.provider.MethodSource
 
 import java.util.stream.Stream
 
-import static eu.describeit.plantflow.converter.PlantUmlConverter.ConvertMode.CALCULATE
 import static eu.describeit.plantflow.converter.PlantUmlConverter.getResourceText
 
 @CompileStatic
@@ -31,9 +30,9 @@ class PlantFlowConverterTest {
   @MethodSource('provideTestFileNames')
   void 'convert puml for calculation'(String fileName) {
     def puml = getResourceText("${fileName}.puml")
-    def expectedPflow = getResourceText("${fileName}_calculate.pflow")
+    def expectedPflow = getResourceText("${fileName}.pflow")
 
-    def resultPflow = PlantUmlConverter.convertToPlantFlowDsl(CALCULATE, puml)
+    def resultPflow = PlantUmlConverter.convertToPlantFlowDsl(puml)
 
     assert resultPflow.contains(expectedPflow)
   }

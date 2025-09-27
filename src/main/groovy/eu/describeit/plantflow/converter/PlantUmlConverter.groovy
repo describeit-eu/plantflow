@@ -9,8 +9,6 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
-  enum ConvertMode {CALCULATE, EXECUTE}
-
   static final List<String> linesToMethod = [
       'start', 'stop', 'end', 'fork', 'fork again', 'end merge', 'repeat', 'endswitch', 'endwhile', 'detach'
   ]
@@ -26,8 +24,8 @@ final class PlantUmlConverter {
     return ' '.repeat(size)
   }
 
-  static String convertToPlantFlowDsl(final ConvertMode mode, final String pumlText) {
-    def pflow = new StringBuffer();
+  static String convertToPlantFlowDsl(final String pumlText) {
+    def pflow = new StringBuffer()
 
     pumlText.eachLine { String line ->
       int tabSize = line.takeWhile { it == ' ' }.size()

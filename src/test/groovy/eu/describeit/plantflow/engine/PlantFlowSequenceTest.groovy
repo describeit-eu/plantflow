@@ -14,7 +14,7 @@ class PlantFlowSequenceTest extends Specification {
     PlantFlowAction action2 = Mock() {
       getName() >> 'groovy goodness'
     }
-    def pflow = new PlantFlow("sequence_calculate.pflow", [action1, action2])
+    def pflow = new PlantFlow("sequence.pflow", [action1, action2])
 
     when: '1.'
     def nextActions = pflow.calculateNext()

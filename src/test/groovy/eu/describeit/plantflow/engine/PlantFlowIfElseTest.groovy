@@ -14,7 +14,7 @@ class PlantFlowIfElseTest extends Specification {
     PlantFlowAction action2 = Mock() {
       getName() >> 'process none'
     }
-    def pflow = new PlantFlow("ifThenElseEndif_calculate.pflow", [action1, action2])
+    def pflow = new PlantFlow("ifThenElseEndif.pflow", [action1, action2])
 
     when: '1.'
     def nextActions = pflow.calculateNext()
