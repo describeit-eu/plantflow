@@ -1,8 +1,8 @@
 start()
 
-if (eval("actions ready?") == "yes" ) {
+if (eval("actions['process all']")) { // yes
   if (action("process all")) { stop(); return }
-} else { //no
+} else { // no
   if (action("process none")) { stop(); return }
 }
 

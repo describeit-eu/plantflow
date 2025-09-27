@@ -1,7 +1,7 @@
 @startuml
 start
 
-if ( actions ready? ) then (yes)
+if ( actions['process all'] ) then (yes)
   :process all;
 else (no)
   :process none;

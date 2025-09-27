@@ -9,12 +9,12 @@ import java.util.regex.Pattern
 @CompileStatic
 @Slf4j
 enum ExpressionConverter {
-  IF_THEN     (~ /^if\b.*\bthen\b.*$/      , 'if (eval("%s") == "%s" ) {'),
+  IF_THEN     (~ /^if\b.*\bthen\b.*$/      , 'if (eval("%s")) { // %s'),
   REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
   WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
   WHILE       (~ /^while.*$/               , ["whilee"]),
   ENDWHILE    (~ /^endwhile.*/             , ["endwhile"]),
-  ELSE        (~ /^else.*/                 , '} else { //%s'),
+  ELSE        (~ /^else.*/                 , '} else { // %s'),
   SWITCH      (~ /^switch.*/               , ["switchh"]),
   CASE        (~ /^case.*/                 , ["casee"])
 

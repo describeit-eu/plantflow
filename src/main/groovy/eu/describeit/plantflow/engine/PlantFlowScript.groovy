@@ -7,11 +7,11 @@ import groovy.util.logging.Slf4j
 @Slf4j
 abstract class PlantFlowScript extends DelegatingScript {
 
-  List<PlantFlowAction> pflowActions
+  Map<String, PlantFlowAction> actions
   List<PlantFlowAction> nextActions
 
   def action(String name) {
-    def anAction = getAction(name)
+    def anAction = actions[name]
 
     if (anAction) {
       log.info("action() - found name:{}", anAction.name)
@@ -28,7 +28,7 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   def eval(String expression) {
     log.info("eval() - expression:{}", expression)
-    return 'yes'
+    return evaluate(expression)
   }
 
   def start() {
@@ -103,9 +103,5 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   def endMerge() {
     log.info("endMerge()")
-  }
-
-  private PlantFlowAction getAction(String name) {
-    return pflowActions.find {it.name == name}
   }
 }

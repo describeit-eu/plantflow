@@ -7,12 +7,19 @@ import org.codehaus.groovy.control.CompilerConfiguration
 
 @CompileStatic
 class PlantFlow {
-  List<PlantFlowAction> pflowActions
+  Map<String, PlantFlowAction> pflowActions
   PlantFlowScript pflowScript
+  Binding pflowBinding
+
+  PlantFlow(String pflowName, List<PlantFlowAction> actions, Binding binding) {
+    pflowActions = actions.collectEntries  { PlantFlowAction action -> [(action.name): action]}
+    binding.setVariable('actions', pflowActions)
+    pflowBinding = binding
+    initPflowScript(pflowName)
+  }
 
   PlantFlow(String pflowName, List<PlantFlowAction> actions) {
-    pflowActions = actions
-    initPflowScript(pflowName)
+    this(pflowName, actions, new Binding())
   }
 
   private void initPflowScript(String pflowName) {
@@ -22,9 +29,10 @@ class PlantFlow {
     def engine = new GroovyScriptEngine("src/test/resources")
     engine.setConfig(cc)
 
-    pflowScript = (PlantFlowScript) engine.createScript(pflowName, new Binding())
+    pflowScript = (PlantFlowScript) engine.createScript(pflowName, pflowBinding)
+
     pflowScript.setDelegate(pflowScript);
-    pflowScript.pflowActions = pflowActions
+    pflowScript.actions = pflowActions
   }
 
   List<PlantFlowAction> calculateNext() {
