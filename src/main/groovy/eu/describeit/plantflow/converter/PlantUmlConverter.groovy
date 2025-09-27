@@ -30,20 +30,23 @@ final class PlantUmlConverter {
     pumlText.eachLine { String line ->
       int tabSize = line.takeWhile { it == ' ' }.size()
       String lineTrimmed = line.trim()
+      String lineConverted = null
 
       switch (lineTrimmed) {
         case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ~/^-.*>$/     : log.info('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ''            : pflow.append(tab(tabSize)); break
-        case linesToMethod : pflow.append(tab(tabSize)).append(convertLineToMethod(lineTrimmed)); break
-        case linesMap*.key : pflow.append(tab(tabSize)).append(linesMap[line]); break
-        case ~/^:.*;$/     : pflow.append(tab(tabSize)).append(convertLineToActionMethod(lineTrimmed)); break
-
-        default :
-          pflow.append(tab(tabSize)).append(ExpressionConverter.convert(lineTrimmed))
-          break
+        case ''            : lineConverted = ''; break
+        case linesToMethod : lineConverted = convertLineToMethod(lineTrimmed); break
+        case linesMap*.key : lineConverted = linesMap[line]; break
+        case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed); break
+        default            : lineConverted = ExpressionConverter.convert(lineTrimmed); break
       }
-      pflow.append(System.lineSeparator())
+
+      if (lineConverted != null) {
+        pflow.append(tab(tabSize))
+        pflow.append(lineConverted)
+        pflow.append(System.lineSeparator())
+      }
     }
 
     return pflow.toString()

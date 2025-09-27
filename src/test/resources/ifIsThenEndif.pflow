@@ -1,0 +1,7 @@
+start()
+
+if (eval("new String('yes')") == "yes") {
+  if (action("process all")) { stop(); return }
+}
+
+stop()

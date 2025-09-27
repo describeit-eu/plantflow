@@ -2,14 +2,18 @@ package eu.describeit.plantflow.converter
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-import org.apache.commons.lang3.StringUtils
 
 import java.util.regex.Pattern
+
+import static org.apache.commons.lang3.StringUtils.substringsBetween
 
 @CompileStatic
 @Slf4j
 enum ExpressionConverter {
-  IF_THEN     (~ /^if\b.*\bthen\b.*$/      , 'if (eval("%s")) { // %s'),
+  IF_THEN        (~ /^if *\(.*\) *then *\(.*\)$/         , 'if (eval("%s")) { // %s'),
+  IF_IS_THEN     (~ /^if *\(.*\) *is *\(.*\) *then$/     , 'if (eval("%s") == "%s") {'),
+  IF_EQUALS_THEN (~ /^if *\(.*\) *equals *\(.*\) *then$/ , 'if (eval("%s") == "%s") {'),
+
   REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
   WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
   WHILE       (~ /^while.*$/               , ["whilee"]),
@@ -49,15 +53,14 @@ enum ExpressionConverter {
   }
 
   static private String convertExpressionString(String line, String exprString) {
-    log.info('convertExpressionString() - line:"{}", exprString:{}', line, exprString)
-    List<String> exprData = StringUtils.substringsBetween(line, '(', ')').collect { it.trim() }
+    List<String> exprData = substringsBetween(line, '(', ')').collect { it.trim() }
+    log.info('convertExpressionString() - line:"{}", exprString:{}, exprData:{}', line, exprString, exprData)
     return String.format(exprString, exprData as String[])
   }
 
   static private String convertExpressionList(String line, List<String> exprPieces) {
-    log.info('convertExpressionList() - line:"{}" , exprPieces:{}', line, exprPieces)
-
-    List<String> exprData = StringUtils.substringsBetween(line, '(', ')').collect { it.trim() }
+    List<String> exprData = substringsBetween(line, '(', ')').collect { it.trim() }
+    log.info('convertExpressionList() - line:"{}" , exprPieces:{}, exprData:{}', line, exprPieces, exprData)
     assert exprPieces.size() == exprData.size()
 
     StringBuilder newLine = new StringBuilder()

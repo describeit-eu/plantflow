@@ -1,0 +1,9 @@
+@startuml
+start
+
+if ( new String('yes') ) is (yes) then
+  :process all;
+endif
+
+stop
+@enduml
