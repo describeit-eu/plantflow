@@ -3,9 +3,12 @@ package eu.describeit.plantflow.engine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
+import static eu.describeit.plantflow.engine.BlockContext.BlockType.*
+
 @CompileStatic
 @Slf4j
 abstract class PlantFlowScript extends DelegatingScript {
+  Stack<BlockContext> blocks
 
   Map<String, PlantFlowAction> actions
   List<PlantFlowAction> nextActions
@@ -15,58 +18,76 @@ abstract class PlantFlowScript extends DelegatingScript {
   @Override
   Object run() {
     nextActions = []
+    blocks = new Stack<>()
 
     log.info('run() - start')
+    blocks.push(new BlockContext(type: SEQ))
+
     def result = scriptBody()
-    log.info('run() - end')
+
+    def lastContext = blocks.pop()
+    assert lastContext && lastContext.type == SEQ
+    nextActions.addAll(lastContext.nextActions)
+
+    log.info('run() - # of nextActions:{}', nextActions.size())
 
     return result
   }
 
-  Boolean action(String name) {
-    def anAction = actions[name]
+  Boolean isActive(String action) {
+    PlantFlowAction anAction = actions[action]
 
     if (anAction) {
-      log.info("action() - found name:{}", anAction.name)
+      log.info("isActive() - found name:{}", anAction.name)
 
       if (anAction.activate()) {
-        nextActions << anAction
+        blocks.last.nextActions << anAction
         return true
       } else {
         return false
       }
     } else {
-      throw new MissingPropertyException("Action '$name' was not found")
+      throw new MissingPropertyException("Action '$action' was not found")
     }
   }
 
-  def eval(String expression) {
+  @Override
+  Object evaluate(String expression) {
     log.info("eval() - expression:{}", expression)
-    return evaluate(expression)
+    return super.evaluate(expression)
   }
 
   def fork(Closure cl) {
     log.info("fork()")
 
+    blocks.push(new BlockContext(type: FORK))
+
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
     return this
-  }
-
-  def endFork() {
-
   }
 
   def forkAgain(Closure cl) {
     log.info("forkAgain()")
 
+    assert blocks.last.type == FORK
+
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
     return this
+  }
+
+  Boolean endFork() {
+    def forkBlock = blocks.pop()
+    assert forkBlock && forkBlock.type == FORK
+
+    blocks.last.nextActions.addAll(forkBlock.nextActions)
+
+    return forkBlock.nextActions as Boolean
   }
 
   def detach() {

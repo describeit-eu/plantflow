@@ -1,5 +1,5 @@
-if (eval("actions['process all']")) { // yes
-  if (action("process all")) return
+if (evaluate("actions['process all']")) { // yes
+  if (isActive("process all")) return
 } else { // no
-  if (action("process none")) return
+  if (isActive("process none")) return
 }

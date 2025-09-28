@@ -1,16 +1,9 @@
 package eu.describeit.plantflow.converter
 
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class PlantUmlConverterTest extends Specification {
-
-  def "tab returns requested number of spaces"() {
-    expect:
-    PlantUmlConverter.tab(n) == ' '.repeat(n)
-
-    where:
-    n << [0, 1, 3, 8]
-  }
 
   def "convertToPlantFlowDsl drops annotation and arrow-only lines"() {
     given:
@@ -29,15 +22,22 @@ class PlantUmlConverterTest extends Specification {
     !result.contains('-->')
   }
 
-  def "convertToPlantFlowDsl converts method-like keywords and preserves indentation"() {
-    given:
-    String puml = "  fork again"
-
+  @Unroll
+  def "convert keywords and preserve indentation - #line"() {
     when:
-    String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
+    String result = PlantUmlConverter.convertToPlantFlowDsl(line)
 
     then:
-    result.contains("  forkAgain()")
+    result == expected
+
+    where:
+    line           || expected
+    'endif'        || '}\n'
+    'end merge'    || '}; if (endFork()) return\n'
+    'fork again'   || '} forkAgain {\n'
+    '  end merge'  || '  }; if (endFork()) return\n'
+    '  endif'      || '  }\n'
+    '  fork again' || '  } forkAgain {\n'
   }
 
   def "convertToPlantFlowDsl converts action lines to action() checks"() {
@@ -48,8 +48,8 @@ class PlantUmlConverterTest extends Specification {
     String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
 
     then:
-    result.contains('if (action("do something")) return')
-    result.contains('if (action("do another")) return')
+    result.contains('if (isActive("do something")) return')
+    result.contains('if (isActive("do another")) return')
   }
 
   def "convertToPlantFlowDsl maps endif to closing brace"() {
@@ -76,7 +76,7 @@ class PlantUmlConverterTest extends Specification {
     resultPflow.contains(expectedPflow)
 
     where:
-    fileName << ['sequence', 'ifThenElseEndif', 'ifIsThenEndif']
-    //'forkEndMerge', 'repeatWhile','switchCaseEndswitch','whileEndwhile','whileInfinite'
+    fileName << ['sequence', 'ifThenElseEndif', 'ifIsThenEndif', 'forkEndMerge']
+    //'repeatWhile','switchCaseEndswitch','whileEndwhile','whileInfinite'
   }
 }

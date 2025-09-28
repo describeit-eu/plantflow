@@ -10,19 +10,17 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @Slf4j
 final class PlantUmlConverter {
   static final List<String> linesToDrop = ['start', 'stop', 'end']
-  static final List<String> linesToMethod = ['fork', 'fork again', 'repeat', 'endswitch', 'endwhile', 'detach']
+  static final List<String> linesToMethod = ['repeat', 'endswitch', 'endwhile', 'detach']
 
   static final Map<String, String> linesMap = [
-      endif   : '}',
-      endmerge: '} endFork()'
+      'endif'      : '}',
+      'end merge'  : '}; if (endFork()) return',
+      'fork'       : 'fork {',
+      'fork again' : '} forkAgain {',
   ]
 
   static String getResourceText(String file) {
     return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
-  }
-
-  static String tab(int size) {
-    return ' '.repeat(size)
   }
 
   static String convertToPlantFlowDsl(final String pumlText) {
@@ -39,13 +37,13 @@ final class PlantUmlConverter {
         case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : lineConverted = ''; break
         case linesToMethod : lineConverted = convertLineToMethod(lineTrimmed); break
-        case linesMap*.key : lineConverted = linesMap[line]; break
+        case linesMap*.key : lineConverted = linesMap[lineTrimmed]; break
         case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed); break
         default            : lineConverted = ExpressionConverter.convert(lineTrimmed); break
       }
 
       if (lineConverted != null) {
-        pflow.append(tab(tabSize))
+        pflow.append(' '.repeat(tabSize))
              .append(lineConverted)
              .append(System.lineSeparator())
       }
@@ -65,6 +63,6 @@ final class PlantUmlConverter {
 
     String actionName = substringBetween(line, ':', ';')
 
-    return "if (action(\"${actionName}\")) return"
+    return "if (isActive(\"${actionName}\")) return"
   }
 }

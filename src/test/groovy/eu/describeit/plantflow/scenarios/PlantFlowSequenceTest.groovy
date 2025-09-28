@@ -8,13 +8,8 @@ class PlantFlowSequenceTest extends Specification {
 
   void 'basic scenario'() {
     given:
-    PlantFlowAction action1 = Mock() {
-      getName() >> 'Hello world'
-    }
-
-    PlantFlowAction action2 = Mock() {
-      getName() >> 'groovy goodness'
-    }
+    PlantFlowAction action1 = Mock() { getName() >> 'Hello world' }
+    PlantFlowAction action2 = Mock() { getName() >> 'groovy goodness' }
     def pflow = new PlantFlow("sequence.pflow", [action1, action2])
 
     when: '1.'

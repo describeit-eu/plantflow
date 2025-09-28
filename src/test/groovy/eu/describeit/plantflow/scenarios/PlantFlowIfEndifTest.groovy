@@ -37,9 +37,7 @@ class PlantFlowIfEndifTest extends Specification {
 
   void 'if Then Endif'() {
     given:
-    PlantFlowAction action1 = Mock() {
-      getName() >> 'process all'
-    }
+    PlantFlowAction action1 = Mock() { getName() >> 'process all' }
     def pflow = new PlantFlow(fileName, [action1])
 
     when:

@@ -1,3 +1,3 @@
 
-if (action("Hello world")) return
-if (action("groovy goodness")) return
+if (isActive("Hello world")) return
+if (isActive("groovy goodness")) return
