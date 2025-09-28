@@ -1,7 +1,3 @@
-start()
-
 if (eval("new String('yes')") == "yes") { // is
-  if (action("process all")) { stop(); return }
+  if (action("process all")) return
 }
-
-stop()

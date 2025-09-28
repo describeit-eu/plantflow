@@ -6,8 +6,8 @@ fork again
   :action 2;
 fork again
   :action 3;
-fork again
   :action 4;
 end merge
+:action 4;
 stop
 @enduml

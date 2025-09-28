@@ -1,5 +1,3 @@
 
-  start()
-if (action("Hello world")) { stop(); return }
-if (action("groovy goodness")) { stop(); return }
-  stop()
+if (action("Hello world")) return
+if (action("groovy goodness")) return

@@ -1,9 +1,5 @@
-start()
-
 if (eval("actions['process all']")) { // yes
-  if (action("process all")) { stop(); return }
+  if (action("process all")) return
 } else { // no
-  if (action("process none")) { stop(); return }
+  if (action("process none")) return
 }
-
-stop()

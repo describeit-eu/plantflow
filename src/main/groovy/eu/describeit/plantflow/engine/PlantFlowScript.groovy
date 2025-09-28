@@ -10,20 +10,34 @@ abstract class PlantFlowScript extends DelegatingScript {
   Map<String, PlantFlowAction> actions
   List<PlantFlowAction> nextActions
 
-  def action(String name) {
+  abstract Object scriptBody()
+
+  @Override
+  Object run() {
+    nextActions = []
+
+    log.info('run() - start')
+    def result = scriptBody()
+    log.info('run() - end')
+
+    return result
+  }
+
+  Boolean action(String name) {
     def anAction = actions[name]
 
     if (anAction) {
       log.info("action() - found name:{}", anAction.name)
+
       if (anAction.activate()) {
         nextActions << anAction
         return true
       } else {
         return false
       }
+    } else {
+      throw new MissingPropertyException("Action '$name' was not found")
     }
-
-    throw new MissingPropertyException("Action '$name' was not found")
   }
 
   def eval(String expression) {
@@ -31,19 +45,28 @@ abstract class PlantFlowScript extends DelegatingScript {
     return evaluate(expression)
   }
 
-  def start() {
-    nextActions = []
-    log.info('start()')
+  def fork(Closure cl) {
+    log.info("fork()")
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    return this
   }
 
-  def stop() {
-    // link with end()
-    log.info('stop()')
+  def endFork() {
+
   }
 
-  def end() {
-    // link with stop()
-    log.info('end()')
+  def forkAgain(Closure cl) {
+    log.info("forkAgain()")
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    return this
   }
 
   def detach() {
@@ -83,25 +106,8 @@ abstract class PlantFlowScript extends DelegatingScript {
     log.info("endwhile() - expression:{}", expression)
   }
 
-  def is(String expressionValue) {
-    log.info("is() - expressionValue:{}", expressionValue)
-    return this
-  }
-
   def not(String expressionValue) {
     log.info("not() - expressionValue:{}", expressionValue)
     return this
-  }
-
-  def fork() {
-    log.info("fork()")
-  }
-
-  def forkAgain() {
-    log.info("forkAgain()")
-  }
-
-  def endMerge() {
-    log.info("endMerge()")
   }
 }

@@ -9,17 +9,18 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
-  static final List<String> linesToMethod = [
-      'start', 'stop', 'end', 'fork', 'fork again', 'end merge', 'repeat', 'endswitch', 'endwhile', 'detach'
-  ]
+  static final List<String> linesToDrop = ['start', 'stop', 'end']
+  static final List<String> linesToMethod = ['fork', 'fork again', 'repeat', 'endswitch', 'endwhile', 'detach']
 
   static final Map<String, String> linesMap = [
-      endif: '}'
+      endif   : '}',
+      endmerge: '} endFork()'
   ]
 
   static String getResourceText(String file) {
     return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
   }
+
   static String tab(int size) {
     return ' '.repeat(size)
   }
@@ -34,7 +35,8 @@ final class PlantUmlConverter {
 
       switch (lineTrimmed) {
         case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ~/^-.*>$/     : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : lineConverted = ''; break
         case linesToMethod : lineConverted = convertLineToMethod(lineTrimmed); break
         case linesMap*.key : lineConverted = linesMap[line]; break
@@ -44,8 +46,8 @@ final class PlantUmlConverter {
 
       if (lineConverted != null) {
         pflow.append(tab(tabSize))
-        pflow.append(lineConverted)
-        pflow.append(System.lineSeparator())
+             .append(lineConverted)
+             .append(System.lineSeparator())
       }
     }
 
@@ -55,7 +57,7 @@ final class PlantUmlConverter {
   private static String convertLineToMethod(String line) {
     log.info('convertLineToMethod() - line:"{}"', line)
 
-    return toCamelCase(line, false, ' ' as char) + "()"
+    return toCamelCase(line, false, (char)' ') + "()"
   }
 
   private static String convertLineToActionMethod(String line) {
@@ -63,6 +65,6 @@ final class PlantUmlConverter {
 
     String actionName = substringBetween(line, ':', ';')
 
-    return "if (action(\"${actionName}\")) { stop(); return }"
+    return "if (action(\"${actionName}\")) return"
   }
 }

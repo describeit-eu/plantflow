@@ -16,7 +16,7 @@ class PlantUmlConverterTest extends Specification {
     given:
     String puml = """
       @startuml
-      -->
+      -[babla]->
       @enduml
     """.stripIndent().trim()
 
@@ -31,22 +31,12 @@ class PlantUmlConverterTest extends Specification {
 
   def "convertToPlantFlowDsl converts method-like keywords and preserves indentation"() {
     given:
-    String puml = """
-      start
-        fork again
-      stop
-    """.stripIndent().trim()
+    String puml = "  fork again"
 
     when:
     String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
 
     then:
-    // start and stop become method calls
-    result.contains("start()")
-    result.contains("stop()")
-
-    and:
-    // indentation is preserved and camelCase is applied for multi-word keywords
     result.contains("  forkAgain()")
   }
 
@@ -58,8 +48,8 @@ class PlantUmlConverterTest extends Specification {
     String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
 
     then:
-    result.contains('if (action("do something")) { stop(); return }')
-    result.contains('if (action("do another")) { stop(); return }')
+    result.contains('if (action("do something")) return')
+    result.contains('if (action("do another")) return')
   }
 
   def "convertToPlantFlowDsl maps endif to closing brace"() {
