@@ -1,6 +1,7 @@
-package eu.describeit.plantflow.engine
+package eu.describeit.plantflow.scenarios
 
 import eu.describeit.plantflow.PlantFlow
+import eu.describeit.plantflow.engine.PlantFlowAction
 import spock.lang.Specification
 
 class PlantFlowIfEndifTest extends Specification {
