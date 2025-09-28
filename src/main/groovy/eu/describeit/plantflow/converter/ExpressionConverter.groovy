@@ -9,15 +9,18 @@ import java.util.regex.Pattern
 @CompileStatic
 @Slf4j
 enum ExpressionConverter {
-  IF_THEN        (~ /^if *\(.*\) *then *\(.*\)$/         , 'if (eval("%s")) { // %s'),
-  IF_IS_THEN     (~ /^if *\(.*\) *is *\(.*\) *then$/     , 'if (eval("%s") == "%s") { // is'),
-  IF_EQUALS_THEN (~ /^if *\(.*\) *equals *\(.*\) *then$/ , 'if (eval("%s") == "%s") { // equals'),
+  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/             , 'if (eval("%s")) { // %s'),
+  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/         , 'if (eval("%s") == "%s") { // is'),
+  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/     , 'if (eval("%s") == "%s") { // equals'),
+  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/         , 'else if (eval("%s")) { // %s'),
+  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/     , 'else if (eval("%s") == "%s") { // is'),
+  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/ , 'else if (eval("%s") == "%s") { // equals'),
+  ELSE          (~ /^else *\(.*\)$/                         , '} else { // %s'),
 
   REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
   WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
   WHILE       (~ /^while.*$/               , ["whilee"]),
   ENDWHILE    (~ /^endwhile.*/             , ["endwhile"]),
-  ELSE        (~ /^else.*/                 , '} else { // %s'),
   SWITCH      (~ /^switch.*/               , ["switchh"]),
   CASE        (~ /^case.*/                 , ["casee"])
 
