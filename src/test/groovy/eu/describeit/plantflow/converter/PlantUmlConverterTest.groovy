@@ -5,7 +5,7 @@ import spock.lang.Unroll
 
 class PlantUmlConverterTest extends Specification {
 
-  def "convertToPlantFlowDsl drops annotation and arrow-only lines"() {
+  def "drops lines start with @ and arrow-like lines"() {
     given:
     String puml = """
       @startuml
@@ -35,9 +35,11 @@ class PlantUmlConverterTest extends Specification {
     'endif'        || '}\n'
     'end merge'    || '}; if (endFork()) return\n'
     'fork again'   || '} forkAgain {\n'
+    'else (no)'    || '} else { // no\n'
     '  end merge'  || '  }; if (endFork()) return\n'
     '  endif'      || '  }\n'
     '  fork again' || '  } forkAgain {\n'
+    '  else (no)'  || '  } else { // no\n'
   }
 
   def "convertToPlantFlowDsl converts action lines to action() checks"() {
@@ -52,19 +54,8 @@ class PlantUmlConverterTest extends Specification {
     result.contains('if (isActive("do another")) return')
   }
 
-  def "convertToPlantFlowDsl maps endif to closing brace"() {
-    given:
-    String puml = "endif\nendif"
-
-    when:
-    String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
-
-    then:
-    // both lines should be converted to a closing brace
-    result.readLines().findAll { it.trim() == '}' }.size() == 2
-  }
-
-  def "convertToPlantFlowDsl contains expected pflow for resource files"() {
+  @Unroll
+  def "convert complete puml resource file: #fileName"() {
     given:
     def puml = PlantUmlConverter.getResourceText("${fileName}.puml")
     def expectedPflow = PlantUmlConverter.getResourceText("${fileName}.pflow")
@@ -76,7 +67,7 @@ class PlantUmlConverterTest extends Specification {
     resultPflow.contains(expectedPflow)
 
     where:
-    fileName << ['sequence', 'ifThenElseEndif', 'ifIsThenEndif', 'forkEndMerge']
-    //'repeatWhile','switchCaseEndswitch','whileEndwhile','whileInfinite'
+    fileName << ['sequence','ifThenElseEndif','ifIsThenEndif','forkEndMerge','whileInfinite']
+    //'repeatWhile','switchCaseEndswitch','whileEndwhile'
   }
 }

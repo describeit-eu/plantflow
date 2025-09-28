@@ -1,6 +1,3 @@
-start()
-whilee ("true")
- action("do something")
-endwhile()
-
-detach()
+while (evaluate("true")) {
+  if (isActive("do something")) return
+}

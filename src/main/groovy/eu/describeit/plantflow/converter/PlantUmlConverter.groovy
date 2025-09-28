@@ -9,14 +9,15 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
-  static final List<String> linesToDrop = ['start', 'stop', 'end']
-  static final List<String> linesToMethod = ['repeat', 'endswitch', 'endwhile', 'detach']
+  static final List<String> linesToDrop = ['start', 'stop', 'end', 'detach']
+  static final List<String> linesToMethod = ['repeat', 'endswitch']
 
   static final Map<String, String> linesMap = [
       'endif'      : '}',
       'end merge'  : '}; if (endFork()) return',
       'fork'       : 'fork {',
       'fork again' : '} forkAgain {',
+      'endwhile'   : '}'
   ]
 
   static String getResourceText(String file) {
