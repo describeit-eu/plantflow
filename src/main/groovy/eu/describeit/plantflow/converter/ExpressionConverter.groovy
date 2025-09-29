@@ -16,11 +16,11 @@ enum ExpressionConverter {
   ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/     , 'else if (evaluate("%s") == "%s") { // is'),
   ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/ , 'else if (evaluate("%s") == "%s") { // equals'),
   ELSE          (~ /^else *\(.*\)$/                         , '} else { // %s'),
+  WHILE_IS      (~ /^while *\(.*\) *is *\(.*\)$/            , 'while (evaluate("%s") == "%s") { // is'),
   WHILE         (~ /^while *\(.*\)$/                        , 'while (evaluate("%s")) {'),
+  ENDWHILE      (~ /^endwhile *\(.*\)$/                     , '} // %s'),
 
   REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
-  WHILE_IS    (~ /^while\b.*\bis\b.*$/     , ["whilee", 'is']),
-  ENDWHILE    (~ /^endwhile.*/             , ["endwhile"]),
   SWITCH      (~ /^switch.*/               , ["switchh"]),
   CASE        (~ /^case.*/                 , ["casee"])
 

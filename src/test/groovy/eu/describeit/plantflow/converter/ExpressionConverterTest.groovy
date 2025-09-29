@@ -6,11 +6,13 @@ import spock.lang.Unroll
 import static eu.describeit.plantflow.converter.ExpressionConverter.ELSEIF_EQUALS
 import static eu.describeit.plantflow.converter.ExpressionConverter.ELSEIF_IS
 import static eu.describeit.plantflow.converter.ExpressionConverter.ELSEIF_THEN
+import static eu.describeit.plantflow.converter.ExpressionConverter.ENDWHILE
 import static eu.describeit.plantflow.converter.ExpressionConverter.IF_EQUALS
 import static eu.describeit.plantflow.converter.ExpressionConverter.IF_THEN
 import static eu.describeit.plantflow.converter.ExpressionConverter.IF_IS
 import static eu.describeit.plantflow.converter.ExpressionConverter.ELSE
 import static eu.describeit.plantflow.converter.ExpressionConverter.WHILE
+import static eu.describeit.plantflow.converter.ExpressionConverter.WHILE_IS
 
 class ExpressionConverterTest extends Specification {
 
@@ -20,15 +22,17 @@ class ExpressionConverterTest extends Specification {
     ExpressionConverter.match(line) == expected
 
     where:
-    line                               || expected
-    'if (a > b) then (explain)'        || IF_THEN
-    'if (status) is (OK) then'         || IF_IS
-    'if (status) equals (OK) then'     || IF_EQUALS
-    'elseif (a > b) then (explain)'    || ELSEIF_THEN
-    'elseif (status) is (OK) then'     || ELSEIF_IS
-    'elseif (status) equals (OK) then' || ELSEIF_EQUALS
-    'else (because)'                   || ELSE
-    'while (true)'                     || WHILE
+    line                                || expected
+    'if (a > b) then (explain)'         || IF_THEN
+    'if (status) is (OK) then'          || IF_IS
+    'if (status) equals (OK) then'      || IF_EQUALS
+    'elseif (a > b) then (explain)'     || ELSEIF_THEN
+    'elseif (status) is (OK) then'      || ELSEIF_IS
+    'elseif (status) equals (OK) then'  || ELSEIF_EQUALS
+    'else (because)'                    || ELSE
+    'while (true)'                      || WHILE
+    'while (filesize ?) is (not empty)' || WHILE_IS
+    'endwhile (empty)'                  || ENDWHILE
   }
 
   @Unroll
@@ -50,6 +54,8 @@ class ExpressionConverterTest extends Specification {
     ELSEIF_EQUALS  || 'elseif (func(status)) equals (OK) then' || 'else if (evaluate("func(status)") == "OK") { // equals'
     ELSE           || 'else (because)'                         || '} else { // because'
     WHILE          || 'while (true)'                           || 'while (evaluate("true")) {'
+    WHILE_IS       || 'while (filesize ?) is (not empty)'      || 'while (evaluate("filesize ?") == "not empty") { // is'
+    ENDWHILE       || 'endwhile (true)'                        || '} // true'
   }
 
   def "convert throws IllegalArgumentException for unknown expression"() {
