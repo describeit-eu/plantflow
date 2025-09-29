@@ -10,7 +10,6 @@ import static org.apache.commons.text.CaseUtils.toCamelCase
 @Slf4j
 final class PlantUmlConverter {
   static final List<String> linesToDrop = ['start', 'stop', 'end', 'detach']
-  static final List<String> linesToMethod = ['repeat', 'endswitch']
 
   static final Map<String, String> linesMap = [
       'endif'      : '}',
@@ -37,7 +36,6 @@ final class PlantUmlConverter {
         case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : lineConverted = ''; break
-        case linesToMethod : lineConverted = convertLineToMethod(lineTrimmed); break
         case linesMap*.key : lineConverted = linesMap[lineTrimmed]; break
         case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed); break
         default            : lineConverted = ExpressionConverter.convert(lineTrimmed); break

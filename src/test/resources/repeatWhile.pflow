@@ -1,6 +1,4 @@
-start()
-repeat()
-  action("read data")
-  action("generate diagrams")
-repeatWhile ("more data?") is ("yes") not ("no")
-end()
+do {
+  if (isActive("read data")) return
+  if (isActive("generate diagrams")) return
+} while (evaluate("more data?") == "yes") // not ("no")
