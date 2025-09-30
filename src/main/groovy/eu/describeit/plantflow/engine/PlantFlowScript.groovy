@@ -20,7 +20,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     nextActions = []
     blocks = new Stack<>()
 
-    log.info('run() - start')
+    log.trace('run() - start')
     blocks.push(new BlockContext(type: SEQ))
 
     def result = scriptBody()
@@ -29,7 +29,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     assert lastContext && lastContext.type == SEQ
     nextActions.addAll(lastContext.nextActions)
 
-    log.info('run() - # of nextActions:{}', nextActions.size())
+    log.trace('run() - # of nextActions:{}', nextActions.size())
 
     return result
   }
@@ -38,12 +38,12 @@ abstract class PlantFlowScript extends DelegatingScript {
     PlantFlowAction anAction = actions[action]
 
     if (anAction) {
-      log.info("isActive() - found name:{}", anAction.name)
-
       if (anAction.activate()) {
+        log.info("isActive() - active name:{}", anAction.name)
         blocks.last.nextActions << anAction
         return true
       } else {
+        log.info("isActive() - inactive name:{}", anAction.name)
         return false
       }
     } else {
@@ -53,7 +53,7 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   @Override
   Object evaluate(String expression) {
-    log.info("eval() - expression:{}", expression)
+    log.info("evaluate() - expression:{}", expression)
     return super.evaluate(expression)
   }
 
