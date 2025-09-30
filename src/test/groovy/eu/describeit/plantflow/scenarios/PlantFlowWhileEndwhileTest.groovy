@@ -21,7 +21,7 @@ class PlantFlowWhileEndwhileTest extends Specification {
     // Override evaluate(String) on the underlying script to simulate changing condition results
     // We want: 'not empty', 'not empty', then 'empty'
     def results = ['not empty', 'not empty', 'empty'] as List<String>
-    def script = pflow.@pflowScript
+    def script = pflow.pflowScript
     script.metaClass.evaluate = { String expression ->
       // ensure we simulate the asked question only
       assert expression == 'check filesize ?'

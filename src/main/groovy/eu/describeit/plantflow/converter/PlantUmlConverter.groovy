@@ -16,7 +16,8 @@ final class PlantUmlConverter {
       'end merge'  : '}; if (endFork()) return',
       'fork'       : 'fork {',
       'fork again' : '} forkAgain {',
-      'endwhile'   : '}'
+      'endwhile'   : '}',
+      'repeat'     : 'do {'
   ]
 
   static String getResourceText(String file) {
@@ -49,12 +50,6 @@ final class PlantUmlConverter {
     }
 
     return pflow.toString()
-  }
-
-  private static String convertLineToMethod(String line) {
-    log.info('convertLineToMethod() - line:"{}"', line)
-
-    return toCamelCase(line, false, (char)' ') + "()"
   }
 
   private static String convertLineToActionMethod(String line) {

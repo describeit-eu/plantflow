@@ -39,8 +39,4 @@ class PlantFlow {
     pflowScript.run()
     return pflowScript.nextActions
   }
-
-  void dryRun() {
-    pflowScript.run()
-  }
 }

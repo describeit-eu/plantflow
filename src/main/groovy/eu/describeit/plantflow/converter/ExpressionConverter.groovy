@@ -9,25 +9,25 @@ import java.util.regex.Pattern
 @CompileStatic
 @Slf4j
 enum ExpressionConverter {
-  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/             , 'if (evaluate("%s")) { // %s'),
-  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/         , 'if (evaluate("%s") == "%s") { // is'),
-  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/     , 'if (evaluate("%s") == "%s") { // equals'),
-  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/         , 'else if (evaluate("%s")) { // %s'),
-  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/     , 'else if (evaluate("%s") == "%s") { // is'),
-  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/ , 'else if (evaluate("%s") == "%s") { // equals'),
-  ELSE          (~ /^else *\(.*\)$/                         , '} else { // %s'),
-  WHILE_IS      (~ /^while *\(.*\) *is *\(.*\)$/            , 'while (evaluate("%s") == "%s") { // is'),
-  WHILE         (~ /^while *\(.*\)$/                        , 'while (evaluate("%s")) {'),
-  ENDWHILE      (~ /^endwhile *\(.*\)$/                     , '} // %s'),
+  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/                     , 'if (evaluate("%s")) { // %s'),
+  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/                 , 'if (evaluate("%s") == "%s") { // is'),
+  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/             , 'if (evaluate("%s") == "%s") { // equals'),
+  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/                 , 'else if (evaluate("%s")) { // %s'),
+  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/             , 'else if (evaluate("%s") == "%s") { // is'),
+  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/         , 'else if (evaluate("%s") == "%s") { // equals'),
+  ELSE          (~ /^else *\(.*\)$/                                 , '} else { // %s'),
+  WHILE_IS      (~ /^while *\(.*\) *is *\(.*\)$/                    , 'while (evaluate("%s") == "%s") { // is'),
+  WHILE         (~ /^while *\(.*\)$/                                , 'while (evaluate("%s")) {'),
+  ENDWHILE      (~ /^endwhile *\(.*\)$/                             , '} // %s'),
+  REPEAT_WHILE  (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/, '} while (evaluate("%s") == "%s") // not ("%s")'),
 
-  REPEAT_WHilE(~ /^repeat\b.*\bwhile\b.*$/ , ["repeatWhile", 'is', 'not']),
-  SWITCH      (~ /^switch.*/               , ["switchh"]),
-  CASE        (~ /^case.*/                 , ["casee"])
+  // Regex pattern for balanced parentheses with up to 3 levels of nesting
+  private static final Pattern balancedParenthesesPattern = ~/\(([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*)\)/
 
   final Pattern matcher
-  final Object expression
+  final String expression
 
-  ExpressionConverter(Pattern pattern, Object expression) {
+  ExpressionConverter(Pattern pattern, String expression) {
     this.matcher = pattern
     this.expression = expression
   }
@@ -44,42 +44,16 @@ enum ExpressionConverter {
   }
 
   String convertLine(String line) {
-    switch (expression) {
-      case String:
-        return convertExpressionString(line, expression as String)
-      case List:
-        return convertExpressionList(line, expression as List<String>)
-      default:
-        throw new IllegalArgumentException('Uncovered case for line:' + line)
-    }
-  }
-
-  static private String convertExpressionString(String line, String exprString) {
     List<String> exprData = extractBetweenBalancedParentheses(line)
-    log.info('convertExpressionString() - line:"{}", exprString:{}, exprData:{}', line, exprString, exprData)
-    return String.format(exprString, exprData as String[])
-  }
-
-  static private String convertExpressionList(String line, List<String> exprPieces) {
-    List<String> exprData = extractBetweenBalancedParentheses(line)
-    log.info('convertExpressionList() - line:"{}" , exprPieces:{}, exprData:{}', line, exprPieces, exprData)
-    assert exprPieces.size() == exprData.size()
-
-    StringBuilder newLine = new StringBuilder()
-    exprPieces.eachWithIndex { String expr, int idx ->
-      newLine.append("$expr (\"${exprData[idx]}\") ")
-    }
-    return newLine.toString().trim()
+    log.info('convertExpressionString() - line:"{}", exprString:{}, exprData:{}', line, expression, exprData)
+    return String.format(expression, exprData as String[])
   }
 
   static private List<String> extractBetweenBalancedParentheses(String line) {
+    assert line
+
     List<String> results = []
-    if (line == null || line.isEmpty()) return results
-
-    // Regex pattern for balanced parentheses with up to 3 levels of nesting
-    Pattern pattern = ~/\(([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*)\)/
-
-    Matcher matcher = pattern.matcher(line)
+    Matcher matcher = balancedParenthesesPattern.matcher(line)
     while (matcher.find()) {
       results.add(matcher.group(1).trim())
     }

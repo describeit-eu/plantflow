@@ -89,46 +89,4 @@ abstract class PlantFlowScript extends DelegatingScript {
 
     return forkBlock.nextActions as Boolean
   }
-
-  def detach() {
-    // for infinite loop it behaves like end()/stop()
-    log.info('detach()')
-  }
-
-  def switchh(String expression) {
-    log.info("switchh() - expression:{}", expression)
-    return this
-  }
-
-  def casee(String expressionValue) {
-    log.info("casee() - expressionValue:{}", expressionValue)
-  }
-
-  def endswitch() {
-    log.info("endswitch()")
-  }
-
-  def repeat() {
-    log.info("repeat()")
-    return this
-  }
-
-  def repeatWhile(String expression) {
-    log.info("repeatWhile() - expression:{}", expression)
-    return this
-  }
-
-  def whilee(String expression) {
-    log.info("whilee() - expression:{}", expression)
-    return this
-  }
-
-  def endwhile(String expression) {
-    log.info("endwhile() - expression:{}", expression)
-  }
-
-  def not(String expressionValue) {
-    log.info("not() - expressionValue:{}", expressionValue)
-    return this
-  }
 }
