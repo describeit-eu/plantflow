@@ -4,13 +4,20 @@ import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
 import spock.lang.Specification
 
-class PlantFlowRepeatWhileTest extends Specification {
+class ScenarioRepeatWhileTest extends Specification {
 
   void 'scenario executes body at least once and repeats while condition true'() {
     given:
     // Actions used inside the repeat-while loop
-    PlantFlowAction readData = Mock() { getName() >> 'read data' }
-    PlantFlowAction generateDiagrams = Mock() { getName() >> 'generate diagrams' }
+    PlantFlowAction readData = Mock() {
+      getName() >> 'read data'
+      // Allow multiple invocations within a single calculateNext() call by providing a sequence
+      activate() >>> [true, false, true, false, false]
+    }
+    PlantFlowAction generateDiagrams = Mock() {
+      getName() >> 'generate diagrams'
+      activate() >>> [true, true, false, false]
+    }
 
     def binding = new Binding()
 
@@ -25,28 +32,40 @@ class PlantFlowRepeatWhileTest extends Specification {
       return results ? results.remove(0) : 'no'
     }
 
-    when: '1st run - condition true after body -> two actions from body'
+    when: '1st run - first action from body'
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * readData.activate() >> true
-    1 * generateDiagrams.activate() >> true
-    nextActions*.name == ['read data', 'generate diagrams']
+    nextActions*.name == ['read data']
 
-    when: '2nd run - condition still true -> body executes again'
+    when: '2nd run - second action from body'
+    nextActions = pflow.calculateNext()
+
+    then:
+    nextActions*.name == ['generate diagrams']
+
+    when: '3rd run - first action again'
     nextActions = pflow.calculateNext()
 
     then:
     1 * readData.activate() >> true
-    1 * generateDiagrams.activate() >> true
-    nextActions*.name == ['read data', 'generate diagrams']
+    0 * generateDiagrams.activate()
+    nextActions*.name == ['read data']
 
-    when: '3rd run - condition becomes false after body -> loop stops, no actions left'
+    when: '4th run - second action again'
     nextActions = pflow.calculateNext()
 
     then:
     1 * readData.activate() >> false
-    0 * generateDiagrams.activate()
+    1 * generateDiagrams.activate() >> true
+    nextActions*.name == ['generate diagrams']
+
+    when: '5th run - nothing left'
+    nextActions = pflow.calculateNext()
+
+    then:
+    1 * readData.activate() >> false
+    1 * generateDiagrams.activate() >> false
     nextActions.isEmpty()
   }
 }

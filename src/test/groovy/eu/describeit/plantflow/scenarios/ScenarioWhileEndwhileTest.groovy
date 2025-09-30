@@ -4,7 +4,7 @@ import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
 import spock.lang.Specification
 
-class PlantFlowWhileEndwhileTest extends Specification {
+class ScenarioWhileEndwhileTest extends Specification {
 
   void 'scenario loops until condition becomes false, then continues'() {
     given:

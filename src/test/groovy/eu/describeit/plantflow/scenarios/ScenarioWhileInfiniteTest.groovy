@@ -4,7 +4,7 @@ import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
 import spock.lang.Specification
 
-class PlantFlowWhileInfiniteTest extends Specification {
+class ScenarioWhileInfiniteTest extends Specification {
 
   void 'basic scenario'() {
     given:
