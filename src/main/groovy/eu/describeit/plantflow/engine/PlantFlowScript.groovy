@@ -8,26 +8,22 @@ import static eu.describeit.plantflow.engine.BlockContext.BlockType.*
 @CompileStatic
 @Slf4j
 abstract class PlantFlowScript extends DelegatingScript {
-  Stack<BlockContext> blocks
+  ContextManager context = new ContextManager()
 
   Map<String, PlantFlowAction> actions
-  List<PlantFlowAction> nextActions
 
   abstract Object scriptBody()
 
+  List<PlantFlowAction> getNextActions() {
+    return context.nextActions
+  }
+
   @Override
   Object run() {
-    nextActions = []
-    blocks = new Stack<>()
 
-    log.trace('run() - start')
-    blocks.push(new BlockContext(type: SEQ))
-
+    context.start(SEQ)
     def result = scriptBody()
-
-    def lastContext = blocks.pop()
-    assert lastContext && lastContext.type == SEQ
-    nextActions.addAll(lastContext.nextActions)
+    context.end(SEQ)
 
     log.trace('run() - # of nextActions:{}', nextActions.size())
 
@@ -40,7 +36,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     if (anAction) {
       if (anAction.activate()) {
         log.info("isActive() - active name:{}", anAction.name)
-        blocks.last.nextActions << anAction
+        context.addAction(anAction)
         return true
       } else {
         log.info("isActive() - inactive name:{}", anAction.name)
@@ -59,15 +55,16 @@ abstract class PlantFlowScript extends DelegatingScript {
   Boolean evaluate(String expression, String expectedValue) {
     log.info("evaluate() - expression:{} expectedValue:{}", expression, expectedValue)
 
-    def result = expectedValue == null ? super.evaluate(expression) : super.evaluate(expression) == expectedValue
+    def evalResult = super.evaluate(expression)
+    def returnValue = (expectedValue == null) ? evalResult : evalResult == expectedValue
 
-    return result as Boolean
+    return returnValue as Boolean
   }
 
   def fork(Closure cl) {
     log.info("fork()")
 
-    blocks.push(new BlockContext(type: FORK))
+    context.start(FORK)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -79,7 +76,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   def forkAgain(Closure cl) {
     log.info("forkAgain()")
 
-    assert blocks.last.type == FORK
+    context.check(FORK)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -89,11 +86,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   }
 
   Boolean endFork() {
-    def forkBlock = blocks.pop()
-    assert forkBlock && forkBlock.type == FORK
-
-    blocks.last.nextActions.addAll(forkBlock.nextActions)
-
-    return forkBlock.nextActions as Boolean
+    def forkActions = context.end(FORK)
+    return forkActions as Boolean
   }
 }
