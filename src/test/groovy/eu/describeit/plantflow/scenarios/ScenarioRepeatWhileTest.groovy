@@ -2,6 +2,7 @@ package eu.describeit.plantflow.scenarios
 
 import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
+import eu.describeit.plantflow.engine.PlantFlowScript
 import groovy.util.logging.Slf4j
 import spock.lang.Specification
 
@@ -11,17 +12,16 @@ class ScenarioRepeatWhileTest extends Specification {
   PlantFlowAction generateDiagrams
   PlantFlow pflow
 
-  def mockPlantFlow() {
+  void mockPlantFlow() {
     readData         = Mock() { getName() >> 'read data' }
     generateDiagrams = Mock() { getName() >> 'generate diagrams' }
-
     pflow = new PlantFlow('repeatWhile.pflow', [readData, generateDiagrams])
 
-    List<String> exprMockResults = ['yes', 'no', 'no']
+    List<String> scriptEvaluateMockResults = ['yes', 'no']
 
-    pflow.pflowScript.metaClass.evaluate = { String expression, String expectedValue ->
+    pflow.pflowScript.metaClass.evaluate = { String expression ->
       assert expression == 'more data?'
-      def exprValue = exprMockResults.remove(0)
+      def exprValue = scriptEvaluateMockResults.remove(0)
       log.info("mock evaluate() - exprValue:{}", exprValue)
       return exprValue
     }
@@ -31,7 +31,7 @@ class ScenarioRepeatWhileTest extends Specification {
     given:
     mockPlantFlow()
 
-    when: '1st run - first action from body'
+    when: '1st calculateNext() - first action from body'
     def nextActions = pflow.calculateNext()
 
     then:
@@ -39,7 +39,7 @@ class ScenarioRepeatWhileTest extends Specification {
     1 * readData.activate() >> true
     0 * generateDiagrams.activate()
 
-    when: '2nd run - second action from body'
+    when: '2nd calculateNext() - second action from body'
     nextActions = pflow.calculateNext()
 
     then:
@@ -47,23 +47,23 @@ class ScenarioRepeatWhileTest extends Specification {
     1 * readData.activate() >> false
     1 * generateDiagrams.activate() >> true
 
-    when: '3rd run - no actions active'
+    when: '3rd calculateNext() - first execution of while() loops to enable first action'
     nextActions = pflow.calculateNext()
 
     then:
-    nextActions.isEmpty()
-    1 * readData.activate() >> false
+    2 * readData.activate() >>> [false, true]
     1 * generateDiagrams.activate() >> false
+    nextActions*.name == ['read data']
 
-    when: '4th run - second action again'
+    when: '4th calculateNext() - second action again'
     nextActions = pflow.calculateNext()
 
     then:
-    1 * readData.activate() >> true
-    0 * generateDiagrams.activate()
+    1 * readData.activate() >> false
+    1 * generateDiagrams.activate() >> true
     nextActions*.name == ['generate diagrams']
 
-    when: '5th run - nothing left'
+    when: '5th calculateNext() - second execution of while() leaves the loop'
     nextActions = pflow.calculateNext()
 
     then:

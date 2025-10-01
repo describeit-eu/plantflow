@@ -8,22 +8,21 @@ import static eu.describeit.plantflow.engine.BlockContext.BlockType.*
 @CompileStatic
 @Slf4j
 abstract class PlantFlowScript extends DelegatingScript {
-  ContextManager context = new ContextManager()
+  ExecutionContext executionContext = new ExecutionContext()
 
   Map<String, PlantFlowAction> actions
 
   abstract Object scriptBody()
 
   List<PlantFlowAction> getNextActions() {
-    return context.nextActions
+    return executionContext.nextActions
   }
 
   @Override
   Object run() {
-
-    context.start(SEQ)
+    executionContext.start(SEQ)
     def result = scriptBody()
-    context.end(SEQ)
+    executionContext.end(SEQ)
 
     log.trace('run() - # of nextActions:{}', nextActions.size())
 
@@ -36,7 +35,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     if (anAction) {
       if (anAction.activate()) {
         log.info("isActive() - active name:{}", anAction.name)
-        context.addAction(anAction)
+        executionContext.addAction(anAction)
         return true
       } else {
         log.info("isActive() - inactive name:{}", anAction.name)
@@ -64,7 +63,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   def fork(Closure cl) {
     log.info("fork()")
 
-    context.start(FORK)
+    executionContext.start(FORK)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -76,7 +75,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   def forkAgain(Closure cl) {
     log.info("forkAgain()")
 
-    context.check(FORK)
+    executionContext.check(FORK)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -86,7 +85,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   }
 
   Boolean endFork() {
-    def forkActions = context.end(FORK)
+    def forkActions = executionContext.end(FORK)
     return forkActions as Boolean
   }
 }

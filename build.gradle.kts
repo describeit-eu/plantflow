@@ -6,8 +6,10 @@ val groovyVersion    = "4.0.28"
 val slf4jVersion     = "2.0.17"
 val logbackVersion   = "1.5.18"
 
-val junitVersion = "5.13.4"
-val spockVersion = "2.4-M6-groovy-4.0"
+val junitVersion     = "5.13.4"
+val spockVersion     = "2.4-M6-groovy-4.0"
+val bytebuddyVersion = "1.17.7"
+val mockitoVersion   = "5.20.0"
 
 group = "eu.describeit"
 version = "1.0-SNAPSHOT"
@@ -31,6 +33,8 @@ dependencies {
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(platform("org.spockframework:spock-bom:$spockVersion"))
   testImplementation("org.spockframework:spock-core")
+//  testImplementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
+//  testImplementation("org.mockito:mockito-core:$mockitoVersion")
 }
 
 tasks.test {

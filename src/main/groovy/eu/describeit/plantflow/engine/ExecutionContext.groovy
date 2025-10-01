@@ -1,14 +1,13 @@
 package eu.describeit.plantflow.engine
 
 import groovy.transform.CompileStatic
-import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import static eu.describeit.plantflow.engine.BlockContext.BlockType.SEQ
 
 @CompileStatic
 @Slf4j
-class ContextManager {
+class ExecutionContext {
   Stack<BlockContext> blocks = new Stack<>()
   List<PlantFlowAction> nextActions = []
 
