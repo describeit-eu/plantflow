@@ -45,20 +45,20 @@ class ExpressionConverterTest extends Specification {
     where:
     expression     || line                                           || expected
     IF_THEN        || 'if (a > b) then (explain)'                    || 'if (evaluate("a > b")) { // explain'
-    IF_IS          || 'if (status) is (OK) then'                     || 'if (evaluate("status") == "OK") { // is'
-    IF_IS          || 'if (func(status)) is (OK) then'               || 'if (evaluate("func(status)") == "OK") { // is'
-    IF_EQUALS      || 'if (status) equals (OK) then'                 || 'if (evaluate("status") == "OK") { // equals'
-    IF_EQUALS      || 'if (func(status)) equals (OK) then'           || 'if (evaluate("func(status)") == "OK") { // equals'
+    IF_IS          || 'if (status) is (OK) then'                     || 'if (evaluate("status", "OK")) { // is'
+    IF_IS          || 'if (func(status)) is (OK) then'               || 'if (evaluate("func(status)", "OK")) { // is'
+    IF_EQUALS      || 'if (status) equals (OK) then'                 || 'if (evaluate("status", "OK")) { // equals'
+    IF_EQUALS      || 'if (func(status)) equals (OK) then'           || 'if (evaluate("func(status)", "OK")) { // equals'
     ELSEIF_THEN    || 'elseif (a > b) then (explain)'                || 'else if (evaluate("a > b")) { // explain'
-    ELSEIF_IS      || 'elseif (status) is (OK) then'                 || 'else if (evaluate("status") == "OK") { // is'
-    ELSEIF_IS      || 'elseif (func(status)) is (OK) then'           || 'else if (evaluate("func(status)") == "OK") { // is'
-    ELSEIF_EQUALS  || 'elseif (status) equals (OK) then'             || 'else if (evaluate("status") == "OK") { // equals'
-    ELSEIF_EQUALS  || 'elseif (func(status)) equals (OK) then'       || 'else if (evaluate("func(status)") == "OK") { // equals'
+    ELSEIF_IS      || 'elseif (status) is (OK) then'                 || 'else if (evaluate("status", "OK")) { // is'
+    ELSEIF_IS      || 'elseif (func(status)) is (OK) then'           || 'else if (evaluate("func(status)", "OK")) { // is'
+    ELSEIF_EQUALS  || 'elseif (status) equals (OK) then'             || 'else if (evaluate("status", "OK")) { // equals'
+    ELSEIF_EQUALS  || 'elseif (func(status)) equals (OK) then'       || 'else if (evaluate("func(status)", "OK")) { // equals'
     ELSE           || 'else (because)'                               || '} else { // because'
     WHILE          || 'while (true)'                                 || 'while (evaluate("true")) {'
-    WHILE_IS       || 'while (filesize ?) is (not empty)'            || 'while (evaluate("filesize ?") == "not empty") { // is'
+    WHILE_IS       || 'while (filesize ?) is (not empty)'            || 'while (evaluate("filesize ?", "not empty")) { // is'
     ENDWHILE       || 'endwhile (true)'                              || '} // true'
-    REPEAT_WHILE   || 'repeat while (more data?) is (yes) not (no)'  || '} while (evaluate("more data?") == "yes") // not ("no")'
+    REPEAT_WHILE   || 'repeat while (more data?) is (yes) not (no)'  || '} while (evaluate("more data?", "yes")) // not ("no")'
   }
 
   def "convert throws IllegalArgumentException for unknown expression"() {

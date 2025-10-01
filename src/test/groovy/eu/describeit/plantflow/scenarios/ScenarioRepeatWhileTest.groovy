@@ -19,7 +19,7 @@ class ScenarioRepeatWhileTest extends Specification {
 
     List<String> exprMockResults = ['yes', 'no', 'no']
 
-    pflow.pflowScript.metaClass.evaluate = { String expression ->
+    pflow.pflowScript.metaClass.evaluate = { String expression, String expectedValue ->
       assert expression == 'more data?'
       def exprValue = exprMockResults.remove(0)
       log.info("mock evaluate() - exprValue:{}", exprValue)

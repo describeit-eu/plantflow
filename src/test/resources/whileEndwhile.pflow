@@ -1,4 +1,4 @@
-while (evaluate("check filesize ?") == "not empty") { // is
+while (evaluate("check filesize ?", "not empty")) { // is
   if (isActive("read file")) return
 } // empty
 if (isActive("close file")) return

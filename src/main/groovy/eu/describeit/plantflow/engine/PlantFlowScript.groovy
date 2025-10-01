@@ -53,8 +53,15 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   @Override
   Object evaluate(String expression) {
-    log.info("evaluate() - expression:{}", expression)
-    return super.evaluate(expression)
+    return evaluate(expression, null)
+  }
+
+  Boolean evaluate(String expression, String expectedValue) {
+    log.info("evaluate() - expression:{} expectedValue:{}", expression, expectedValue)
+
+    def result = expectedValue == null ? super.evaluate(expression) : super.evaluate(expression) == expectedValue
+
+    return result as Boolean
   }
 
   def fork(Closure cl) {

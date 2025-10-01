@@ -22,7 +22,7 @@ class ScenarioWhileEndwhileTest extends Specification {
     // We want: 'not empty', 'not empty', then 'empty'
     def results = ['not empty', 'not empty', 'empty'] as List<String>
     def script = pflow.pflowScript
-    script.metaClass.evaluate = { String expression ->
+    script.metaClass.evaluate = { String expression, String expectedValue ->
       // ensure we simulate the asked question only
       assert expression == 'check filesize ?'
       return results ? results.remove(0) : 'empty'

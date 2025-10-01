@@ -8,31 +8,25 @@ class ScenarioIfEndifTest extends Specification {
 
   void 'if Then Else Endif'() {
     given:
-    PlantFlowAction action1 = Mock() {
-      getName() >> 'process all'
-    }
+    PlantFlowAction processAll = Mock() { getName() >> 'process all' }
+    PlantFlowAction processNone = Mock() { getName() >> 'process none' }
+    PlantFlow pflow = new PlantFlow("ifThenElseEndif.pflow", [processAll, processNone])
 
-    PlantFlowAction action2 = Mock() {
-      getName() >> 'process none'
-    }
-    def pflow = new PlantFlow("ifThenElseEndif.pflow", [action1, action2])
-
-    when: '1.'
+    when:
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> true
-    0 * action2.activate()
-    nextActions
+    1 * processAll.activate() >> true
+    0 * processNone.activate()
     nextActions[0].name == 'process all'
 
-    when: '2.'
+    when:
     nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> false
-    0 * action2.activate()
-    nextActions.size() == 0
+    1 * processAll.activate() >> false
+    0 * processNone.activate()
+    nextActions.isEmpty()
   }
 
   void 'if Then Endif'() {
