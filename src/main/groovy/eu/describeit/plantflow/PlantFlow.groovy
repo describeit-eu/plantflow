@@ -4,6 +4,7 @@ import eu.describeit.plantflow.engine.PlantFlowAction
 import eu.describeit.plantflow.engine.PlantFlowScript
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 @CompileStatic
 class PlantFlow {
@@ -25,6 +26,9 @@ class PlantFlow {
   private void initPflowScript(String pflowName) {
     CompilerConfiguration cc = new CompilerConfiguration()
     cc.setScriptBaseClass(PlantFlowScript.class.getName())
+
+    // method calls are statically bound to PlantFlowScript, while internal evaluation remains mockable
+    cc.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
 
     def engine = new GroovyScriptEngine("src/test/resources")
     engine.setConfig(cc)

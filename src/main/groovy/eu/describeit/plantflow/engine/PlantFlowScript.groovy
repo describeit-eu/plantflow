@@ -1,7 +1,9 @@
 package eu.describeit.plantflow.engine
 
 import groovy.transform.CompileStatic
+import groovy.transform.CompileDynamic
 import groovy.util.logging.Slf4j
+import org.codehaus.groovy.runtime.InvokerHelper
 
 import static eu.describeit.plantflow.engine.BlockContext.BlockType.*
 
@@ -46,21 +48,17 @@ abstract class PlantFlowScript extends DelegatingScript {
     }
   }
 
-  @Override
-  Object evaluate(String expression) {
-    return evaluate(expression, null)
-  }
-
   Boolean evaluate(String expression, String expectedValue) {
     log.info("evaluate() - expression:{} expectedValue:{}", expression, expectedValue)
 
-    def evalResult = super.evaluate(expression)
+    // Use Groovy MOP to allow mocking Script.evaluate(String) via metaclass
+    def evalResult = InvokerHelper.invokeMethod(this, 'evaluate', expression)
     def returnValue = (expectedValue == null) ? evalResult : evalResult == expectedValue
 
     return returnValue as Boolean
   }
 
-  def fork(Closure cl) {
+  PlantFlowScript fork(Closure cl) {
     log.info("fork()")
 
     executionContext.start(FORK)
@@ -72,7 +70,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     return this
   }
 
-  def forkAgain(Closure cl) {
+  PlantFlowScript forkAgain(Closure cl) {
     log.info("forkAgain()")
 
     executionContext.check(FORK)
