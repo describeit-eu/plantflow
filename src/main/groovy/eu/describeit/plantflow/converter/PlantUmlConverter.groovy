@@ -10,12 +10,6 @@ import static org.apache.commons.lang3.StringUtils.substringBetween
 final class PlantUmlConverter {
   static final List<String> linesToDrop = ['start', 'stop', 'end', 'detach']
 
-  static final Map<String, String> linesMap = [
-      'fork'       : 'fork {',
-      'fork again' : '} forkAgain {',
-      'end merge'  : '}; if (endFork()) return',
-  ]
-
   static String getResourceText(String file) {
     return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
   }
@@ -33,7 +27,6 @@ final class PlantUmlConverter {
         case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : lineConverted = ''; break
-        case linesMap*.key : lineConverted = linesMap[lineTrimmed]; break
         case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed); break
         default            : lineConverted = convertExpression(lineTrimmed); break
       }
@@ -62,6 +55,13 @@ final class PlantUmlConverter {
     } catch (IllegalArgumentException ignored) {
       // ignore
     }
-    return LoopConverter.convert(line)
+
+    try {
+      return LoopConverter.convert(line)
+    } catch (IllegalArgumentException ignored) {
+      // ignore
+    }
+
+    return ForkConverter.convert(line)
   }
 }

@@ -31,7 +31,7 @@ enum LoopConverter {
 
   static String convert(String line) {
     LoopConverter converter = match(line)
-    if (!converter) throw new IllegalArgumentException('Unknown loop expression for line:' + line)
+    if (!converter) throw new IllegalArgumentException('Unknown expression for line:' + line)
 
     return converter.convertLine(line)
   }

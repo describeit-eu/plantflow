@@ -48,6 +48,6 @@ class LoopConverterTest extends Specification {
 
     then:
     def ex = thrown(IllegalArgumentException)
-    ex.message.contains('Unknown loop expression for line:unknown something')
+    ex.message.contains('Unknown expression for line:unknown something')
   }
 }
