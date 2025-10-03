@@ -4,7 +4,6 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import static org.apache.commons.lang3.StringUtils.substringBetween
-import static org.apache.commons.text.CaseUtils.toCamelCase
 
 @CompileStatic
 @Slf4j
@@ -12,12 +11,9 @@ final class PlantUmlConverter {
   static final List<String> linesToDrop = ['start', 'stop', 'end', 'detach']
 
   static final Map<String, String> linesMap = [
-      'endif'      : '}',
-      'end merge'  : '}; if (endFork()) return',
       'fork'       : 'fork {',
       'fork again' : '} forkAgain {',
-      'endwhile'   : '}',
-      'repeat'     : 'do {'
+      'end merge'  : '}; if (endFork()) return',
   ]
 
   static String getResourceText(String file) {
@@ -39,7 +35,7 @@ final class PlantUmlConverter {
         case ''            : lineConverted = ''; break
         case linesMap*.key : lineConverted = linesMap[lineTrimmed]; break
         case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed); break
-        default            : lineConverted = ExpressionConverter.convert(lineTrimmed); break
+        default            : lineConverted = convertExpression(lineTrimmed); break
       }
 
       if (lineConverted != null) {
@@ -58,5 +54,14 @@ final class PlantUmlConverter {
     String actionName = substringBetween(line, ':', ';')
 
     return "if (isActive(\"${actionName}\")) return"
+  }
+
+  private static String convertExpression(String line) {
+    try {
+      return ConditionalConverter.convert(line)
+    } catch (IllegalArgumentException ignored) {
+      // ignore
+    }
+    return LoopConverter.convert(line)
   }
 }

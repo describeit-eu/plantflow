@@ -33,6 +33,7 @@ class PlantUmlConverterTest extends Specification {
     where:
     line           || expected
     'endif'        || '}\n'
+    'repeat'       || 'do {\n'
     'end merge'    || '}; if (endFork()) return\n'
     'fork again'   || '} forkAgain {\n'
     'else (no)'    || '} else { // no\n'
@@ -40,6 +41,7 @@ class PlantUmlConverterTest extends Specification {
     '  endif'      || '  }\n'
     '  fork again' || '  } forkAgain {\n'
     '  else (no)'  || '  } else { // no\n'
+    '  repeat'     || '  do {\n'
   }
 
   def "convertToPlantFlowDsl converts action lines to action() checks"() {
