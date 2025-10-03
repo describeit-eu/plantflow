@@ -11,18 +11,17 @@ class ScenarioRepeatWhileTest extends Specification {
   PlantFlowAction readData
   PlantFlowAction generateDiagrams
   PlantFlow pflow
+  List<String> scriptEvaluateMockResults = ['yes', 'no']
 
   void mockPlantFlow() {
     readData         = Mock() { getName() >> 'read data' }
     generateDiagrams = Mock() { getName() >> 'generate diagrams' }
     pflow = new PlantFlow('repeatWhile.pflow', [readData, generateDiagrams])
 
-    List<String> scriptEvaluateMockResults = ['yes', 'no']
-
     pflow.pflowScript.metaClass.evaluate = { String expression ->
       assert expression == 'more data?'
       def exprValue = scriptEvaluateMockResults.remove(0)
-      log.info("mock evaluate() - exprValue:{}", exprValue)
+      log.info("MOCKED Script.evaluate() - exprValue:{}", exprValue)
       return exprValue
     }
   }

@@ -2,13 +2,15 @@ package eu.describeit.plantflow.scenarios
 
 import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
-import spock.lang.Ignore
+import groovy.util.logging.Slf4j
 import spock.lang.Specification
 
+@Slf4j
 class ScenarioWhileEndwhileTest extends Specification {
   PlantFlowAction readFile
   PlantFlowAction closeFile
   PlantFlow pflow
+  List<String> scriptEvaluateMockResults = ['not empty', 'not empty', 'empty', 'empty']
 
   void mockPlantFlow() {
     readFile = Mock() { getName() >> 'read file' }
@@ -16,15 +18,14 @@ class ScenarioWhileEndwhileTest extends Specification {
 
     pflow = new PlantFlow('whileEndwhile.pflow', [readFile, closeFile])
 
-    def results = ['not empty', 'not empty', 'empty'] as List<String>
-    def script = pflow.pflowScript
-    script.metaClass.evaluate = { String expression, String expectedValue ->
+    pflow.pflowScript.metaClass.evaluate = { String expression ->
       assert expression == 'check filesize ?'
-      return results ? results.remove(0) : 'empty'
+      def exprValue = scriptEvaluateMockResults.remove(0)
+      log.info("MOCKED Script.evaluate() - exprValue:{}", exprValue)
+      return exprValue
     }
   }
 
-  @Ignore
   void 'scenario loops until condition becomes false, then continues'() {
     given:
     mockPlantFlow()
