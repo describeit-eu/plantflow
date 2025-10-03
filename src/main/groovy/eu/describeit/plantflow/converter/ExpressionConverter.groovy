@@ -9,17 +9,17 @@ import java.util.regex.Pattern
 @CompileStatic
 @Slf4j
 enum ExpressionConverter {
-  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/                     , 'if (evaluate("%s")) { // %s'),
-  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/                 , 'if (evaluate("%s", "%s")) { // is'),
-  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/             , 'if (evaluate("%s", "%s")) { // equals'),
-  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/                 , 'else if (evaluate("%s")) { // %s'),
-  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/             , 'else if (evaluate("%s", "%s")) { // is'),
-  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/         , 'else if (evaluate("%s", "%s")) { // equals'),
+  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/                     , 'if (eval("%s")) { // %s'),
+  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/                 , 'if (eval("%s", "%s")) { // is'),
+  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/             , 'if (eval("%s", "%s")) { // equals'),
+  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/                 , 'else if (eval("%s")) { // %s'),
+  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/             , 'else if (eval("%s", "%s")) { // is'),
+  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/         , 'else if (eval("%s", "%s")) { // equals'),
   ELSE          (~ /^else *\(.*\)$/                                 , '} else { // %s'),
-  WHILE_IS      (~ /^while *\(.*\) *is *\(.*\)$/                    , 'while (evaluate("%s", "%s")) { // is'),
-  WHILE         (~ /^while *\(.*\)$/                                , 'while (evaluate("%s")) {'),
+  WHILE_IS      (~ /^while *\(.*\) *is *\(.*\)$/                    , 'while (eval("%s", "%s")) { // is'),
+  WHILE         (~ /^while *\(.*\)$/                                , 'while (eval("%s")) {'),
   ENDWHILE      (~ /^endwhile *\(.*\)$/                             , '} // %s'),
-  REPEAT_WHILE  (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/, '} while (evaluate("%s", "%s")) // not ("%s")'),
+  REPEAT_WHILE  (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/, '} while (eval("%s", "%s")) // not ("%s")'),
 
   // Regex pattern for balanced parentheses with up to 3 levels of nesting
   private static final Pattern balancedParenthesesPattern = ~/\(([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*)\)/

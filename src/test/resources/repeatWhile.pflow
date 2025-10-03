@@ -1,4 +1,4 @@
 do {
   if (isActive("read data")) return
   if (isActive("generate diagrams")) return
-} while (evaluate("more data?", "yes")) // not ("no")
+} while (eval("more data?", "yes")) // not ("no")

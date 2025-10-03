@@ -1,4 +1,4 @@
-if (evaluate("actions['process all']")) { // yes
+if (eval("actions['process all']")) { // yes
   if (isActive("process all")) return
 } else { // no
   if (isActive("process none")) return

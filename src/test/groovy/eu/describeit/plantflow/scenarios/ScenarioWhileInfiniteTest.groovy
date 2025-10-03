@@ -18,5 +18,7 @@ class ScenarioWhileInfiniteTest extends Specification {
     then:
     1 * action1.activate() >> true
     nextActions.size() == 1
+
+    // TODO: this scenario needs to be extended
   }
 }

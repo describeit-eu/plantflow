@@ -2,7 +2,6 @@ package eu.describeit.plantflow.scenarios
 
 import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
-import eu.describeit.plantflow.engine.PlantFlowScript
 import groovy.util.logging.Slf4j
 import spock.lang.Specification
 
