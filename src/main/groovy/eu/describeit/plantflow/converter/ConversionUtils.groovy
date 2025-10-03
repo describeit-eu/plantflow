@@ -28,7 +28,7 @@ class ConversionUtils {
   static String stringFormatLine(String line, String expression) {
     assert line && expression
 
-    log.info('convertLine() - line:"{}", expression:{}', line, expression)
+    log.info('stringFormatLine() - line:"{}", expression:{}', line, expression)
 
     if (expression.contains('%')) {
       List<String> exprData = extractBetweenBalancedParentheses(line)

@@ -1,0 +1,16 @@
+@startuml
+start
+
+fork
+  while (true)
+    :update;
+  endwhile
+fork again
+  while (true)
+    :deactivate;
+    :activate;
+  endwhile
+end merge
+
+end
+@enduml

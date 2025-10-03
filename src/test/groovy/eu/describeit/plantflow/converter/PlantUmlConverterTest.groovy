@@ -69,7 +69,7 @@ class PlantUmlConverterTest extends Specification {
     resultPflow.contains(expectedPflow)
 
     where:
-    fileName << ['sequence','ifThenElseEndif','ifIsThenEndif','forkEndMerge','whileInfinite','whileEndwhile','repeatWhile']
+    fileName << ['sequence','ifThenElseEndif','ifIsThenEndif','forkEndMerge','whileInfinite','whileEndwhile','repeatWhile', 'crud']
     //'switchCaseEndswitch'
   }
 }

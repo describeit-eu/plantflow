@@ -1,0 +1,10 @@
+fork {
+  while (eval("true")) {
+    if (isActive("update")) return
+  }
+} forkAgain {
+  while (eval("true")) {
+    if (isActive("deactivate")) return
+    if (isActive("activate")) return
+  }
+}; if (endFork()) return
