@@ -1,11 +1,10 @@
 package eu.describeit.plantflow.engine
 
 import groovy.transform.CompileStatic
-import groovy.transform.CompileDynamic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import static eu.describeit.plantflow.engine.BlockContext.BlockType.*
+import static eu.describeit.plantflow.engine.ExecutionBlock.Type.*
 
 @CompileStatic
 @Slf4j
@@ -32,15 +31,19 @@ abstract class PlantFlowScript extends DelegatingScript {
   }
 
   Boolean isActive(String action) {
+    return isActive(action, null)
+  }
+
+  Boolean isActive(String action, String loopId) {
     PlantFlowAction anAction = actions[action]
 
     if (anAction) {
       if (anAction.activate()) {
-        log.info("isActive() - active name:{}", anAction.name)
+        log.info("isActive() - active name:{}, loopId:{}", anAction.name, loopId)
         executionContext.addAction(anAction)
         return true
       } else {
-        log.info("isActive() - inactive name:{}", anAction.name)
+        log.info("isActive() - inactive name:{}, loopId:{}", anAction.name, loopId)
         return false
       }
     } else {
@@ -89,5 +92,13 @@ abstract class PlantFlowScript extends DelegatingScript {
   Boolean endFork() {
     def forkActions = executionContext.end(FORK)
     return forkActions as Boolean
+  }
+
+  def loop(String loopId, Closure cl) {
+    log.info('loop() - loopId:{}', loopId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
   }
 }

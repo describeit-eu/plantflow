@@ -35,7 +35,7 @@ class ForkConverterTest extends Specification {
 
   def "convert throws IllegalArgumentException for unknown expression"() {
     when:
-    LoopConverter.convert('unknown something')
+    ForkConverter.convert('unknown something')
 
     then:
     def ex = thrown(IllegalArgumentException)

@@ -1,3 +1,3 @@
-while (eval("true")) {
-  if (isActive("do something")) return
-}
+loop("LOOP0") { while (eval("true")) {
+  if (isActive("do something", "LOOP0")) return
+} } // LOOP0

@@ -5,20 +5,24 @@ import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
+import static eu.describeit.plantflow.converter.ConversionBlock.Type.LOOP
 import static eu.describeit.plantflow.converter.ConversionUtils.stringFormatLine
 
 @CompileStatic
 @Slf4j
 enum LoopConverter {
-  WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/                     , 'while (eval("%s", "%s")) { // is'),
-  WHILE        (~ /^while *\(.*\)$/                                 , 'while (eval("%s")) {'),
-  ENDWHILE     (~ /^endwhile *\(.*\)$/                              , '} // %s'),
-  ENDWHILE2    (~ /^endwhile$/                                      , '}'),
-  REPEAT_WHILE (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/ , '} while (eval("%s", "%s")) // not ("%s")'),
-  REPEAT       (~ /^repeat$/                                        , 'do {'),
+  WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/                     , 'loop("%s") { while (eval("%s", "%s")) { // is'),
+  WHILE        (~ /^while *\(.*\)$/                                 , 'loop("%s") { while (eval("%s")) {'),
+  REPEAT       (~ /^repeat$/                                        , 'loop("%s") { do {'),
+  ENDWHILE     (~ /^endwhile *\(.*\)$/                              , '} } // %s %s'),
+  ENDWHILE2    (~ /^endwhile$/                                      , '} } // %s'),
+  REPEAT_WHILE (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/ , '} while (eval("%s", "%s")) } // not ("%s") %s'),
 
   final Pattern matcher
   final String expression
+
+  private static final List loopStarts = [WHILE, WHILE_IS, REPEAT]
+  private static final List loopEnds   = [ENDWHILE, ENDWHILE2, REPEAT_WHILE]
 
   LoopConverter(Pattern pattern, String expression) {
     this.matcher = pattern
@@ -29,14 +33,19 @@ enum LoopConverter {
     return values().find { LoopConverter lc -> (line ==~ lc.matcher) } as LoopConverter
   }
 
-  static String convert(String line) {
+  static String convert(String line, ConversionContext context) {
     LoopConverter converter = match(line)
-    if (!converter) throw new IllegalArgumentException('Unknown expression for line:' + line)
+    if (converter == null) return null
 
-    return converter.convertLine(line)
+    if (loopStarts.contains(converter)) context.start(LOOP)
+    def convertedLine = converter.convertLine(line, context.getId() )
+    if (loopEnds.contains(converter)) context.end(LOOP)
+
+    return convertedLine
   }
 
-  String convertLine(String line) {
-    return stringFormatLine(line, expression)
+  String convertLine(String line, String loopId) {
+    boolean addFirst = loopStarts.contains(this)
+    return stringFormatLine(line, expression, loopId, addFirst)
   }
 }

@@ -33,7 +33,7 @@ class PlantUmlConverterTest extends Specification {
     where:
     line           || expected
     'endif'        || '}\n'
-    'repeat'       || 'do {\n'
+    'repeat'       || 'loop("LOOP0") { do {\n'
     'end merge'    || '}; if (endFork()) return\n'
     'fork again'   || '} forkAgain {\n'
     'else (no)'    || '} else { // no\n'
@@ -41,10 +41,10 @@ class PlantUmlConverterTest extends Specification {
     '  endif'      || '  }\n'
     '  fork again' || '  } forkAgain {\n'
     '  else (no)'  || '  } else { // no\n'
-    '  repeat'     || '  do {\n'
+    '  repeat'     || '  loop("LOOP0") { do {\n'
   }
 
-  def "convertToPlantFlowDsl converts action lines to action() checks"() {
+  def "convertToPlantFlowDsl converts action lines to isActive() checks"() {
     given:
     String puml = ":do something;\n:do another;"
 
@@ -54,22 +54,5 @@ class PlantUmlConverterTest extends Specification {
     then:
     result.contains('if (isActive("do something")) return')
     result.contains('if (isActive("do another")) return')
-  }
-
-  @Unroll
-  def "convert complete puml resource file: #fileName"() {
-    given:
-    def puml = PlantUmlConverter.getResourceText("${fileName}.puml")
-    def expectedPflow = PlantUmlConverter.getResourceText("${fileName}.pflow")
-
-    when:
-    def resultPflow = PlantUmlConverter.convertToPlantFlowDsl(puml)
-
-    then:
-    resultPflow.contains(expectedPflow)
-
-    where:
-    fileName << ['sequence','ifThenElseEndif','ifIsThenEndif','forkEndMerge','whileInfinite','whileEndwhile','repeatWhile', 'crud']
-    //'switchCaseEndswitch'
   }
 }

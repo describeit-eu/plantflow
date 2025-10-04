@@ -1,4 +1,4 @@
-while (eval("check filesize ?", "not empty")) { // is
-  if (isActive("read file")) return
-} // empty
+loop("LOOP0") { while (eval("check filesize ?", "not empty")) { // is
+  if (isActive("read file", "LOOP0")) return
+} } // empty LOOP0
 if (isActive("close file")) return

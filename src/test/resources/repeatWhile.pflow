@@ -1,4 +1,4 @@
-do {
-  if (isActive("read data")) return
-  if (isActive("generate diagrams")) return
-} while (eval("more data?", "yes")) // not ("no")
+loop("LOOP0") { do {
+  if (isActive("read data", "LOOP0")) return
+  if (isActive("generate diagrams", "LOOP0")) return
+} while (eval("more data?", "yes")) } // not ("no") LOOP0

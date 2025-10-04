@@ -15,7 +15,8 @@ final class PlantUmlConverter {
   }
 
   static String convertToPlantFlowDsl(final String pumlText) {
-    def pflow = new StringBuffer()
+    def pflowBuffer = new StringBuffer()
+    ConversionContext context = new ConversionContext()
 
     pumlText.eachLine { String line ->
       int tabSize = line.takeWhile { it == ' ' }.size()
@@ -27,41 +28,37 @@ final class PlantUmlConverter {
         case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : lineConverted = ''; break
-        case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed); break
-        default            : lineConverted = convertExpression(lineTrimmed); break
+        case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
+        default            : lineConverted = convertExpression(lineTrimmed, context); break
       }
 
       if (lineConverted != null) {
-        pflow.append(' '.repeat(tabSize))
-             .append(lineConverted)
-             .append(System.lineSeparator())
+        pflowBuffer.append(' '.repeat(tabSize))
+                   .append(lineConverted)
+                   .append(System.lineSeparator())
       }
     }
 
-    return pflow.toString()
+    return pflowBuffer.toString()
   }
 
-  private static String convertLineToActionMethod(String line) {
+  private static String convertLineToActionMethod(String line, ConversionContext context) {
     log.info('convertLineToActionMethod() - line:"{}"', line)
 
-    String actionName = substringBetween(line, ':', ';')
+    String actionName = '"'+substringBetween(line, ':', ';')+'"'
+    String contextId = context.getId() ? '"'+context.getId()+'"' : null
 
-    return "if (isActive(\"${actionName}\")) return"
+    if (contextId) return "if (isActive(${actionName}, ${contextId})) return"
+    else           return "if (isActive(${actionName})) return"
   }
 
-  private static String convertExpression(String line) {
-    try {
-      return ConditionalConverter.convert(line)
-    } catch (IllegalArgumentException ignored) {
-      // ignore
-    }
+  private static String convertExpression(String line, ConversionContext context) {
+    String convertedLine = ConditionalConverter.convert(line)
+    if (convertedLine == null) convertedLine = LoopConverter.convert(line, context)
+    if (convertedLine == null) convertedLine = ForkConverter.convert(line, context)
 
-    try {
-      return LoopConverter.convert(line)
-    } catch (IllegalArgumentException ignored) {
-      // ignore
-    }
+    if (convertedLine == null) throw new IllegalArgumentException('Unknown expression for line:' + line)
 
-    return ForkConverter.convert(line)
+    return convertedLine
   }
 }

@@ -20,7 +20,7 @@ class LoopConverterTest extends Specification {
     where:
     line                                           || expected
     'while (true)'                                 || WHILE
-    'while (filesize ?) is (not empty)'            || WHILE_IS
+    'while (check filesize ?) is (not empty)'      || WHILE_IS
     'endwhile (empty)'                             || ENDWHILE
     'endwhile'                                     || ENDWHILE2
     'repeat while (more data?) is (yes) not (no)'  || REPEAT_WHILE
@@ -30,21 +30,21 @@ class LoopConverterTest extends Specification {
   @Unroll
   def "convert produces expected output for '#expression'"() {
     expect:
-    expression.convertLine(line) == expected
+    expression.convertLine(line, 'LOOP0') == expected
 
     where:
     expression     || line                                           || expected
-    WHILE          || 'while (true)'                                 || 'while (eval("true")) {'
-    WHILE_IS       || 'while (filesize ?) is (not empty)'            || 'while (eval("filesize ?", "not empty")) { // is'
-    ENDWHILE       || 'endwhile (true)'                              || '} // true'
-    ENDWHILE2      || 'endwhile'                                     || '}'
-    REPEAT_WHILE   || 'repeat while (more data?) is (yes) not (no)'  || '} while (eval("more data?", "yes")) // not ("no")'
-    REPEAT         || 'repeat'                                       || 'do {'
+    WHILE          || 'while (true)'                                 || 'loop("LOOP0") { while (eval("true")) {'
+    WHILE_IS       || 'while (check filesize ?) is (not empty)'      || 'loop("LOOP0") { while (eval("check filesize ?", "not empty")) { // is'
+    ENDWHILE       || 'endwhile (true)'                              || '} } // true LOOP0'
+    ENDWHILE2      || 'endwhile'                                     || '} } // LOOP0'
+    REPEAT_WHILE   || 'repeat while (more data?) is (yes) not (no)'  || '} while (eval("more data?", "yes")) } // not ("no") LOOP0'
+    REPEAT         || 'repeat'                                       || 'loop("LOOP0") { do {'
   }
 
   def "convert throws IllegalArgumentException for unknown expression"() {
     when:
-    LoopConverter.convert('unknown something')
+    LoopConverter.convert('unknown something', new ConversionContext())
 
     then:
     def ex = thrown(IllegalArgumentException)

@@ -28,7 +28,7 @@ enum ForkConverter {
 
   static String convert(String line) {
     ForkConverter converter = match(line)
-    if (!converter) throw new IllegalArgumentException('Unknown expression for line:' + line)
+    if (converter == null) return null
 
     return converter.convertLine(line)
   }

@@ -4,10 +4,10 @@ import groovy.transform.CompileStatic
 import groovy.transform.ToString
 
 @CompileStatic
-@ToString
-class BlockContext {
-  enum BlockType { SEQ, FORK }
+@ToString(includePackage=false)
+class ExecutionBlock {
+  enum Type { SEQ, FORK }
 
-  BlockType type
+  Type type
   List<PlantFlowAction> nextActions = []
 }

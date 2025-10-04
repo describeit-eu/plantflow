@@ -26,12 +26,20 @@ class ConversionUtils {
   }
 
   static String stringFormatLine(String line, String expression) {
+    return stringFormatLine(line, expression, null)
+  }
+
+  static String stringFormatLine(String line, String expression, String contextId, boolean first = true) {
     assert line && expression
 
-    log.info('stringFormatLine() - line:"{}", expression:{}', line, expression)
+    log.info('stringFormatLine() - line:"{}", expression:{}, contextId:{}', line, expression, contextId)
 
     if (expression.contains('%')) {
       List<String> exprData = extractBetweenBalancedParentheses(line)
+      if (contextId) {
+        if (first) exprData.addFirst(contextId)
+        else       exprData.addLast(contextId)
+      }
       return String.format(expression, exprData as String[])
     }
     else {
