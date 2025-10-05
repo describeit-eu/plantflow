@@ -19,23 +19,25 @@ final class PlantUmlConverter {
     ConversionContext context = new ConversionContext()
 
     pumlText.eachLine { String line ->
-      int tabSize = line.takeWhile { it == ' ' }.size()
+      String tab = line.takeWhile { it == ' ' }
       String lineTrimmed = line.trim()
-      String lineConverted = null
+      String lineConverted = ''
 
       switch (lineTrimmed) {
         case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ''            : lineConverted = ''; break
+        case ''            : log.trace('convertToPlantFlowDsl() - EMPTY line:{}', line); break
         case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
         default            : lineConverted = convertExpression(lineTrimmed, context); break
       }
 
       if (lineConverted != null) {
-        pflowBuffer.append(' '.repeat(tabSize))
+        pflowBuffer.append(tab)
                    .append(lineConverted)
                    .append(System.lineSeparator())
+      } else {
+        throw new IllegalArgumentException('Unknown case for line:' + line)
       }
     }
 
@@ -55,9 +57,7 @@ final class PlantUmlConverter {
   private static String convertExpression(String line, ConversionContext context) {
     String convertedLine = ConditionalConverter.convert(line)
     if (convertedLine == null) convertedLine = LoopConverter.convert(line, context)
-    if (convertedLine == null) convertedLine = ForkConverter.convert(line, context)
-
-    if (convertedLine == null) throw new IllegalArgumentException('Unknown expression for line:' + line)
+    if (convertedLine == null) convertedLine = ForkConverter.convert(line)
 
     return convertedLine
   }

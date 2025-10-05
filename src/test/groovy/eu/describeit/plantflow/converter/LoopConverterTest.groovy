@@ -42,12 +42,11 @@ class LoopConverterTest extends Specification {
     REPEAT         || 'repeat'                                       || 'loop("LOOP0") { do {'
   }
 
-  def "convert throws IllegalArgumentException for unknown expression"() {
+  def "convert returns null for unknown expression"() {
     when:
-    LoopConverter.convert('unknown something', new ConversionContext())
+    def result = LoopConverter.convert('unknown something', new ConversionContext())
 
     then:
-    def ex = thrown(IllegalArgumentException)
-    ex.message.contains('Unknown expression for line:unknown something')
+    result == null
   }
 }

@@ -35,7 +35,7 @@ enum LoopConverter {
 
   static String convert(String line, ConversionContext context) {
     LoopConverter converter = match(line)
-    if (converter == null) return null
+    if (!converter) return null
 
     if (loopStarts.contains(converter)) context.start(LOOP)
     def convertedLine = converter.convertLine(line, context.getId() )

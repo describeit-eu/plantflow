@@ -52,12 +52,11 @@ class ConditionalConverterTest extends Specification {
     ENDIF          || 'endif'                                  || '}'
   }
 
-  def "convert throws IllegalArgumentException for unknown expression"() {
+  def "convert returns null for unknown expression"() {
     when:
-    ConditionalConverter.convert('unknown something')
+    def result = ConditionalConverter.convert('unknown something')
 
     then:
-    def ex = thrown(IllegalArgumentException)
-    ex.message.contains('Unknown expression for line:unknown something')
+    result == null
   }
 }

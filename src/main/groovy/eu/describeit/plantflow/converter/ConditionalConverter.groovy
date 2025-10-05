@@ -33,7 +33,7 @@ enum ConditionalConverter {
 
   static String convert(String line) {
     ConditionalConverter converter = match(line)
-    if (converter == null) return null
+    if (!converter) return null
 
     return converter.convertLine(line)
   }
