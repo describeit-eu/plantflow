@@ -25,12 +25,8 @@ class ConversionUtils {
     return results
   }
 
-  static String stringFormatLine(String line, String expression) {
-    return stringFormatLine(line, expression, null)
-  }
-
-  static String stringFormatLine(String line, String expression, String contextId, boolean first = true) {
-    assert line && expression
+  static String stringFormatLine(String line, String expression, String contextId, boolean first) {
+    assert line && expression && contextId
 
     log.info('stringFormatLine() - line:"{}", expression:{}, contextId:{}', line, expression, contextId)
 

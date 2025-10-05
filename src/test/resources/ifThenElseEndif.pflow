@@ -1,5 +1,5 @@
-if (eval("actions['process all']")) { // yes
-  if (isActive("process all")) return
-} else { // no
-  if (isActive("process none")) return
-}
+conditional("CONDITIONAL0") { if (eval("actions['process all']")) { // yes
+  if (isActive("process all", "CONDITIONAL0")) return
+} else { // no CONDITIONAL0
+  if (isActive("process none", "CONDITIONAL0")) return
+} } // CONDITIONAL0

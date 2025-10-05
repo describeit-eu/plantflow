@@ -21,8 +21,8 @@ enum LoopConverter {
   final Pattern matcher
   final String expression
 
-  private static final List loopStarts = [WHILE, WHILE_IS, REPEAT]
-  private static final List loopEnds   = [ENDWHILE, ENDWHILE2, REPEAT_WHILE]
+  private static final List blockStarts = [WHILE, WHILE_IS, REPEAT]
+  private static final List blockEnds   = [ENDWHILE, ENDWHILE2, REPEAT_WHILE]
 
   LoopConverter(Pattern pattern, String expression) {
     this.matcher = pattern
@@ -34,18 +34,22 @@ enum LoopConverter {
   }
 
   static String convert(String line, ConversionContext context) {
-    LoopConverter converter = match(line)
-    if (!converter) return null
+    def converter = match(line)
 
-    if (loopStarts.contains(converter)) context.start(LOOP)
-    def convertedLine = converter.convertLine(line, context.getId() )
-    if (loopEnds.contains(converter)) context.end(LOOP)
+    if (!converter) return null
+    else            return converter.convertLine(line, context)
+  }
+
+  String convertLine(String line, ConversionContext context) {
+    if (blockStarts.contains(this)) context.start(LOOP)
+    def convertedLine = convertLine(line, context.getId())
+    if (blockEnds.contains(this)) context.end(LOOP)
 
     return convertedLine
   }
 
   String convertLine(String line, String loopId) {
-    boolean addFirst = loopStarts.contains(this)
+    boolean addFirst = blockStarts.contains(this)
     return stringFormatLine(line, expression, loopId, addFirst)
   }
 }

@@ -15,7 +15,7 @@ class ConversionContext {
   }
 
   void check(ConversionBlock.Type type) {
-    assert blocks.last.type == type, ""
+    assert blocks.last.type == type
   }
 
   void end(ConversionBlock.Type type) {
@@ -27,6 +27,6 @@ class ConversionContext {
 
   String getId() {
     if (blocks && blocks.last) return blocks.last.getId()
-    else             return null
+    else                       return null
   }
 }

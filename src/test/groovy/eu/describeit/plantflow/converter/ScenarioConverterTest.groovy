@@ -18,7 +18,6 @@ class ScenarioConverterTest extends Specification {
     resultPflow.contains(expectedPflow)
 
     where:
-//    fileName << ['whileEndwhile']
     fileName << ['sequence','ifThenElseEndif','ifIsThenEndif','forkEndMerge','whileInfinite','whileEndwhile','repeatWhile','crud']//'switchCaseEndswitch'
   }
 }

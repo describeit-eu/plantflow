@@ -31,17 +31,14 @@ class PlantUmlConverterTest extends Specification {
     result == expected
 
     where:
-    line           || expected
-    'endif'        || '}\n'
-    'repeat'       || 'loop("LOOP0") { do {\n'
-    'end merge'    || '}; if (endFork()) return\n'
-    'fork again'   || '} forkAgain {\n'
-    'else (no)'    || '} else { // no\n'
-    '  end merge'  || '  }; if (endFork()) return\n'
-    '  endif'      || '  }\n'
-    '  fork again' || '  } forkAgain {\n'
-    '  else (no)'  || '  } else { // no\n'
-    '  repeat'     || '  loop("LOOP0") { do {\n'
+    line                         || expected
+    ':doIt;'                     || 'if (isActive("doIt")) return\n'
+    'repeat'                     || 'loop("LOOP0") { do {\n'
+    'fork'                       || 'fork("FORK0") {\n'
+    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL0") { if (eval("a > b")) { // explain\n'
+    '  :doIt;'                   || '  if (isActive("doIt")) return\n'
+    '    repeat'                 || '    loop("LOOP0") { do {\n'
+    '      fork'                 || '      fork("FORK0") {\n'
   }
 
   def "convertToPlantFlowDsl converts action lines to isActive() checks"() {
@@ -54,5 +51,14 @@ class PlantUmlConverterTest extends Specification {
     then:
     result.contains('if (isActive("do something")) return')
     result.contains('if (isActive("do another")) return')
+  }
+
+  def "convertToPlantFlowDsl throws IllegalArgumentException for unknown expression"() {
+    when:
+    PlantUmlConverter.convertToPlantFlowDsl('unknown something')
+
+    then:
+    def ex = thrown(IllegalArgumentException)
+    ex.message.contains('Unknown case for line:unknown something')
   }
 }

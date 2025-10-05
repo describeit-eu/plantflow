@@ -1,9 +1,9 @@
-fork {
-  if (isActive("action 1")) return
-} forkAgain {
-  if (isActive("action 2")) return
-} forkAgain {
-  if (isActive("action 3")) return
-  if (isActive("action 4")) return
-}; if (endFork()) return
+fork("FORK0") {
+  if (isActive("action 1", "FORK0")) return
+} forkAgain("FORK0") {
+  if (isActive("action 2", "FORK0")) return
+} forkAgain("FORK0") {
+  if (isActive("action 3", "FORK0")) return
+  if (isActive("action 4", "FORK0")) return
+}; if (endFork("FORK0")) return
 if (isActive("action 5")) return

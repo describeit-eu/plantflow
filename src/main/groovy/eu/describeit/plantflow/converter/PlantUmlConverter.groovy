@@ -55,9 +55,9 @@ final class PlantUmlConverter {
   }
 
   private static String convertExpression(String line, ConversionContext context) {
-    String convertedLine = ConditionalConverter.convert(line)
+    String convertedLine = ConditionalConverter.convert(line, context)
     if (convertedLine == null) convertedLine = LoopConverter.convert(line, context)
-    if (convertedLine == null) convertedLine = ForkConverter.convert(line)
+    if (convertedLine == null) convertedLine = ForkConverter.convert(line, context)
 
     return convertedLine
   }

@@ -65,8 +65,8 @@ abstract class PlantFlowScript extends DelegatingScript {
     return returnValue as Boolean
   }
 
-  PlantFlowScript fork(Closure cl) {
-    log.info("fork()")
+  PlantFlowScript fork(String forkId, Closure cl) {
+    log.info("fork() - forkId:{}", forkId)
 
     executionContext.start(FORK)
 
@@ -77,8 +77,8 @@ abstract class PlantFlowScript extends DelegatingScript {
     return this
   }
 
-  PlantFlowScript forkAgain(Closure cl) {
-    log.info("forkAgain()")
+  PlantFlowScript forkAgain(String forkId, Closure cl) {
+    log.info("forkAgain() - forkId:{}", forkId)
 
     executionContext.check(FORK)
 
@@ -89,13 +89,21 @@ abstract class PlantFlowScript extends DelegatingScript {
     return this
   }
 
-  Boolean endFork() {
+  Boolean endFork(String forkId) {
     def forkActions = executionContext.end(FORK)
     return forkActions as Boolean
   }
 
   def loop(String loopId, Closure cl) {
     log.info('loop() - loopId:{}', loopId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+  }
+
+  def conditional(String condId, Closure cl) {
+    log.info('conditional() - loopId:{}', condId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST

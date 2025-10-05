@@ -24,18 +24,18 @@ class ForkConverterTest extends Specification {
   @Unroll
   def "convert produces expected output for '#expression'"() {
     expect:
-    expression.convertLine(line) == expected
+    expression.convertLine(line, 'FORK0') == expected
 
     where:
     expression || line        || expected
-    FORK       || 'fork'      || 'fork {'
-    FORK_AGAIN || 'for again' || '} forkAgain {'
-    END_MERGE  || 'end merge' || '}; if (endFork()) return'
+    FORK       || 'fork'      || 'fork("FORK0") {'
+    FORK_AGAIN || 'for again' || '} forkAgain("FORK0") {'
+    END_MERGE  || 'end merge' || '}; if (endFork("FORK0")) return'
   }
 
   def "convert returns null for unknown expression"() {
     when:
-    def result = ForkConverter.convert('unknown something')
+    def result = ForkConverter.convert('unknown something', new ConversionContext())
 
     then:
     result == null

@@ -6,7 +6,7 @@ import groovy.transform.ToString
 @CompileStatic
 @ToString(includePackage=false, excludes="type,idx")
 class ConversionBlock {
-  enum Type { LOOP, CONDITION, FORK }
+  enum Type { LOOP, CONDITIONAL, FORK }
 
   Type type
   int idx = 0
