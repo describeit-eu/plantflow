@@ -14,6 +14,20 @@ class ConversionUtils {
   // Regex pattern for balanced parentheses with up to 3 levels of nesting
   private static final Pattern balancedParenthesesPattern = ~/\(([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*)\)/
 
+  static String stringFormatLine(String line, String expression, String contextId, boolean first) {
+    assert line && expression && contextId
+
+    log.debug('stringFormatLine() - line:"{}", expression:{}, contextId:{}', line, expression, contextId)
+
+    List<String> exprData = extractBetweenBalancedParentheses(line)
+
+    if (contextId) {
+      if (first) exprData.addFirst(contextId)
+      else       exprData.addLast(contextId)
+    }
+    return String.format(expression, exprData as String[])
+  }
+
   private static List<String> extractBetweenBalancedParentheses(String line) {
     List<String> results = []
     Matcher matcher = balancedParenthesesPattern.matcher(line)
@@ -23,23 +37,5 @@ class ConversionUtils {
     }
 
     return results
-  }
-
-  static String stringFormatLine(String line, String expression, String contextId, boolean first) {
-    assert line && expression && contextId
-
-    log.info('stringFormatLine() - line:"{}", expression:{}, contextId:{}', line, expression, contextId)
-
-    if (expression.contains('%')) {
-      List<String> exprData = extractBetweenBalancedParentheses(line)
-      if (contextId) {
-        if (first) exprData.addFirst(contextId)
-        else       exprData.addLast(contextId)
-      }
-      return String.format(expression, exprData as String[])
-    }
-    else {
-      return expression
-    }
   }
 }

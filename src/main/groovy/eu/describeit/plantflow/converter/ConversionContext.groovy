@@ -26,7 +26,6 @@ class ConversionContext {
   }
 
   String getId() {
-    if (blocks && blocks.last) return blocks.last.getId()
-    else                       return null
+    return blocks ? blocks.last?.getId() : null
   }
 }
