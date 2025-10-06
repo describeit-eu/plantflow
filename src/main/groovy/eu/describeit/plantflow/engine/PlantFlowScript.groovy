@@ -21,9 +21,9 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   @Override
   Object run() {
-    executionContext.start(SEQ)
+    executionContext.start(SEQ, null)
     def result = scriptBody()
-    executionContext.end(SEQ)
+    executionContext.end(SEQ, null)
 
     log.trace('run() - # of nextActions:{}', nextActions.size())
 
@@ -68,7 +68,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   PlantFlowScript fork(String forkId, Closure cl) {
     log.info("fork() - forkId:{}", forkId)
 
-    executionContext.start(FORK)
+    executionContext.start(FORK, forkId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -78,9 +78,9 @@ abstract class PlantFlowScript extends DelegatingScript {
   }
 
   PlantFlowScript forkAgain(String forkId, Closure cl) {
-    log.info("forkAgain() - forkId:{}", forkId)
+    log.info("forkAgain() - id:{}", forkId)
 
-    executionContext.check(FORK)
+    executionContext.check(FORK, forkId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
@@ -90,23 +90,31 @@ abstract class PlantFlowScript extends DelegatingScript {
   }
 
   Boolean endFork(String forkId) {
-    def forkActions = executionContext.end(FORK)
+    def forkActions = executionContext.end(FORK, forkId)
     return forkActions as Boolean
   }
 
   def loop(String loopId, Closure cl) {
-    log.info('loop() - loopId:{}', loopId)
+    log.info('loop() - id:{}', loopId)
+
+    executionContext.start(LOOP, loopId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
+
+    executionContext.end(LOOP, loopId)
   }
 
-  def conditional(String condId, Closure cl) {
-    log.info('conditional() - loopId:{}', condId)
+  def conditional(String conditionalId, Closure cl) {
+    log.info('conditional() - id:{}', conditionalId)
+
+    executionContext.start(CONDITIONAL, conditionalId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
+
+    executionContext.end(CONDITIONAL, conditionalId)
   }
 }

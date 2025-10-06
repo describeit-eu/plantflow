@@ -11,10 +11,10 @@ class ExecutionContext {
   Stack<ExecutionBlock> blocks = new Stack<>()
   List<PlantFlowAction> nextActions = []
 
-  void start(ExecutionBlock.Type type) {
-    log.info('startContext() - type:{}', type)
+  void start(ExecutionBlock.Type type, String id) {
+    log.info('start() - type:{} id:{}', type, id)
 
-    blocks.push(new ExecutionBlock(type: type))
+    blocks.push(new ExecutionBlock(type: type, id: id))
   }
 
   void addAction(PlantFlowAction action) {
@@ -25,15 +25,15 @@ class ExecutionContext {
     blocks.last.nextActions.add(action)
   }
 
-  void check(ExecutionBlock.Type type) {
-    assert blocks.last.type == type
+  void check(ExecutionBlock.Type type, String id) {
+    assert blocks.last.type == type && blocks.last.id == id
   }
 
-  List<PlantFlowAction> end(ExecutionBlock.Type type) {
-    log.info('endContext() - type:{}', type)
-
-    check(type)
+  List<PlantFlowAction> end(ExecutionBlock.Type type, String id) {
+    check(type, id)
     ExecutionBlock endingContext = blocks.pop()
+
+    log.info('end() - context:{}', endingContext)
 
     if (blocks.empty()) nextActions = endingContext.nextActions
     else blocks.last.nextActions.addAll(endingContext.nextActions)
