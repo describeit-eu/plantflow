@@ -6,7 +6,6 @@ import groovy.util.logging.Slf4j
 import java.util.regex.Pattern
 
 import static eu.describeit.plantflow.converter.ConversionBlock.Type.CONDITIONAL
-import static eu.describeit.plantflow.converter.ConversionBlock.Type.LOOP
 import static eu.describeit.plantflow.converter.ConversionUtils.stringFormatLine
 
 @CompileStatic
@@ -45,7 +44,7 @@ enum ConditionalConverter {
 
   String convertLine(String line, ConversionContext context) {
     if (blockStarts.contains(this)) context.start(CONDITIONAL)
-    def convertedLine = convertLine(line, context.getId() )
+    def convertedLine = convertLine(line, context.geCurrentId() )
     if (blockEnds.contains(this)) context.end(CONDITIONAL)
 
     return convertedLine

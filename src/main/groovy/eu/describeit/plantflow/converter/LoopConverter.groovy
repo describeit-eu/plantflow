@@ -42,7 +42,7 @@ enum LoopConverter {
 
   String convertLine(String line, ConversionContext context) {
     if (blockStarts.contains(this)) context.start(LOOP)
-    def convertedLine = convertLine(line, context.getId())
+    def convertedLine = convertLine(line, context.geCurrentId())
     if (blockEnds.contains(this)) context.end(LOOP)
 
     return convertedLine

@@ -38,7 +38,7 @@ enum ForkConverter {
 
   String convertLine(String line, ConversionContext context) {
     if (blockStarts.contains(this)) context.start(ConversionBlock.Type.FORK)
-    def convertedLine = convertLine(line, context.getId() )
+    def convertedLine = convertLine(line, context.geCurrentId() )
     if (blockEnds.contains(this)) context.end(ConversionBlock.Type.FORK)
 
     return convertedLine
