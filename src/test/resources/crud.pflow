@@ -1,10 +1,10 @@
-fork("FORK0") {
-  loop("LOOP1") { while (eval("true")) {
-    if (isActive("update", "LOOP1")) return
-  } } // LOOP1
-} forkAgain("FORK0") {
+fork("FORK1") {
   loop("LOOP2") { while (eval("true")) {
-    if (isActive("deactivate", "LOOP2")) return
-    if (isActive("activate", "LOOP2")) return
+    if (isActive("update", "LOOP2")) return
   } } // LOOP2
-}; if (endFork("FORK0")) return
+} forkAgain("FORK1") {
+  loop("LOOP3") { while (eval("true")) {
+    if (isActive("deactivate", "LOOP3")) return
+    if (isActive("activate", "LOOP3")) return
+  } } // LOOP3
+}; if (endFork("FORK1")) return

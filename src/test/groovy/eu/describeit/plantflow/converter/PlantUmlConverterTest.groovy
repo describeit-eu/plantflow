@@ -14,7 +14,7 @@ class PlantUmlConverterTest extends Specification {
     """.stripIndent().trim()
 
     when:
-    String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
+    String result = new PlantUmlConverter().convertToPlantFlowDsl(puml)
 
     then:
     !result.contains('@startuml')
@@ -25,7 +25,7 @@ class PlantUmlConverterTest extends Specification {
   @Unroll
   def "convert keywords and preserve indentation - #line"() {
     when:
-    String result = PlantUmlConverter.convertToPlantFlowDsl(line)
+    String result = new PlantUmlConverter().convertToPlantFlowDsl(line)
 
     then:
     result == expected
@@ -33,12 +33,12 @@ class PlantUmlConverterTest extends Specification {
     where:
     line                         || expected
     ':doIt;'                     || 'if (isActive("doIt")) return\n'
-    'repeat'                     || 'loop("LOOP0") { do {\n'
-    'fork'                       || 'fork("FORK0") {\n'
-    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL0") { if (eval("a > b")) { // explain\n'
+    'repeat'                     || 'loop("LOOP1") { do {\n'
+    'fork'                       || 'fork("FORK1") {\n'
+    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL1") { if (eval("a > b")) { // explain\n'
     '  :doIt;'                   || '  if (isActive("doIt")) return\n'
-    '    repeat'                 || '    loop("LOOP0") { do {\n'
-    '      fork'                 || '      fork("FORK0") {\n'
+    '    repeat'                 || '    loop("LOOP1") { do {\n'
+    '      fork'                 || '      fork("FORK1") {\n'
   }
 
   def "convertToPlantFlowDsl converts action lines to isActive() checks"() {
@@ -46,7 +46,7 @@ class PlantUmlConverterTest extends Specification {
     String puml = ":do something;\n:do another;"
 
     when:
-    String result = PlantUmlConverter.convertToPlantFlowDsl(puml)
+    String result = new PlantUmlConverter().convertToPlantFlowDsl(puml)
 
     then:
     result.contains('if (isActive("do something")) return')
@@ -55,7 +55,7 @@ class PlantUmlConverterTest extends Specification {
 
   def "convertToPlantFlowDsl throws IllegalArgumentException for unknown expression"() {
     when:
-    PlantUmlConverter.convertToPlantFlowDsl('unknown something')
+    new PlantUmlConverter().convertToPlantFlowDsl('unknown something')
 
     then:
     def ex = thrown(IllegalArgumentException)

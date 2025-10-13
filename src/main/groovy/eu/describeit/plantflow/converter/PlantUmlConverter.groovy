@@ -8,16 +8,12 @@ import static org.apache.commons.lang3.StringUtils.substringBetween
 @CompileStatic
 @Slf4j
 final class PlantUmlConverter {
+  StringBuffer pflowBuffer = new StringBuffer()
+  ConversionContext context = new ConversionContext()
+
   static final List<String> linesToDrop = ['start', 'stop', 'end', 'detach']
 
-  static String getResourceText(String file) {
-    return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
-  }
-
-  static String convertToPlantFlowDsl(final String pumlText) {
-    def pflowBuffer = new StringBuffer()
-    ConversionContext context = new ConversionContext()
-
+  String convertToPlantFlowDsl(final String pumlText) {
     pumlText.eachLine { String line ->
       String tab = line.takeWhile { it == ' ' }
       String lineTrimmed = line.trim()
@@ -40,6 +36,8 @@ final class PlantUmlConverter {
         throw new IllegalArgumentException('Unknown case for line:' + line)
       }
     }
+
+      log.info('convertToPlantFlowDsl() - context json:{}', context)
 
     return pflowBuffer.toString()
   }

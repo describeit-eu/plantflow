@@ -8,8 +8,10 @@ val logbackVersion   = "1.5.18"
 
 val junitVersion     = "5.13.4"
 val spockVersion     = "2.4-M6-groovy-4.0"
-val bytebuddyVersion = "1.17.7"
-val mockitoVersion   = "5.20.0"
+//val bytebuddyVersion = "1.17.7"
+//val mockitoVersion   = "5.20.0"
+val jsonUnitVersion  = "5.0.0"
+val orgJsonVersion   = "20250517"
 
 group = "eu.describeit"
 version = "1.0-SNAPSHOT"
@@ -20,6 +22,7 @@ repositories {
 
 dependencies {
   implementation("org.apache.groovy:groovy:$groovyVersion")
+  implementation("org.apache.groovy:groovy-json:$groovyVersion")
 
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")
@@ -35,6 +38,9 @@ dependencies {
   testImplementation("org.spockframework:spock-core")
 //  testImplementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
 //  testImplementation("org.mockito:mockito-core:$mockitoVersion")
+  testImplementation("net.javacrumbs.json-unit:json-unit:$jsonUnitVersion")
+  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:$jsonUnitVersion")
+  testImplementation("org.json:json:$orgJsonVersion")
 }
 
 tasks.test {

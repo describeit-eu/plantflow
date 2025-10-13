@@ -8,11 +8,11 @@ class ScenarioConverterTest extends Specification {
   @Unroll
   def "convert complete puml resource file: #fileName"() {
     given:
-    def puml = PlantUmlConverter.getResourceText("${fileName}.puml")
-    def expectedPflow = PlantUmlConverter.getResourceText("${fileName}.pflow")
+    def puml = ConversionUtils.getResourceText("${fileName}.puml")
+    def expectedPflow = ConversionUtils.getResourceText("${fileName}.pflow")
 
     when:
-    def resultPflow = PlantUmlConverter.convertToPlantFlowDsl(puml)
+    def resultPflow = new PlantUmlConverter().convertToPlantFlowDsl(puml)
 
     then:
     resultPflow.contains(expectedPflow)

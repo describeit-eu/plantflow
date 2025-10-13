@@ -28,6 +28,10 @@ class ConversionUtils {
     return String.format(expression, exprData as String[])
   }
 
+  static String getResourceText(String file) {
+    return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
+  }
+
   private static List<String> extractBetweenBalancedParentheses(String line) {
     List<String> results = []
     Matcher matcher = balancedParenthesesPattern.matcher(line)
