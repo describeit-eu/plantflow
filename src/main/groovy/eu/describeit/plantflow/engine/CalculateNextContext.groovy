@@ -10,14 +10,17 @@ import groovy.util.logging.Slf4j
 @Slf4j
 class CalculateNextContext {
   final BlockNode rootBlock
-//  BlockNode currentBlock = null
   final Stack<BlockNode> blockStack = new Stack<>()
 
-  List<PlantFlowAction> nextActions = []
+  List<PlantFlowAction> nextActions
 
   CalculateNextContext(String json) {
     ObjectMapper mapper = new ObjectMapper()
     rootBlock = mapper.readValue(json, BlockNode)
+  }
+
+  void initialise() {
+    nextActions = []
   }
 
   void start(BlockType type, String id) {

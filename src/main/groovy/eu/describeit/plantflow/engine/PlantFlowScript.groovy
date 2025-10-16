@@ -21,6 +21,8 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   @Override
   Object run() {
+    executionContext.initialise()
+
     executionContext.start(SEQ, 'SEQ0')
     def result = scriptBody()
     executionContext.end(SEQ, 'SEQ0')

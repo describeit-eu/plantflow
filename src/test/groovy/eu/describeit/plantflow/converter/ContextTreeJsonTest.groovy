@@ -32,9 +32,10 @@ class ContextTreeJsonTest extends Specification {
     """.stripIndent().trim()
 
     def converter = new PlantUmlConverter()
-    converter.convertToPlantFlowDsl(puml)
 
     when:
+    String actualPflow = converter.convertToPlantFlowDsl(puml)
+    println actualPflow
     String actualJson = converter.context.toJson()
 
     then:
