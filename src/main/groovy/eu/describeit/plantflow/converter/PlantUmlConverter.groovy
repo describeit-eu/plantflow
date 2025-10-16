@@ -37,18 +37,18 @@ final class PlantUmlConverter {
       }
     }
 
-      log.info('convertToPlantFlowDsl() - context json:{}', context)
+    log.info('convertToPlantFlowDsl() - context:{}', context)
 
     return pflowBuffer.toString()
   }
 
   private static String convertLineToActionMethod(String line, ConversionContext context) {
-    log.info('convertLineToActionMethod() - line:"{}" context:{}', line, context)
+    log.info('convertLineToActionMethod() - line:"{}"', line)
 
     String actionName = substringBetween(line, ':', ';')
-    String contextId = context.geCurrentId() ? context.geCurrentId() : null
+    String contextId = context.geCurrentId()
 
-    context.addAction(context.geCurrentId(), actionName)
+    context.addAction(contextId, actionName)
 
     if (contextId) return "if (isActive(\"${actionName}\", \"${contextId}\")) return"
     else           return "if (isActive(\"${actionName}\")) return"

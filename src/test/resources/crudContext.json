@@ -1,7 +1,12 @@
 {
   "type": "SEQ",
   "idx": 0,
+  "name": null,
   "children": [
+    {
+      "type": "ACTION",
+      "name": "update"
+    },
     {
       "type": "FORK",
       "idx": 1,
@@ -9,23 +14,28 @@
         {
           "type": "LOOP",
           "idx": 2,
-          "children": [],
-          "actions": [
-            "update"
+          "children": [
+            {
+              "type": "ACTION",
+              "name": "update"
+            }
           ]
         },
         {
           "type": "LOOP",
           "idx": 3,
-          "children": [],
-          "actions": [
-            "deactivate",
-            "activate"
+          "children": [
+            {
+              "type": "ACTION",
+              "name": "deactivate"
+            },
+            {
+              "type": "ACTION",
+              "name": "activate"
+            }
           ]
         }
-      ],
-      "actions": []
+      ]
     }
-  ],
-  "actions": []
+  ]
 }

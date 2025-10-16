@@ -34,37 +34,48 @@ class ContextTreeJsonTest extends Specification {
     def converter = new PlantUmlConverter()
 
     when:
-    String actualPflow = converter.convertToPlantFlowDsl(puml)
-    println actualPflow
+    converter.convertToPlantFlowDsl(puml)
     String actualJson = converter.context.toJson()
 
     then:
     String expectedJson = '''
     {
-      "idx": 0,
       "type": "SEQ",
+      "idx": 0,
+      "name": null,
       "children": [
         {
-          "idx": 1,
           "type": "LOOP",
+          "idx": 1,
+          "name": null,
           "children": [
             {
-              "idx": 2,
               "type": "CONDITIONAL",
-              "children": [],
-              "actions": ["step A", "step B"]
+              "idx": 2,
+              "name": null,
+              "children": [
+                { "type": "ACTION", "idx": 0, "name": "step A", "children": []},
+                { "type": "ACTION", "idx": 0, "name": "step B", "children": [] }
+              ]
             },
             {
-              "idx": 3,
               "type": "FORK",
-              "children": [],
-              "actions": ["parallel 1","parallel 2"]
+              "idx": 3,
+              "name": null,
+              "children": [
+                { "type": "ACTION", "idx": 0, "name": "parallel 1", "children": [] },
+                { "type": "ACTION", "idx": 0, "name": "parallel 2", "children": [] }
+              ]
             }
-          ],
-          "actions": []
+          ]
+        },
+        {
+          "type": "ACTION",
+          "idx": 0,
+          "name": "after loop",
+          "children": []
         }
-      ],
-      "actions": ["after loop"]
+      ]
     }
     '''.stripIndent().trim()
 
@@ -72,8 +83,17 @@ class ContextTreeJsonTest extends Specification {
 
     when:
     def blockTree = new ObjectMapper().readValue(actualJson, BlockNode)
+
     then:
     blockTree.type == BlockType.SEQ
     blockTree.idx == 0
+    blockTree.children.size() == 2
+    blockTree.children[0].type == BlockType.LOOP
+    blockTree.children[0].children.size() == 2
+    blockTree.children[0].children[0].type == BlockType.CONDITIONAL
+    blockTree.children[0].children[1].type == BlockType.FORK
+    blockTree.children[1].type == BlockType.ACTION
+    blockTree.children[1].name == 'after loop'
+    blockTree.children[1].children.size() == 0
   }
 }

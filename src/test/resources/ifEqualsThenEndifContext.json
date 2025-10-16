@@ -1,15 +1,20 @@
 {
   "type": "SEQ",
   "idx": 0,
+  "name": null,
   "children": [
     {
       "type": "CONDITIONAL",
       "idx": 1,
-      "children": [],
-      "actions": [
-        "process all"
+      "name": null,
+      "children": [
+        {
+          "type": "ACTION",
+          "idx": 0,
+          "name": "process all",
+          "children": []
+        }
       ]
     }
-  ],
-  "actions": []
+  ]
 }

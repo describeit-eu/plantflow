@@ -1,9 +1,19 @@
 {
   "type": "SEQ",
   "idx": 0,
-  "children": [],
-  "actions": [
-    "Hello world",
-    "groovy goodness"
+  "name": null,
+  "children": [
+    {
+      "type": "ACTION",
+      "idx": 0,
+      "name": "Hello world",
+      "children": []
+    },
+    {
+      "type": "ACTION",
+      "idx": 0,
+      "name": "groovy goodness",
+      "children": []
+    }
   ]
 }

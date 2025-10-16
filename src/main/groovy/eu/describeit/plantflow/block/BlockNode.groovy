@@ -5,15 +5,17 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
 
+import static eu.describeit.plantflow.block.BlockType.ACTION
+
 @CompileStatic
 @ToString(includePackage=false, includes="id")
 class BlockNode {
 
   BlockType type
   int idx = 0
+  String name = null
 
   final List<BlockNode> children = []
-  final List<String> actions = []
 
   @JsonIgnore
   String getId() {
@@ -22,6 +24,10 @@ class BlockNode {
 
   void addChildren(BlockNode child) {
     children.add(child)
+  }
+
+  void addAction(String name) {
+    children.add(new BlockNode(type: ACTION, name: name))
   }
 
   BlockNode find(String id) {

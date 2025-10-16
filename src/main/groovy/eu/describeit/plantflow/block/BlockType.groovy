@@ -1,3 +1,3 @@
 package eu.describeit.plantflow.block
 
-enum BlockType { LOOP, CONDITIONAL, FORK, SEQ }
+enum BlockType { ACTION, LOOP, CONDITIONAL, FORK, SEQ }

@@ -46,8 +46,8 @@ class ConversionContext {
   void addAction(String contextId, String name) {
     if (contextId) assert blockStack.last.id == contextId
 
-    if (blockStack) blockStack.peek().actions.add(name)
-    else        rootBlock.actions.add(name)
+    if (blockStack) blockStack.peek().addAction(name)
+    else            rootBlock.addAction(name)
   }
 
   @Override
