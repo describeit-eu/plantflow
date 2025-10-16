@@ -1,11 +1,12 @@
 package eu.describeit.plantflow.converter
 
+import eu.describeit.plantflow.block.BlockType
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
-import static eu.describeit.plantflow.converter.ConversionUtils.stringFormatLine
+import static eu.describeit.plantflow.Utility.stringFormatLine
 
 @CompileStatic
 @Slf4j
@@ -37,9 +38,9 @@ enum ForkConverter {
   }
 
   String convertLine(String line, ConversionContext context) {
-    if (blockStarts.contains(this)) context.start(ConversionBlock.Type.FORK)
+    if (blockStarts.contains(this)) context.start(BlockType.FORK)
     def convertedLine = convertLine(line, context.geCurrentId() )
-    if (blockEnds.contains(this)) context.end(ConversionBlock.Type.FORK)
+    if (blockEnds.contains(this)) context.end(BlockType.FORK)
 
     return convertedLine
   }

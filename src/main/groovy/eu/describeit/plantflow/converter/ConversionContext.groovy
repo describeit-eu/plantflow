@@ -1,51 +1,53 @@
 package eu.describeit.plantflow.converter
 
-import groovy.json.JsonGenerator
-import groovy.json.JsonOutput
+import com.fasterxml.jackson.databind.ObjectMapper
+import eu.describeit.plantflow.block.BlockType
+import eu.describeit.plantflow.block.BlockNode
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
-import static eu.describeit.plantflow.converter.ConversionBlock.Type.SEQ
+import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT
+import static eu.describeit.plantflow.block.BlockType.SEQ
 
 @Slf4j
 @ToString(includePackage=false)
 @CompileStatic
 class ConversionContext {
-  final Stack<ConversionBlock> blocks = new Stack<>()
-  final ConversionBlock root = new ConversionBlock(type: SEQ, idx: 0)
+  final Stack<BlockNode> blockStack = new Stack<>()
+  final BlockNode rootBlock = new BlockNode(type: SEQ, idx: 0)
   int counter = 1
 
-  void start(ConversionBlock.Type type) {
-    ConversionBlock currentBlock = blocks.empty() ? root : blocks.peek()
+  void start(BlockType type) {
+    BlockNode currentBlock = blockStack.empty() ? rootBlock : blockStack.peek()
 
-    ConversionBlock newBlock = new ConversionBlock(type: type, idx: counter++)
+    BlockNode newBlock = new BlockNode(type: type, idx: counter++)
     currentBlock.addChildren(newBlock)
-    blocks.push(newBlock)
+    blockStack.push(newBlock)
 
     log.info('start() - new block:{}', newBlock)
   }
 
-  void check(ConversionBlock.Type type) {
-    assert blocks.last.type == type
+  void check(BlockType type) {
+    assert blockStack.last.type == type
   }
 
-  void end(ConversionBlock.Type type) {
+  void end(BlockType type) {
     check(type)
 
-    ConversionBlock lastBlock = blocks.pop()
+    BlockNode lastBlock = blockStack.pop()
     log.info('end() - last block:{}', lastBlock)
   }
 
   String geCurrentId() {
-    return blocks ? blocks.last?.id : null
+    return blockStack ? blockStack.last?.id : null
   }
 
   void addAction(String contextId, String name) {
-    if (contextId) assert blocks.last.id == contextId
+    if (contextId) assert blockStack.last.id == contextId
 
-    if (blocks) blocks.peek().actions.add(name)
-    else        root.actions.add(name)
+    if (blockStack) blockStack.peek().actions.add(name)
+    else        rootBlock.actions.add(name)
   }
 
   @Override
@@ -54,13 +56,10 @@ class ConversionContext {
   }
 
   String toJson(boolean pretty = true) {
-    JsonGenerator generator = new JsonGenerator.Options()
-        .excludeFieldsByName('id')
-        .build()
+    ObjectMapper mapper = new ObjectMapper()
 
-    String json = generator.toJson(root)
+    if (pretty) mapper.enable(INDENT_OUTPUT)
 
-    if (pretty) return JsonOutput.prettyPrint(json)
-    else        return json
+    return mapper.writeValueAsString(rootBlock)
   }
 }

@@ -10,7 +10,7 @@ class ScenarioIfEndifTest extends Specification {
     given:
     PlantFlowAction processAll = Mock() { getName() >> 'process all' }
     PlantFlowAction processNone = Mock() { getName() >> 'process none' }
-    PlantFlow pflow = new PlantFlow("ifThenElseEndif.pflow", [processAll, processNone])
+    PlantFlow pflow = new PlantFlow("ifThenElseEndif", [processAll, processNone])
 
     when:
     def nextActions = pflow.calculateNext()
@@ -50,6 +50,6 @@ class ScenarioIfEndifTest extends Specification {
     nextActions.size() == 0
 
     where:
-    fileName << ['ifIsThenEndif.pflow', 'ifEqualsThenEndif.pflow']
+    fileName << ['ifIsThenEndif', 'ifEqualsThenEndif']
   }
 }

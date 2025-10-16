@@ -1,0 +1,15 @@
+{
+  "type": "SEQ",
+  "idx": 0,
+  "children": [
+    {
+      "type": "LOOP",
+      "idx": 1,
+      "children": [],
+      "actions": [
+        "do something"
+      ]
+    }
+  ],
+  "actions": []
+}

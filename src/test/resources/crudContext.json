@@ -1,0 +1,31 @@
+{
+  "type": "SEQ",
+  "idx": 0,
+  "children": [
+    {
+      "type": "FORK",
+      "idx": 1,
+      "children": [
+        {
+          "type": "LOOP",
+          "idx": 2,
+          "children": [],
+          "actions": [
+            "update"
+          ]
+        },
+        {
+          "type": "LOOP",
+          "idx": 3,
+          "children": [],
+          "actions": [
+            "deactivate",
+            "activate"
+          ]
+        }
+      ],
+      "actions": []
+    }
+  ],
+  "actions": []
+}

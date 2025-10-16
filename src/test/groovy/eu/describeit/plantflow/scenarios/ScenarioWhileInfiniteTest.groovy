@@ -10,7 +10,7 @@ class ScenarioWhileInfiniteTest extends Specification {
     given:
     PlantFlowAction action1 = Mock() { getName() >> 'do something' }
 
-    def pflow = new PlantFlow("whileInfinite.pflow", [action1])
+    def pflow = new PlantFlow("whileInfinite", [action1])
 
     when:
     def nextActions = pflow.calculateNext()

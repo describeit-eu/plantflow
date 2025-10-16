@@ -24,6 +24,8 @@ dependencies {
   implementation("org.apache.groovy:groovy:$groovyVersion")
   implementation("org.apache.groovy:groovy-json:$groovyVersion")
 
+  implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
+
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")
   implementation("ch.qos.logback:logback-classic:${logbackVersion}")

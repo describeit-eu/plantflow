@@ -1,10 +1,13 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.CalculateNextContext
 import eu.describeit.plantflow.engine.PlantFlowAction
 import eu.describeit.plantflow.engine.PlantFlowScript
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+
+import static Utility.getResourceText
 
 @CompileStatic
 class PlantFlow {
@@ -33,9 +36,10 @@ class PlantFlow {
     def engine = new GroovyScriptEngine("src/test/resources")
     engine.setConfig(cc)
 
-    pflowScript = (PlantFlowScript) engine.createScript(pflowName, pflowBinding)
-
+    pflowScript = (PlantFlowScript) engine.createScript(pflowName+'.pflow', pflowBinding)
     pflowScript.setDelegate(pflowScript)
+
+    pflowScript.executionContext = new CalculateNextContext(getResourceText(pflowName+'Context.json'))
     pflowScript.actions = pflowActions
   }
 

@@ -1,0 +1,20 @@
+{
+  "type": "SEQ",
+  "idx": 0,
+  "children": [
+    {
+      "type": "FORK",
+      "idx": 1,
+      "children": [],
+      "actions": [
+        "action 1",
+        "action 2",
+        "action 3",
+        "action 4"
+      ]
+    }
+  ],
+  "actions": [
+    "action 5"
+  ]
+}

@@ -5,8 +5,8 @@ import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
-import static eu.describeit.plantflow.converter.ConversionBlock.Type.CONDITIONAL
-import static eu.describeit.plantflow.converter.ConversionUtils.stringFormatLine
+import static eu.describeit.plantflow.block.BlockType.CONDITIONAL
+import static eu.describeit.plantflow.Utility.stringFormatLine
 
 @CompileStatic
 @Slf4j

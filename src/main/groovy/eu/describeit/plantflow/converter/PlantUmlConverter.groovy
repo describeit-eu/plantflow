@@ -45,13 +45,13 @@ final class PlantUmlConverter {
   private static String convertLineToActionMethod(String line, ConversionContext context) {
     log.info('convertLineToActionMethod() - line:"{}" context:{}', line, context)
 
-    String actionName = '"'+substringBetween(line, ':', ';')+'"'
-    String contextId = context.geCurrentId() ? '"'+context.geCurrentId()+'"' : null
+    String actionName = substringBetween(line, ':', ';')
+    String contextId = context.geCurrentId() ? context.geCurrentId() : null
 
     context.addAction(context.geCurrentId(), actionName)
 
-    if (contextId) return "if (isActive(${actionName}, ${contextId})) return"
-    else           return "if (isActive(${actionName})) return"
+    if (contextId) return "if (isActive(\"${actionName}\", \"${contextId}\")) return"
+    else           return "if (isActive(\"${actionName}\")) return"
   }
 
   private static String convertExpression(String line, ConversionContext context) {

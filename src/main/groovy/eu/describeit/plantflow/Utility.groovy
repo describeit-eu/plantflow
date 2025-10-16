@@ -1,4 +1,5 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow
+
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -8,8 +9,8 @@ import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-class ConversionUtils {
-  private ConversionUtils() {}
+class Utility {
+  private Utility() {}
 
   // Regex pattern for balanced parentheses with up to 3 levels of nesting
   private static final Pattern balancedParenthesesPattern = ~/\(([^()]*(?:\([^()]*(?:\([^()]*\)[^()]*)*\)[^()]*)*)\)/
@@ -29,7 +30,7 @@ class ConversionUtils {
   }
 
   static String getResourceText(String file) {
-    return PlantUmlConverter.class.getClassLoader().getResource(file).text.trim()
+    return PlantFlow.class.getClassLoader().getResource(file).text.trim()
   }
 
   private static List<String> extractBetweenBalancedParentheses(String line) {

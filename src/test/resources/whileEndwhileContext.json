@@ -1,0 +1,17 @@
+{
+  "type": "SEQ",
+  "idx": 0,
+  "children": [
+    {
+      "type": "LOOP",
+      "idx": 1,
+      "children": [],
+      "actions": [
+        "read file"
+      ]
+    }
+  ],
+  "actions": [
+    "close file"
+  ]
+}

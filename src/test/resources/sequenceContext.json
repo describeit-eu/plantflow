@@ -1,0 +1,9 @@
+{
+  "type": "SEQ",
+  "idx": 0,
+  "children": [],
+  "actions": [
+    "Hello world",
+    "groovy goodness"
+  ]
+}

@@ -15,7 +15,7 @@ class ScenarioRepeatWhileTest extends Specification {
   void mockPlantFlow() {
     readData         = Mock() { getName() >> 'read data' }
     generateDiagrams = Mock() { getName() >> 'generate diagrams' }
-    pflow = new PlantFlow('repeatWhile.pflow', [readData, generateDiagrams])
+    pflow = new PlantFlow('repeatWhile', [readData, generateDiagrams])
 
     pflow.pflowScript.metaClass.evaluate = { String expression ->
       assert expression == 'more data?'

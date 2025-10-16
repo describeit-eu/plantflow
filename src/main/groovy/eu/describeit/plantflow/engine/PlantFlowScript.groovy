@@ -4,12 +4,12 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import static eu.describeit.plantflow.engine.ExecutionBlock.Type.*
+import static eu.describeit.plantflow.block.BlockType.*
 
 @CompileStatic
 @Slf4j
 abstract class PlantFlowScript extends DelegatingScript {
-  ExecutionContext executionContext = new ExecutionContext()
+  CalculateNextContext executionContext
 
   Map<String, PlantFlowAction> actions
 
@@ -21,9 +21,9 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   @Override
   Object run() {
-    executionContext.start(SEQ, null)
+    executionContext.start(SEQ, 'SEQ0')
     def result = scriptBody()
-    executionContext.end(SEQ, null)
+    executionContext.end(SEQ, 'SEQ0')
 
     log.trace('run() - # of nextActions:{}', nextActions.size())
 
@@ -34,16 +34,16 @@ abstract class PlantFlowScript extends DelegatingScript {
     return isActive(action, null)
   }
 
-  Boolean isActive(String action, String loopId) {
+  Boolean isActive(String action, String blockId) {
     PlantFlowAction anAction = actions[action]
 
     if (anAction) {
       if (anAction.activate()) {
-        log.info("isActive() - active name:{}, loopId:{}", anAction.name, loopId)
+        log.info("isActive() - active name:{}, blockId:{}", anAction.name, blockId)
         executionContext.addAction(anAction)
         return true
       } else {
-        log.info("isActive() - inactive name:{}, loopId:{}", anAction.name, loopId)
+        log.info("isActive() - inactive name:{}, blockId:{}", anAction.name, blockId)
         return false
       }
     } else {

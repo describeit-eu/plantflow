@@ -14,7 +14,7 @@ class ScenarioForkEndMergeTest extends Specification {
     PlantFlowAction action4 = Mock() { getName() >> 'action 4' }
     PlantFlowAction action5 = Mock() { getName() >> 'action 5' }
 
-    def pflow = new PlantFlow("forkEndMerge.pflow", [action1, action2, action3, action4, action5])
+    def pflow = new PlantFlow("forkEndMerge", [action1, action2, action3, action4, action5])
 
     when:
     def nextActions = pflow.calculateNext()

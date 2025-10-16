@@ -10,7 +10,7 @@ class ScenarioSequenceTest extends Specification {
     given:
     PlantFlowAction action1 = Mock() { getName() >> 'Hello world' }
     PlantFlowAction action2 = Mock() { getName() >> 'groovy goodness' }
-    def pflow = new PlantFlow("sequence.pflow", [action1, action2])
+    def pflow = new PlantFlow("sequence", [action1, action2])
 
     when: '1.'
     def nextActions = pflow.calculateNext()

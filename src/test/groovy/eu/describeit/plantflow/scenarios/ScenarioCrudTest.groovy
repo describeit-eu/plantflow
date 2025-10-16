@@ -12,7 +12,7 @@ class ScenarioCrudTest extends Specification {
     PlantFlowAction deactivate = Mock() { getName() >> 'deactivate' }
     PlantFlowAction activate = Mock() { getName() >> 'activate' }
 
-    def pflow = new PlantFlow('crud.pflow', [update, deactivate, activate])
+    def pflow = new PlantFlow('crud', [update, deactivate, activate])
 
     when: '1st run - both branches produce an action'
     def nextActions = pflow.calculateNext()

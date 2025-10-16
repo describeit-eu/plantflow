@@ -16,7 +16,7 @@ class ScenarioWhileEndwhileTest extends Specification {
     readFile = Mock() { getName() >> 'read file' }
     closeFile = Mock() { getName() >> 'close file' }
 
-    pflow = new PlantFlow('whileEndwhile.pflow', [readFile, closeFile])
+    pflow = new PlantFlow('whileEndwhile', [readFile, closeFile])
 
     pflow.pflowScript.metaClass.evaluate = { String expression ->
       assert expression == 'check filesize ?'
