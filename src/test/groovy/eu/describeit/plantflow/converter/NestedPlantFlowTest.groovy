@@ -140,4 +140,40 @@ class NestedPlantFlowTest extends Specification {
     blockTree.children[2].name == 'after loop'
     blockTree.children[2].children.size() == 0
   }
+
+  def "builds PlantFlow Script for nested flow"() {
+    given:
+    def converter = new PlantUmlConverter()
+
+    when:
+    String actualPflow = converter.convertToPlantFlowDsl(puml).stripIndent().trim()
+    println actualPflow
+
+    then:
+    String expectedPflow = '''
+    if (isActive("before loop")) return
+      loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) {
+        if (isActive("before if", "LOOP1")) return
+        conditional("CONDITIONAL2") { if (eval("ready", null, "CONDITIONAL2")) { // go
+          if (isActive("step A1", "CONDITIONAL2")) return
+          if (isActive("step A2", "CONDITIONAL2")) return
+        } else { // wait CONDITIONAL2
+          if (isActive("step B1", "CONDITIONAL2")) return
+          if (isActive("step B2", "CONDITIONAL2")) return
+        } } // CONDITIONAL2
+        if (isActive("middle loop", "LOOP1")) return
+        fork("FORK3") {
+          if (isActive("parallel A1", "FORK3")) return
+          if (isActive("parallel A2", "FORK3")) return
+        } forkAgain("FORK3") {
+          if (isActive("parallel B1", "FORK3")) return
+          if (isActive("parallel B2", "FORK3")) return
+        }; if (endFork("FORK3")) return
+        if (isActive("after fork", "LOOP1")) return
+      } } // LOOP1
+      if (isActive("after loop")) return
+    '''.stripIndent().trim()
+
+    actualPflow.contains(expectedPflow)
+  }
 }
