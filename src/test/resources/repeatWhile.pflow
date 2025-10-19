@@ -1,4 +1,4 @@
 loop("LOOP1") { do {
   if (isActive("read data", "LOOP1")) return
   if (isActive("generate diagrams", "LOOP1")) return
-} while (eval("more data?", "yes")) } // not ("no") LOOP1
+} while (eval("more data?", "yes", "LOOP1")) } // not ("no")

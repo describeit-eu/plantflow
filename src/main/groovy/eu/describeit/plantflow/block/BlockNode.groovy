@@ -31,10 +31,10 @@ class BlockNode {
   }
 
   BlockNode find(String id) {
-    def child= children.find { it.id == id }
+    BlockNode child= children.find { BlockNode node -> node.id == id }
 
     if (!child) {
-      for (def subChild : children) return subChild.find(id)
+      for (BlockNode subChild : children) return subChild.find(id)
     } else {
       return child
     }

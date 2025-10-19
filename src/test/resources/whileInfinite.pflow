@@ -1,3 +1,3 @@
-loop("LOOP1") { while (eval("true")) {
+loop("LOOP1") { while (eval("true", null, "LOOP1")) {
   if (isActive("do something", "LOOP1")) return
 } } // LOOP1

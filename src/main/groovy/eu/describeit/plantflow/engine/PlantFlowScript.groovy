@@ -53,12 +53,10 @@ abstract class PlantFlowScript extends DelegatingScript {
     }
   }
 
-  Boolean eval(String expression) {
-    return eval(expression, null)
-  }
+  Boolean eval(String expression, String expectedValue, String blockId) {
+    log.info("eval() - expression:{}, expectedValue:{}, blockId:{}", expression, expectedValue, blockId)
 
-  Boolean eval(String expression, String expectedValue) {
-    log.info("eval() - expression:{} expectedValue:{}", expression, expectedValue)
+    executionContext.check(blockId)
 
     // Use Groovy MOP to allow mocking Script.evaluate(String) via metaclass
     def evalResult = InvokerHelper.invokeMethod(this, 'evaluate', expression)
@@ -68,7 +66,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   }
 
   PlantFlowScript fork(String forkId, Closure cl) {
-    log.info("fork() - forkId:{}", forkId)
+    log.info("fork() - id:{}", forkId)
 
     executionContext.start(FORK, forkId)
 

@@ -11,22 +11,24 @@ import static eu.describeit.plantflow.Utility.stringFormatLine
 @CompileStatic
 @Slf4j
 enum LoopConverter {
-  WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/                     , 'loop("%s") { while (eval("%s", "%s")) { // is'),
-  WHILE        (~ /^while *\(.*\)$/                                 , 'loop("%s") { while (eval("%s")) {'),
-  REPEAT       (~ /^repeat$/                                        , 'loop("%s") { do {'),
-  ENDWHILE     (~ /^endwhile *\(.*\)$/                              , '} } // %s %s'),
-  ENDWHILE2    (~ /^endwhile$/                                      , '} } // %s'),
-  REPEAT_WHILE (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/ , '} while (eval("%s", "%s")) } // not ("%s") %s'),
+  WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/,                     'loop("%s") { while (eval("%s", "%s", "%s")) { // is', [0,3]),
+  WHILE        (~ /^while *\(.*\)$/,                                 'loop("%s") { while (eval("%s", null, "%s")) {',       [0,2]),
+  REPEAT       (~ /^repeat$/,                                        'loop("%s") { do {',                                   [0]),
+  ENDWHILE     (~ /^endwhile *\(.*\)$/,                              '} } // %s %s',                                        [1]),
+  ENDWHILE2    (~ /^endwhile$/,                                      '} } // %s',                                           [0]),
+  REPEAT_WHILE (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/, '} while (eval("%s", "%s", "%s")) } // not ("%s")',    [2]),
 
   final Pattern matcher
   final String expression
+  final List<Integer> blockIdPositions
 
   private static final List blockStarts = [WHILE, WHILE_IS, REPEAT]
   private static final List blockEnds   = [ENDWHILE, ENDWHILE2, REPEAT_WHILE]
 
-  LoopConverter(Pattern pattern, String expression) {
+  LoopConverter(Pattern pattern, String expression, List<Integer> positions) {
     this.matcher = pattern
     this.expression = expression
+    this.blockIdPositions = positions
   }
 
   static LoopConverter match(String line) {
@@ -49,7 +51,6 @@ enum LoopConverter {
   }
 
   String convertLine(String line, String loopId) {
-    boolean addFirst = blockStarts.contains(this)
-    return stringFormatLine(line, expression, loopId, addFirst)
+    return stringFormatLine(line, expression, loopId, blockIdPositions)
   }
 }

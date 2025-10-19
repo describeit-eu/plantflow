@@ -1,3 +1,3 @@
-conditional("CONDITIONAL1") { if (eval("new String('yes')", "yes")) { // equals
+conditional("CONDITIONAL1") { if (eval("new String('yes')", "yes", "CONDITIONAL1")) { // equals
   if (isActive("process all", "CONDITIONAL1")) return
 } } // CONDITIONAL1

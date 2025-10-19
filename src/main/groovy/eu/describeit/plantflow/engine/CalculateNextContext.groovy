@@ -38,8 +38,9 @@ class CalculateNextContext {
     nextActions.add(action)
   }
 
-  void check(BlockType type, String id) {
-    assert blockStack.last.type == type && blockStack.last.id == id
+  void check(BlockType type = null, String id) {
+    if (type) assert blockStack.last.type == type
+    assert blockStack.last.id == id
   }
 
   List<PlantFlowAction> end(BlockType type, String id) {

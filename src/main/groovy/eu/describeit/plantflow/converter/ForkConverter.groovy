@@ -47,6 +47,6 @@ enum ForkConverter {
 
   String convertLine(String line, String forkId) {
     boolean addFirst = blockStarts.contains(this)
-    return stringFormatLine(line, expression, forkId, addFirst)
+    return stringFormatLine(line, expression, forkId, [0])
   }
 }

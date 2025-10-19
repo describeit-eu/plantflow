@@ -35,7 +35,7 @@ class PlantUmlConverterTest extends Specification {
     ':doIt;'                     || 'if (isActive("doIt")) return\n'
     'repeat'                     || 'loop("LOOP1") { do {\n'
     'fork'                       || 'fork("FORK1") {\n'
-    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL1") { if (eval("a > b")) { // explain\n'
+    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL1") { if (eval("a > b", null, "CONDITIONAL1")) { // explain\n'
     '  :doIt;'                   || '  if (isActive("doIt")) return\n'
     '    repeat'                 || '    loop("LOOP1") { do {\n'
     '      fork'                 || '      fork("FORK1") {\n'
