@@ -1,4 +1,4 @@
-if (isActive("update")) return
+if (isActive("update", "SEQ0")) return
 fork("FORK1") {
   loop("LOOP2") { while (eval("true", null, "LOOP2")) {
     if (isActive("update", "LOOP2")) return

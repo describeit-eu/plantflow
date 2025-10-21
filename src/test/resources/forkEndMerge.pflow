@@ -6,4 +6,4 @@ fork("FORK1") {
   if (isActive("action 3", "FORK1")) return
   if (isActive("action 4", "FORK1")) return
 }; if (endFork("FORK1")) return
-if (isActive("action 5")) return
+if (isActive("action 5", "SEQ0")) return

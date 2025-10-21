@@ -1,5 +1,6 @@
 package eu.describeit.plantflow.converter
 
+import eu.describeit.plantflow.block.BlockType
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
@@ -11,7 +12,7 @@ final class PlantUmlConverter {
   StringBuffer pflowBuffer = new StringBuffer()
   ConversionContext context = new ConversionContext()
 
-  static final List<String> linesToDrop = ['start', 'stop', 'end', 'detach']
+  static final List<String> linesToDrop = ['stop', 'detach']
 
   String convertToPlantFlowDsl(final String pumlText) {
     pumlText.eachLine { String line ->
@@ -24,6 +25,8 @@ final class PlantUmlConverter {
         case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''            : log.trace('convertToPlantFlowDsl() - EMPTY line:{}', line); break
+        case 'start'       : context.start(BlockType.SEQ); break
+        case 'end'         : context.end(BlockType.SEQ); break
         case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
         default            : lineConverted = convertExpression(lineTrimmed, context); break
       }
@@ -43,10 +46,10 @@ final class PlantUmlConverter {
   }
 
   private static String convertLineToActionMethod(String line, ConversionContext context) {
-    log.info('convertLineToActionMethod() - line:"{}"', line)
-
     String actionName = substringBetween(line, ':', ';')
     String contextId = context.geCurrentId()
+
+    log.debug('convertLineToActionMethod() - line:"{}", contextId:{}, actionName:{}', line, contextId, actionName)
 
     context.addAction(contextId, actionName)
 

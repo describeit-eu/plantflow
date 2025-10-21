@@ -15,14 +15,12 @@ import static eu.describeit.plantflow.block.BlockType.SEQ
 @CompileStatic
 class ConversionContext {
   final Stack<BlockNode> blockStack = new Stack<>()
-  final BlockNode rootBlock = new BlockNode(type: SEQ, idx: 0)
-  int counter = 1
+  int counter = 0
 
   void start(BlockType type) {
-    BlockNode currentBlock = blockStack.empty() ? rootBlock : blockStack.peek()
-
     BlockNode newBlock = new BlockNode(type: type, idx: counter++)
-    currentBlock.addChildren(newBlock)
+
+    if (blockStack) blockStack.peek().addChildren(newBlock)
     blockStack.push(newBlock)
 
     log.info('start() - new block:{}', newBlock)
@@ -44,15 +42,19 @@ class ConversionContext {
   }
 
   void addAction(String contextId, String name) {
-    if (contextId) assert blockStack.last.id == contextId
-
-    if (blockStack) blockStack.peek().addAction(name)
-    else            rootBlock.addAction(name)
+    if (contextId) {
+      assert blockStack.last.id == contextId
+      blockStack.peek().addAction(name)
+    } else {
+      // this case should only happen during unit test of PlantUmlConverter
+      log.warn('addAction() - no contextId was provided for action:{}', name)
+    }
   }
 
   @Override
   String toString() {
-    return toJson(false)
+    if (blockStack) return toJson(false)
+    else return null
   }
 
   String toJson(boolean pretty = true) {
@@ -60,6 +62,6 @@ class ConversionContext {
 
     if (pretty) mapper.enable(INDENT_OUTPUT)
 
-    return mapper.writeValueAsString(rootBlock)
+    return mapper.writeValueAsString(blockStack.first)
   }
 }

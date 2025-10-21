@@ -33,12 +33,12 @@ class PlantUmlConverterTest extends Specification {
     where:
     line                         || expected
     ':doIt;'                     || 'if (isActive("doIt")) return\n'
-    'repeat'                     || 'loop("LOOP1") { do {\n'
-    'fork'                       || 'fork("FORK1") {\n'
-    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL1") { if (eval("a > b", null, "CONDITIONAL1")) { // explain\n'
+    'repeat'                     || 'loop("LOOP0") { do {\n'
+    'fork'                       || 'fork("FORK0") {\n'
+    'if (a > b) then (explain)'  || 'conditional("CONDITIONAL0") { if (eval("a > b", null, "CONDITIONAL0")) { // explain\n'
     '  :doIt;'                   || '  if (isActive("doIt")) return\n'
-    '    repeat'                 || '    loop("LOOP1") { do {\n'
-    '      fork'                 || '      fork("FORK1") {\n'
+    '    repeat'                 || '    loop("LOOP0") { do {\n'
+    '      fork'                 || '      fork("FORK0") {\n'
   }
 
   def "convertToPlantFlowDsl converts action lines to isActive() checks"() {

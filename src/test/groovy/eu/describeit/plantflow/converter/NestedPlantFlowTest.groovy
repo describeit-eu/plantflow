@@ -147,11 +147,10 @@ class NestedPlantFlowTest extends Specification {
 
     when:
     String actualPflow = converter.convertToPlantFlowDsl(puml).stripIndent().trim()
-    println actualPflow
 
     then:
     String expectedPflow = '''
-    if (isActive("before loop")) return
+    if (isActive("before loop", "SEQ0")) return
       loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) {
         if (isActive("before if", "LOOP1")) return
         conditional("CONDITIONAL2") { if (eval("ready", null, "CONDITIONAL2")) { // go
@@ -171,7 +170,7 @@ class NestedPlantFlowTest extends Specification {
         }; if (endFork("FORK3")) return
         if (isActive("after fork", "LOOP1")) return
       } } // LOOP1
-      if (isActive("after loop")) return
+      if (isActive("after loop", "SEQ0")) return
     '''.stripIndent().trim()
 
     actualPflow.contains(expectedPflow)
