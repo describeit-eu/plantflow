@@ -9,28 +9,49 @@
       "name": null,
       "children": [
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "action 1",
-          "children": []
+          "type": "FORK_BLOCK",
+          "idx": 2,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "action 1",
+              "children": []
+            }
+          ]
         },
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "action 2",
-          "children": []
+          "type": "FORK_BLOCK",
+          "idx": 3,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "action 2",
+              "children": []
+            }
+          ]
         },
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "action 3",
-          "children": []
-        },
-        {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "action 4",
-          "children": []
+          "type": "FORK_BLOCK",
+          "idx": 4,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "action 3",
+              "children": []
+            },
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "action 4",
+              "children": []
+            }
+          ]
         }
       ]
     },

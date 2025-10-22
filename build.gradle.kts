@@ -23,16 +23,18 @@ repositories {
 dependencies {
   implementation("org.apache.groovy:groovy:$groovyVersion")
   implementation("org.apache.groovy:groovy-json:$groovyVersion")
-
+  implementation("org.apache.groovy:groovy-templates:$groovyVersion")
   implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
 
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")
   implementation("ch.qos.logback:logback-classic:${logbackVersion}")
 
+  // Commons dependencies
   implementation("org.apache.commons:commons-lang3:3.18.0")
   implementation("org.apache.commons:commons-text:1.14.0")
-
+    
+  // Test dependencies
   testImplementation(platform("org.junit:junit-bom:$junitVersion"))
   testImplementation("org.junit.jupiter:junit-jupiter")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")

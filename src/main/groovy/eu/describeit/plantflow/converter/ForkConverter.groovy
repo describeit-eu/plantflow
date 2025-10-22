@@ -1,22 +1,18 @@
 package eu.describeit.plantflow.converter
 
 import eu.describeit.plantflow.block.BlockType
+import groovy.text.SimpleTemplateEngine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
-import static eu.describeit.plantflow.Utility.stringFormatLine
-
 @CompileStatic
 @Slf4j
 enum ForkConverter {
-  FORK       (~ /^fork$/       , 'fork("%s") {'),
-  FORK_AGAIN (~ /^fork again$/ , '} forkAgain("%s") {'),
-  END_MERGE  (~ /^end merge$/  , '}; if (endFork("%s")) return'),
-
-  private static final List blockStarts = [FORK]
-  private static final List blockEnds   = [END_MERGE]
+  FORK       (~ /^fork$/       , 'fork("$forkId") { forkBlock("$forkBlockId") {'),
+  FORK_AGAIN (~ /^fork again$/ , '} forkBlock("$forkBlockId") {'),
+  END_MERGE  (~ /^end merge$/  , '} } // $forkId'),
 
   final Pattern matcher
   final String expression
@@ -34,19 +30,41 @@ enum ForkConverter {
     def converter = match(line)
 
     if (!converter) return null
-    else            return converter.convertLine(line, context)
+    else            return converter.convertLine(context)
   }
 
-  String convertLine(String line, ConversionContext context) {
-    if (blockStarts.contains(this)) context.start(BlockType.FORK)
-    def convertedLine = convertLine(line, context.geCurrentId() )
-    if (blockEnds.contains(this)) context.end(BlockType.FORK)
+  String convertLine(ConversionContext context) {
+    String forkId = null
+    String forkBlockId = null
 
-    return convertedLine
+    switch (this) {
+      case FORK:
+        context.start(BlockType.FORK)
+        forkId = context.geCurrentId()
+        context.start(BlockType.FORK_BLOCK)
+        forkBlockId = context.geCurrentId()
+        break
+
+      case FORK_AGAIN:
+        context.end(BlockType.FORK_BLOCK)
+        context.start(BlockType.FORK_BLOCK)
+        forkBlockId = context.geCurrentId()
+        break
+
+      case END_MERGE:
+        context.end(BlockType.FORK_BLOCK)
+        forkId = context.geCurrentId()
+        context.end(BlockType.FORK)
+        break
+    }
+
+    return convertExpression(forkId, forkBlockId)
   }
 
-  String convertLine(String line, String forkId) {
-    boolean addFirst = blockStarts.contains(this)
-    return stringFormatLine(line, expression, forkId, [0])
+  String convertExpression(String forkId, String forkBlockId) {
+    def binding = [forkId: forkId, forkBlockId: forkBlockId]
+    def engine = new SimpleTemplateEngine()
+
+    return engine.createTemplate(expression).make(binding).toString()
   }
 }

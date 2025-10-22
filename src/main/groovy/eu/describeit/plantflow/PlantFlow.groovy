@@ -3,12 +3,15 @@ package eu.describeit.plantflow
 import eu.describeit.plantflow.engine.CalculateNextContext
 import eu.describeit.plantflow.engine.PlantFlowAction
 import eu.describeit.plantflow.engine.PlantFlowScript
+import eu.describeit.plantflow.engine.StopCalculateNextException
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 
 import static Utility.getResourceText
 
+@Slf4j
 @CompileStatic
 class PlantFlow {
   Map<String, PlantFlowAction> pflowActions
@@ -44,7 +47,11 @@ class PlantFlow {
   }
 
   List<PlantFlowAction> calculateNext() {
-    pflowScript.run()
+    try {
+      pflowScript.run()
+    } catch (StopCalculateNextException ex) {
+      log.info('calculateNext() - {}', ex.message)
+    }
     return pflowScript.nextActions
   }
 }

@@ -5,44 +5,58 @@
   "children": [
     {
       "type": "ACTION",
-      "name": "update",
       "idx": 0,
+      "name": "update",
       "children": []
     },
     {
       "type": "FORK",
-      "name": null,
       "idx": 1,
+      "name": null,
       "children": [
         {
-          "type": "LOOP",
+          "type": "FORK_BLOCK",
           "idx": 2,
           "name": null,
           "children": [
             {
-              "type": "ACTION",
-              "name": "update",
-              "idx": 0,
-              "children": []
+              "type": "LOOP",
+              "idx": 3,
+              "name": null,
+              "children": [
+                {
+                  "type": "ACTION",
+                  "idx": 0,
+                  "name": "update",
+                  "children": []
+                }
+              ]
             }
           ]
         },
         {
-          "type": "LOOP",
+          "type": "FORK_BLOCK",
+          "idx": 4,
           "name": null,
-          "idx": 3,
           "children": [
             {
-              "type": "ACTION",
-              "name": "deactivate",
-              "idx": 0,
-              "children": []
-            },
-            {
-              "type": "ACTION",
-              "name": "activate",
-              "idx": 0,
-              "children": []
+              "type": "LOOP",
+              "idx": 5,
+              "name": null,
+              "children": [
+                {
+                  "type": "ACTION",
+                  "idx": 0,
+                  "name": "deactivate",
+                  "children": []
+                },
+                {
+                  "type": "ACTION",
+                  "idx": 0,
+                  "name": "activate",
+                  "children": []
+                }
+              ]
             }
           ]
         }

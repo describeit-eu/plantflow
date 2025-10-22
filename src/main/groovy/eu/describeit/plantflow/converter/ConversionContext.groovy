@@ -41,7 +41,11 @@ class ConversionContext {
   }
 
   String geCurrentId() {
-    return blockStack ? blockStack.last?.id : null
+    return geCurrent()?.id
+  }
+
+  BlockNode geCurrent() {
+    return blockStack ? blockStack.last : null
   }
 
   void addAction(String contextId, String name) {

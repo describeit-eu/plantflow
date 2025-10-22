@@ -1,5 +1,6 @@
 package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.block.BlockNode
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -41,11 +42,11 @@ abstract class PlantFlowScript extends DelegatingScript {
 
     if (anAction) {
       if (anAction.activate()) {
-        log.info("isActive() - active name:{}, blockId:{}", anAction.name, blockId)
-        executionContext.addAction(anAction)
+        log.info("isActive( true ) - name:{}, blockId:{}", anAction.name, blockId)
+        executionContext.addAction(anAction, blockId)
         return true
       } else {
-        log.info("isActive() - inactive name:{}, blockId:{}", anAction.name, blockId)
+        log.info("isActive( false ) - inactive name:{}, blockId:{}", anAction.name, blockId)
         return false
       }
     } else {
@@ -74,27 +75,29 @@ abstract class PlantFlowScript extends DelegatingScript {
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
+    def forkBlock = executionContext.end(FORK, forkId)
+    if (! forkBlock.isFinished()) {
+      throw new StopCalculateNextException("Fork NOT finished - id:$forkId")
+    }
+
     return this
   }
 
-  PlantFlowScript forkAgain(String forkId, Closure cl) {
-    log.info("forkAgain() - id:{}", forkId)
+  PlantFlowScript forkBlock(String forkBlockId, Closure cl) {
+    log.info("forkBlock() - id:{}", forkBlockId)
 
-    executionContext.check(FORK, forkId)
+    executionContext.start(FORK_BLOCK, forkBlockId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
+    executionContext.end(FORK_BLOCK, forkBlockId)
+
     return this
   }
 
-  Boolean endFork(String forkId) {
-    def forkActions = executionContext.end(FORK, forkId)
-    return forkActions as Boolean
-  }
-
-  def loop(String loopId, Closure cl) {
+  void loop(String loopId, Closure cl) {
     log.info('loop() - id:{}', loopId)
 
     executionContext.start(LOOP, loopId)
@@ -106,7 +109,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     executionContext.end(LOOP, loopId)
   }
 
-  def conditional(String conditionalId, Closure cl) {
+  void conditional(String conditionalId, Closure cl) {
     log.info('conditional() - id:{}', conditionalId)
 
     executionContext.start(CONDITIONAL, conditionalId)

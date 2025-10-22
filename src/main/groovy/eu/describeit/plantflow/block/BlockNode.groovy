@@ -2,6 +2,7 @@ package eu.describeit.plantflow.block
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import eu.describeit.plantflow.engine.PlantFlowAction
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
 
@@ -14,8 +15,10 @@ class BlockNode {
   BlockType type
   int idx = 0
   String name = null
-
   final List<BlockNode> children = []
+
+  @JsonIgnore
+  List<PlantFlowAction> nextActions = []
 
   @JsonIgnore
   String getId() {
@@ -37,6 +40,14 @@ class BlockNode {
       for (BlockNode subChild : children) return subChild.find(id)
     } else {
       return child
+    }
+  }
+
+  @JsonIgnore
+  Boolean isFinished() {
+    children.every { BlockNode child ->
+      if (child.type != ACTION) return child.nextActions.empty
+      else                      return true
     }
   }
 }

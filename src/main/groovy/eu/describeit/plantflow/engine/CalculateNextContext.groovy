@@ -23,18 +23,20 @@ class CalculateNextContext {
     nextActions = []
   }
 
-  void start(BlockType type, String id) {
+  BlockNode start(BlockType type, String id) {
     log.info('start() - type:{} id:{}', type, id)
+    final BlockNode nextBlock
 
-    if (rootBlock.id == id) {
-      blockStack.push(rootBlock)
-    }
-    else {
-      blockStack.push(rootBlock.find(id))
-    }
+    if (rootBlock.id == id) nextBlock = rootBlock
+    else                    nextBlock = rootBlock.find(id)
+
+    nextBlock.nextActions = []
+    return blockStack.push(nextBlock)
   }
 
-  void addAction(PlantFlowAction action) {
+  void addAction(PlantFlowAction action, String blockId) {
+    check(blockId)
+    blockStack.last.nextActions.add(action)
     nextActions.add(action)
   }
 
@@ -43,12 +45,10 @@ class CalculateNextContext {
     assert blockStack.last.id == id
   }
 
-  List<PlantFlowAction> end(BlockType type, String id) {
+  BlockNode end(BlockType type, String id) {
     log.info('end() - type:{} id:{}', type, id)
-
     check(type, id)
-    blockStack.pop()
 
-    return nextActions
+    return blockStack.pop()
   }
 }

@@ -15,11 +15,11 @@ class NestedPlantFlowTest extends Specification {
       while (count < 3)
         :before if;
         if (ready) then (go)
-          :step A1;
-          :step A2;
+          :if A1;
+          :if A2;
         else (wait)
-          :step B1;
-          :step B2;
+          :else B1;
+          :else B2;
         endif
         :middle loop;
         fork
@@ -73,10 +73,10 @@ class NestedPlantFlowTest extends Specification {
               "idx": 2,
               "name": null,
               "children": [
-                { "type": "ACTION", "idx": 0, "name": "step A1", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "step A2", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "step B1", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "step B2", "children": [] }
+                { "type": "ACTION", "idx": 0, "name": "if A1", "children": [] },
+                { "type": "ACTION", "idx": 0, "name": "if A2", "children": [] },
+                { "type": "ACTION", "idx": 0, "name": "else B1", "children": [] },
+                { "type": "ACTION", "idx": 0, "name": "else B2", "children": [] }
               ]
             },
             {
@@ -90,10 +90,24 @@ class NestedPlantFlowTest extends Specification {
               "idx": 3,
               "name": null,
               "children": [
-                { "type": "ACTION", "idx": 0, "name": "parallel A1", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "parallel A2", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "parallel B1", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "parallel B2", "children": [] }
+                {
+                  "type": "FORK_BLOCK",
+                  "idx": 4,
+                  "name": null,
+                  "children": [
+                    { "type": "ACTION", "idx": 0, "name": "parallel A1", "children": [] },
+                    { "type": "ACTION", "idx": 0, "name": "parallel A2", "children": [] }
+                  ]
+                },
+                {
+                  "type": "FORK_BLOCK",
+                  "idx": 5,
+                  "name": null,
+                  "children": [
+                    { "type": "ACTION", "idx": 0, "name": "parallel B1", "children": [] },
+                    { "type": "ACTION", "idx": 0, "name": "parallel B2", "children": [] }
+                  ]
+                }
               ]
             },
             {
@@ -116,7 +130,7 @@ class NestedPlantFlowTest extends Specification {
 
     assertThatJson(actualJson).isEqualTo(expectedJson)
 
-    when:
+    when: ""
     def blockTree = new ObjectMapper().readValue(actualJson, BlockNode)
 
     then:
@@ -154,24 +168,24 @@ class NestedPlantFlowTest extends Specification {
       loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) {
         if (isActive("before if", "LOOP1")) return
         conditional("CONDITIONAL2") { if (eval("ready", null, "CONDITIONAL2")) { // go
-          if (isActive("step A1", "CONDITIONAL2")) return
-          if (isActive("step A2", "CONDITIONAL2")) return
+          if (isActive("if A1", "CONDITIONAL2")) return
+          if (isActive("if A2", "CONDITIONAL2")) return
         } else { // wait CONDITIONAL2
-          if (isActive("step B1", "CONDITIONAL2")) return
-          if (isActive("step B2", "CONDITIONAL2")) return
+          if (isActive("else B1", "CONDITIONAL2")) return
+          if (isActive("else B2", "CONDITIONAL2")) return
         } } // CONDITIONAL2
         if (isActive("middle loop", "LOOP1")) return
-        fork("FORK3") {
-          if (isActive("parallel A1", "FORK3")) return
-          if (isActive("parallel A2", "FORK3")) return
-        } forkAgain("FORK3") {
-          if (isActive("parallel B1", "FORK3")) return
-          if (isActive("parallel B2", "FORK3")) return
-        }; if (endFork("FORK3")) return
+        fork("FORK3") { forkBlock("FORK_BLOCK4") {
+          if (isActive("parallel A1", "FORK_BLOCK4")) return
+          if (isActive("parallel A2", "FORK_BLOCK4")) return
+        } forkBlock("FORK_BLOCK5") {
+          if (isActive("parallel B1", "FORK_BLOCK5")) return
+          if (isActive("parallel B2", "FORK_BLOCK5")) return
+        } } // FORK3
         if (isActive("after fork", "LOOP1")) return
       } } // LOOP1
       if (isActive("after loop", "SEQ0")) return
-    '''.stripIndent().trim()
+      '''.stripIndent().trim()
 
     actualPflow.contains(expectedPflow)
   }
