@@ -5,33 +5,44 @@
   "children": [
     {
       "type": "ACTION",
-      "name": "update"
+      "name": "update",
+      "idx": 0,
+      "children": []
     },
     {
       "type": "FORK",
+      "name": null,
       "idx": 1,
       "children": [
         {
           "type": "LOOP",
           "idx": 2,
+          "name": null,
           "children": [
             {
               "type": "ACTION",
-              "name": "update"
+              "name": "update",
+              "idx": 0,
+              "children": []
             }
           ]
         },
         {
           "type": "LOOP",
+          "name": null,
           "idx": 3,
           "children": [
             {
               "type": "ACTION",
-              "name": "deactivate"
+              "name": "deactivate",
+              "idx": 0,
+              "children": []
             },
             {
               "type": "ACTION",
-              "name": "activate"
+              "name": "activate",
+              "idx": 0,
+              "children": []
             }
           ]
         }

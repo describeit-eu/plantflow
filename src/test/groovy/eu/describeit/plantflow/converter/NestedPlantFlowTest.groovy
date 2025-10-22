@@ -32,7 +32,7 @@ class NestedPlantFlowTest extends Specification {
         :after fork;
       endwhile
       :after loop;
-      stop
+      end
       @enduml
     """.stripIndent().trim()
 

@@ -2,5 +2,5 @@
   start
 :Hello world;
 :groovy goodness;
-  stop
+  end
 @enduml

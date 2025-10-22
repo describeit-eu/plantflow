@@ -12,7 +12,8 @@ final class PlantUmlConverter {
   StringBuffer pflowBuffer = new StringBuffer()
   ConversionContext context = new ConversionContext()
 
-  static final List<String> linesToDrop = ['stop', 'detach']
+  static final List<String> linesToDrop  = ['detach']
+  static final List<String> illegalLines = ['stop']
 
   String convertToPlantFlowDsl(final String pumlText) {
     pumlText.eachLine { String line ->
@@ -21,14 +22,15 @@ final class PlantUmlConverter {
       String lineConverted = ''
 
       switch (lineTrimmed) {
-        case ~/^@.*/       : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ~/^-.*->$/    : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case linesToDrop   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
-        case ''            : log.trace('convertToPlantFlowDsl() - EMPTY line:{}', line); break
-        case 'start'       : context.start(BlockType.SEQ); break
-        case 'end'         : context.end(BlockType.SEQ); break
-        case ~/^:.*;$/     : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
-        default            : lineConverted = convertExpression(lineTrimmed, context); break
+        case ~/^@.*/      : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case ~/^-.*->$/   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case linesToDrop  : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
+        case ''           : log.trace('convertToPlantFlowDsl() - EMPTY line:{}', line); break
+        case 'start'      : context.start(BlockType.SEQ); break
+        case 'end'        : context.end(BlockType.SEQ); break
+        case ~/^:.*;$/    : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
+        case illegalLines : throw new IllegalArgumentException('Cannot handle puml line:' + line)
+        default           : lineConverted = convertExpression(lineTrimmed, context); break
       }
 
       if (lineConverted != null) {

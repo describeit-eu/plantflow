@@ -5,5 +5,5 @@ if ( new String('yes') ) equals (yes) then
   :process all;
 endif
 
-stop
+end
 @enduml

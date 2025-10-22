@@ -10,7 +10,7 @@ import static ForkConverter.END_MERGE
 class ForkConverterTest extends Specification {
 
   @Unroll
-  def "match returns correct enum for '#line'"() {
+  def "match() returns correct enum for '#line'"() {
     expect:
     ForkConverter.match(line) == expected
 
@@ -22,7 +22,7 @@ class ForkConverterTest extends Specification {
   }
 
   @Unroll
-  def "convert produces expected output for '#expression'"() {
+  def "convertLine() produces expected output for '#expression'"() {
     expect:
     expression.convertLine(line, 'FORK0') == expected
 
@@ -33,7 +33,7 @@ class ForkConverterTest extends Specification {
     END_MERGE  || 'end merge' || '}; if (endFork("FORK0")) return'
   }
 
-  def "convert returns null for unknown expression"() {
+  def "convert() returns null String for unknown expression"() {
     when:
     def result = ForkConverter.convert('unknown something', new ConversionContext())
 

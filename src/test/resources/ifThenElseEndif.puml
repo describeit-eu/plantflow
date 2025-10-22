@@ -7,5 +7,5 @@ else (no)
   :process none;
 endif
 
-stop
+end
 @enduml

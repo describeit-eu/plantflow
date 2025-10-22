@@ -15,12 +15,15 @@ import static eu.describeit.plantflow.block.BlockType.SEQ
 @CompileStatic
 class ConversionContext {
   final Stack<BlockNode> blockStack = new Stack<>()
+  BlockNode rootNode = null
   int counter = 0
 
   void start(BlockType type) {
     BlockNode newBlock = new BlockNode(type: type, idx: counter++)
 
     if (blockStack) blockStack.peek().addChildren(newBlock)
+    else            rootNode = newBlock
+
     blockStack.push(newBlock)
 
     log.info('start() - new block:{}', newBlock)
@@ -62,6 +65,6 @@ class ConversionContext {
 
     if (pretty) mapper.enable(INDENT_OUTPUT)
 
-    return mapper.writeValueAsString(blockStack.first)
+    return mapper.writeValueAsString(rootNode)
   }
 }
