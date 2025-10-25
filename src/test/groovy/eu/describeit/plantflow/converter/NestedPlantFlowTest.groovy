@@ -73,10 +73,14 @@ class NestedPlantFlowTest extends Specification {
               "idx": 2,
               "name": null,
               "children": [
-                { "type": "ACTION", "idx": 0, "name": "if A1", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "if A2", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "else B1", "children": [] },
-                { "type": "ACTION", "idx": 0, "name": "else B2", "children": [] }
+                { "type": "IF_BLOCK", "idx": 3, "name": null, "children": [
+                  { "type": "ACTION", "idx": 0, "name": "if A1", "children": [] },
+                  { "type": "ACTION", "idx": 0, "name": "if A2", "children": [] }
+                ] },
+                { "type": "ELSE_BLOCK", "idx": 4, "name": null, "children": [
+                  { "type": "ACTION", "idx": 0, "name": "else B1", "children": [] },
+                  { "type": "ACTION", "idx": 0, "name": "else B2", "children": [] }
+                ] }
               ]
             },
             {
@@ -87,12 +91,12 @@ class NestedPlantFlowTest extends Specification {
             },
             {
               "type": "FORK",
-              "idx": 3,
+              "idx": 5,
               "name": null,
               "children": [
                 {
                   "type": "FORK_BLOCK",
-                  "idx": 4,
+                  "idx": 6,
                   "name": null,
                   "children": [
                     { "type": "ACTION", "idx": 0, "name": "parallel A1", "children": [] },
@@ -101,7 +105,7 @@ class NestedPlantFlowTest extends Specification {
                 },
                 {
                   "type": "FORK_BLOCK",
-                  "idx": 5,
+                  "idx": 7,
                   "name": null,
                   "children": [
                     { "type": "ACTION", "idx": 0, "name": "parallel B1", "children": [] },
@@ -167,21 +171,21 @@ class NestedPlantFlowTest extends Specification {
     if (isActive("before loop", "SEQ0")) return
       loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) {
         if (isActive("before if", "LOOP1")) return
-        conditional("CONDITIONAL2") { if (eval("ready", null, "CONDITIONAL2")) { // go
-          if (isActive("if A1", "CONDITIONAL2")) return
-          if (isActive("if A2", "CONDITIONAL2")) return
-        } else { // wait CONDITIONAL2
-          if (isActive("else B1", "CONDITIONAL2")) return
-          if (isActive("else B2", "CONDITIONAL2")) return
-        } } // CONDITIONAL2
+        conditional("CONDITIONAL2") { if (eval("ready", null, "CONDITIONAL2")) { ifBlock("IF_BLOCK3") { // go
+          if (isActive("if A1", "IF_BLOCK3")) return
+          if (isActive("if A2", "IF_BLOCK3")) return
+        } } else { elseBlock("ELSE_BLOCK4") { // wait CONDITIONAL2
+          if (isActive("else B1", "ELSE_BLOCK4")) return
+          if (isActive("else B2", "ELSE_BLOCK4")) return
+        } } } // CONDITIONAL2
         if (isActive("middle loop", "LOOP1")) return
-        fork("FORK3") { forkBlock("FORK_BLOCK4") {
-          if (isActive("parallel A1", "FORK_BLOCK4")) return
-          if (isActive("parallel A2", "FORK_BLOCK4")) return
-        } forkBlock("FORK_BLOCK5") {
-          if (isActive("parallel B1", "FORK_BLOCK5")) return
-          if (isActive("parallel B2", "FORK_BLOCK5")) return
-        } } // FORK3
+        fork("FORK5") { forkBlock("FORK_BLOCK6") {
+          if (isActive("parallel A1", "FORK_BLOCK6")) return
+          if (isActive("parallel A2", "FORK_BLOCK6")) return
+        } forkBlock("FORK_BLOCK7") {
+          if (isActive("parallel B1", "FORK_BLOCK7")) return
+          if (isActive("parallel B2", "FORK_BLOCK7")) return
+        } } // FORK5
         if (isActive("after fork", "LOOP1")) return
       } } // LOOP1
       if (isActive("after loop", "SEQ0")) return

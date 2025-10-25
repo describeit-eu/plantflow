@@ -9,10 +9,17 @@
       "name": null,
       "children": [
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "process all",
-          "children": []
+          "type": "IF_BLOCK",
+          "idx": 2,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "process all",
+              "children": []
+            }
+          ]
         }
       ]
     }

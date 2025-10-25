@@ -7,19 +7,19 @@ import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
-import static eu.describeit.plantflow.block.BlockType.CONDITIONAL
+import static eu.describeit.plantflow.block.BlockType.*
 
 @CompileStatic
 @Slf4j
 enum ConditionalConverter {
-  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/,             'conditional("$conditionalId") { if (eval("${exprData[0]}", null, "$conditionalId")) { // ${exprData[1]}'),
-  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/,         'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // is'),
-  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/,     'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // equals'),
-  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/,         'else if (eval("${exprData[0]}", null, "$conditionalId")) { // ${exprData[1]}'),
-  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/,     'else if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // is'),
-  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/, 'else if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // equals'),
-  ELSE          (~ /^else *\(.*\)$/,                         '} else { // ${exprData[0]} $conditionalId'),
-  ENDIF         (~ /^endif$/,                                '} } // $conditionalId'),
+  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/,             'conditional("$conditionalId") { if (eval("${exprData[0]}", null, "$conditionalId")) { ifBlock("$branchId") { // ${exprData[1]}'),
+  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/,         'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { ifBlock("$branchId") { // is'),
+  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/,     'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { ifBlock("$branchId") { // equals'),
+  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/,         '} } else if (eval("${exprData[0]}", null, "$conditionalId")) { elseIfBlock("$branchId") { // ${exprData[1]}'),
+  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/,     '} } else if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { elseIfBlock("$branchId") { // is'),
+  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/, '} } else if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { elseIfBlock("$branchId") { // equals'),
+  ELSE          (~ /^else *\(.*\)$/,                         '} } else { elseBlock("$branchId") { // ${exprData[0]} $conditionalId'),
+  ENDIF         (~ /^endif$/,                                '} } } // $conditionalId'),
 
   final Pattern matcher
   final String expression
@@ -44,16 +44,52 @@ enum ConditionalConverter {
   }
 
   String convertLine(String line, ConversionContext context) {
-    if (blockStarts.contains(this)) context.start(CONDITIONAL)
-    def convertedLine = convertLine(line, context.geCurrentId() )
-    if (blockEnds.contains(this)) context.end(CONDITIONAL)
+    String conditionalId = null
+    String branchId = null
 
-    return convertedLine
+    switch (this) {
+      case IF_THEN:
+      case IF_IS:
+      case IF_EQUALS:
+        context.start(CONDITIONAL)
+        conditionalId = context.geCurrentId()
+        context.start(IF_BLOCK)
+        branchId = context.geCurrentId()
+        break
+
+      case ELSEIF_THEN:
+      case ELSEIF_IS:
+      case ELSEIF_EQUALS:
+        // close previous IF block and get back to CONDITIONAL to read its id
+        context.end(IF_BLOCK)
+        conditionalId = context.geCurrentId()
+        context.start(ELSEIF_BLOCK)
+        branchId = context.geCurrentId()
+        break
+
+      case ELSE:
+        // close last IF block and open ELSE block
+        context.end(IF_BLOCK)
+        conditionalId = context.geCurrentId()
+        context.start(ELSE_BLOCK)
+        branchId = context.geCurrentId()
+        break
+
+      case ENDIF:
+        // Close whichever branch is open (IF_BLOCK or ELSE_BLOCK)
+        if (context.geCurrent()?.type == IF_BLOCK) context.end(IF_BLOCK)
+        else if (context.geCurrent()?.type == ELSE_BLOCK) context.end(ELSE_BLOCK)
+        conditionalId = context.geCurrentId()
+        context.end(CONDITIONAL)
+        break
+    }
+
+    return convertLine(line, conditionalId, branchId)
   }
 
-  String convertLine(String line, String conditionalId) {
+  String convertLine(String line, String conditionalId, String branchId) {
     List<String> exprData = Utility.extractBetweenBalancedParentheses(line)
-    def binding = [conditionalId: conditionalId, exprData: exprData]
+    def binding = [conditionalId: conditionalId, branchId: branchId, exprData: exprData]
 
     def engine = new SimpleTemplateEngine()
     return engine.createTemplate(expression).make(binding).toString()

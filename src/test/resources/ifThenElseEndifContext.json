@@ -9,16 +9,30 @@
       "name": null,
       "children": [
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "process all",
-          "children": []
+          "type": "IF_BLOCK",
+          "idx": 2,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "process all",
+              "children": []
+            }
+          ]
         },
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "process none",
-          "children": []
+          "type": "ELSE_BLOCK",
+          "idx": 3,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "process none",
+              "children": []
+            }
+          ]
         }
       ]
     }

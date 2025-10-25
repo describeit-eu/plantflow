@@ -34,22 +34,22 @@ class ConditionalConverterTest extends Specification {
   @Unroll
   def "convert produces expected output for '#expression'"() {
     expect:
-    expression.convertLine(line, 'CONDITIONAL0') == expected
+    expression.convertLine(line, 'CONDITIONAL0', 'BRANCH1') == expected
 
     where:
     expression     || line                                     || expected
-    IF_THEN        || 'if (a > b) then (explain)'              || 'conditional("CONDITIONAL0") { if (eval("a > b", null, "CONDITIONAL0")) { // explain'
-    IF_IS          || 'if (status) is (OK) then'               || 'conditional("CONDITIONAL0") { if (eval("status", "OK", "CONDITIONAL0")) { // is'
-    IF_IS          || 'if (func(status)) is (OK) then'         || 'conditional("CONDITIONAL0") { if (eval("func(status)", "OK", "CONDITIONAL0")) { // is'
-    IF_EQUALS      || 'if (status) equals (OK) then'           || 'conditional("CONDITIONAL0") { if (eval("status", "OK", "CONDITIONAL0")) { // equals'
-    IF_EQUALS      || 'if (func(status)) equals (OK) then'     || 'conditional("CONDITIONAL0") { if (eval("func(status)", "OK", "CONDITIONAL0")) { // equals'
-    ELSEIF_THEN    || 'elseif (a > b) then (explain)'          || 'else if (eval("a > b", null, "CONDITIONAL0")) { // explain'
-    ELSEIF_IS      || 'elseif (status) is (OK) then'           || 'else if (eval("status", "OK", "CONDITIONAL0")) { // is'
-    ELSEIF_IS      || 'elseif (func(status)) is (OK) then'     || 'else if (eval("func(status)", "OK", "CONDITIONAL0")) { // is'
-    ELSEIF_EQUALS  || 'elseif (status) equals (OK) then'       || 'else if (eval("status", "OK", "CONDITIONAL0")) { // equals'
-    ELSEIF_EQUALS  || 'elseif (func(status)) equals (OK) then' || 'else if (eval("func(status)", "OK", "CONDITIONAL0")) { // equals'
-    ELSE           || 'else (because)'                         || '} else { // because CONDITIONAL0'
-    ENDIF          || 'endif'                                  || '} } // CONDITIONAL0'
+    IF_THEN        || 'if (a > b) then (explain)'              || 'conditional("CONDITIONAL0") { if (eval("a > b", null, "CONDITIONAL0")) { ifBlock("BRANCH1") { // explain'
+    IF_IS          || 'if (status) is (OK) then'               || 'conditional("CONDITIONAL0") { if (eval("status", "OK", "CONDITIONAL0")) { ifBlock("BRANCH1") { // is'
+    IF_IS          || 'if (func(status)) is (OK) then'         || 'conditional("CONDITIONAL0") { if (eval("func(status)", "OK", "CONDITIONAL0")) { ifBlock("BRANCH1") { // is'
+    IF_EQUALS      || 'if (status) equals (OK) then'           || 'conditional("CONDITIONAL0") { if (eval("status", "OK", "CONDITIONAL0")) { ifBlock("BRANCH1") { // equals'
+    IF_EQUALS      || 'if (func(status)) equals (OK) then'     || 'conditional("CONDITIONAL0") { if (eval("func(status)", "OK", "CONDITIONAL0")) { ifBlock("BRANCH1") { // equals'
+    ELSEIF_THEN    || 'elseif (a > b) then (explain)'          || '} } else if (eval("a > b", null, "CONDITIONAL0")) { elseIfBlock("BRANCH1") { // explain'
+    ELSEIF_IS      || 'elseif (status) is (OK) then'           || '} } else if (eval("status", "OK", "CONDITIONAL0")) { elseIfBlock("BRANCH1") { // is'
+    ELSEIF_IS      || 'elseif (func(status)) is (OK) then'     || '} } else if (eval("func(status)", "OK", "CONDITIONAL0")) { elseIfBlock("BRANCH1") { // is'
+    ELSEIF_EQUALS  || 'elseif (status) equals (OK) then'       || '} } else if (eval("status", "OK", "CONDITIONAL0")) { elseIfBlock("BRANCH1") { // equals'
+    ELSEIF_EQUALS  || 'elseif (func(status)) equals (OK) then' || '} } else if (eval("func(status)", "OK", "CONDITIONAL0")) { elseIfBlock("BRANCH1") { // equals'
+    ELSE           || 'else (because)'                         || '} } else { elseBlock("BRANCH1") { // because CONDITIONAL0'
+    ENDIF          || 'endif'                                  || '} } } // CONDITIONAL0'
   }
 
   def "convert returns null for unknown expression"() {

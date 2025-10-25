@@ -120,4 +120,38 @@ abstract class PlantFlowScript extends DelegatingScript {
 
     executionContext.end(CONDITIONAL, conditionalId)
   }
+
+  PlantFlowScript ifBlock(String ifBlockId, Closure cl) {
+    log.info("ifBlock() - id:{}", ifBlockId)
+
+    executionContext.start(IF_BLOCK, ifBlockId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    executionContext.end(IF_BLOCK, ifBlockId)
+
+    return this
+  }
+
+  PlantFlowScript elseIfBlock(String elseIfBlockId, Closure cl) {
+    log.info("elseIfBlock() - id:{}", elseIfBlockId)
+
+    return this
+  }
+
+  PlantFlowScript elseBlock(String elseBlockId, Closure cl) {
+    log.info("elseBlock() - id:{}", elseBlockId)
+
+    executionContext.start(ELSE_BLOCK, elseBlockId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    executionContext.end(ELSE_BLOCK, elseBlockId)
+
+    return this
+  }
 }
