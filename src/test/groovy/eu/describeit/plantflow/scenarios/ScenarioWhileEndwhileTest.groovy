@@ -3,7 +3,6 @@ package eu.describeit.plantflow.scenarios
 import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
 import groovy.util.logging.Slf4j
-import spock.lang.Ignore
 import spock.lang.Specification
 
 @Slf4j
@@ -27,7 +26,6 @@ class ScenarioWhileEndwhileTest extends Specification {
     }
   }
 
-  @Ignore
   void 'scenario loops until condition becomes false, then continues'() {
     given:
     mockPlantFlow()

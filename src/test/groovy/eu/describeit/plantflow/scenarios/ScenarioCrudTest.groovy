@@ -2,12 +2,10 @@ package eu.describeit.plantflow.scenarios
 
 import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PlantFlowAction
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class ScenarioCrudTest extends Specification {
 
-  @Ignore
   void 'crud with two infinite loops inside fork produces actions from both branches'() {
     given:
     PlantFlowAction update = Mock() { getName() >> 'update' }

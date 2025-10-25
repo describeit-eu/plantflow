@@ -9,10 +9,17 @@
       "name": null,
       "children": [
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "read file",
-          "children": []
+          "type": "LOOP_BLOCK",
+          "idx": 2,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "read file",
+              "children": []
+            }
+          ]
         }
       ]
     },

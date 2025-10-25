@@ -109,6 +109,20 @@ abstract class PlantFlowScript extends DelegatingScript {
     executionContext.end(LOOP, loopId)
   }
 
+  PlantFlowScript loopBlock(String loopBlockId, Closure cl) {
+    log.info("loopBlock() - id:{}", loopBlockId)
+
+    executionContext.start(LOOP_BLOCK, loopBlockId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    executionContext.end(LOOP_BLOCK, loopBlockId)
+
+    return this
+  }
+
   void conditional(String conditionalId, Closure cl) {
     log.info('conditional() - id:{}', conditionalId)
 

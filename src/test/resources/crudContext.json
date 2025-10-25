@@ -25,10 +25,17 @@
               "name": null,
               "children": [
                 {
-                  "type": "ACTION",
-                  "idx": 0,
-                  "name": "update",
-                  "children": []
+                  "type": "LOOP_BLOCK",
+                  "idx": 4,
+                  "name": null,
+                  "children": [
+                    {
+                      "type": "ACTION",
+                      "idx": 0,
+                      "name": "update",
+                      "children": []
+                    }
+                  ]
                 }
               ]
             }
@@ -36,25 +43,32 @@
         },
         {
           "type": "FORK_BLOCK",
-          "idx": 4,
+          "idx": 5,
           "name": null,
           "children": [
             {
               "type": "LOOP",
-              "idx": 5,
+              "idx": 6,
               "name": null,
               "children": [
                 {
-                  "type": "ACTION",
-                  "idx": 0,
-                  "name": "deactivate",
-                  "children": []
-                },
-                {
-                  "type": "ACTION",
-                  "idx": 0,
-                  "name": "activate",
-                  "children": []
+                  "type": "LOOP_BLOCK",
+                  "idx": 7,
+                  "name": null,
+                  "children": [
+                    {
+                      "type": "ACTION",
+                      "idx": 0,
+                      "name": "deactivate",
+                      "children": []
+                    },
+                    {
+                      "type": "ACTION",
+                      "idx": 0,
+                      "name": "activate",
+                      "children": []
+                    }
+                  ]
                 }
               ]
             }

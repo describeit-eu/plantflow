@@ -10,8 +10,8 @@ import java.util.regex.Pattern
 @CompileStatic
 @Slf4j
 enum ForkConverter {
-  FORK       (~ /^fork$/       , 'fork("$forkId") { forkBlock("$forkBlockId") {'),
-  FORK_AGAIN (~ /^fork again$/ , '} forkBlock("$forkBlockId") {'),
+  FORK       (~ /^fork$/       , 'fork("$forkId") { forkBlock("$branchId") {'),
+  FORK_AGAIN (~ /^fork again$/ , '} forkBlock("$branchId") {'),
   END_MERGE  (~ /^end merge$/  , '} } // $forkId'),
 
   final Pattern matcher
@@ -35,20 +35,20 @@ enum ForkConverter {
 
   String convertLine(ConversionContext context) {
     String forkId = null
-    String forkBlockId = null
+    String branchId = null
 
     switch (this) {
       case FORK:
         context.start(BlockType.FORK)
         forkId = context.geCurrentId()
         context.start(BlockType.FORK_BLOCK)
-        forkBlockId = context.geCurrentId()
+        branchId = context.geCurrentId()
         break
 
       case FORK_AGAIN:
         context.end(BlockType.FORK_BLOCK)
         context.start(BlockType.FORK_BLOCK)
-        forkBlockId = context.geCurrentId()
+        branchId = context.geCurrentId()
         break
 
       case END_MERGE:
@@ -58,11 +58,11 @@ enum ForkConverter {
         break
     }
 
-    return convertExpression(forkId, forkBlockId)
+    return convertExpression(forkId, branchId)
   }
 
-  String convertExpression(String forkId, String forkBlockId) {
-    def binding = [forkId: forkId, forkBlockId: forkBlockId]
+  String convertExpression(String forkId, String branchId) {
+    def binding = [forkId: forkId, branchId: branchId]
     def engine = new SimpleTemplateEngine()
 
     return engine.createTemplate(expression).make(binding).toString()

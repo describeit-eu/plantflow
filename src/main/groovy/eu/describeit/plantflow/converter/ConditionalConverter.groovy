@@ -60,7 +60,6 @@ enum ConditionalConverter {
       case ELSEIF_THEN:
       case ELSEIF_IS:
       case ELSEIF_EQUALS:
-        // close previous IF block and get back to CONDITIONAL to read its id
         context.end(IF_BLOCK)
         conditionalId = context.geCurrentId()
         context.start(ELSEIF_BLOCK)
@@ -68,7 +67,6 @@ enum ConditionalConverter {
         break
 
       case ELSE:
-        // close last IF block and open ELSE block
         context.end(IF_BLOCK)
         conditionalId = context.geCurrentId()
         context.start(ELSE_BLOCK)
@@ -76,7 +74,6 @@ enum ConditionalConverter {
         break
 
       case ENDIF:
-        // Close whichever branch is open (IF_BLOCK or ELSE_BLOCK)
         if (context.geCurrent()?.type == IF_BLOCK) context.end(IF_BLOCK)
         else if (context.geCurrent()?.type == ELSE_BLOCK) context.end(ELSE_BLOCK)
         conditionalId = context.geCurrentId()

@@ -1,34 +1,29 @@
 package eu.describeit.plantflow.converter
 
+import eu.describeit.plantflow.Utility
+import eu.describeit.plantflow.block.BlockType
+import groovy.text.SimpleTemplateEngine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
-import static eu.describeit.plantflow.block.BlockType.LOOP
-import static eu.describeit.plantflow.Utility.stringFormatLine
-
 @CompileStatic
 @Slf4j
 enum LoopConverter {
-  WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/,                     'loop("%s") { while (eval("%s", "%s", "%s")) { // is', [0,3]),
-  WHILE        (~ /^while *\(.*\)$/,                                 'loop("%s") { while (eval("%s", null, "%s")) {',       [0,2]),
-  REPEAT       (~ /^repeat$/,                                        'loop("%s") { do {',                                   [0]),
-  ENDWHILE     (~ /^endwhile *\(.*\)$/,                              '} } // %s %s',                                        [1]),
-  ENDWHILE2    (~ /^endwhile$/,                                      '} } // %s',                                           [0]),
-  REPEAT_WHILE (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/, '} while (eval("%s", "%s", "%s")) } // not ("%s")',    [2]),
+  WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/,                     'loop("$loopId") { while (eval("${exprData[0]}", "${exprData[1]}", "$loopId")) { loopBlock("$loopBlockId") { // is'),
+  WHILE        (~ /^while *\(.*\)$/,                                 'loop("$loopId") { while (eval("${exprData[0]}", null, "$loopId")) { loopBlock("$loopBlockId") {'),
+  REPEAT       (~ /^repeat$/,                                        'loop("$loopId") { do { loopBlock("$loopBlockId") {'),
+  ENDWHILE     (~ /^endwhile *\(.*\)$/,                              '} } } // ${exprData[0]} $loopId'),
+  ENDWHILE2    (~ /^endwhile$/,                                      '} } } // $loopId'),
+  REPEAT_WHILE (~ /^repeat while *\(.*\) *is *\(.*\) *not *\(.*\)$/, '} } while (eval("${exprData[0]}", "${exprData[1]}", "$loopId")) } // not ("${exprData[2]}")'),
 
   final Pattern matcher
   final String expression
-  final List<Integer> blockIdPositions
 
-  private static final List blockStarts = [WHILE, WHILE_IS, REPEAT]
-  private static final List blockEnds   = [ENDWHILE, ENDWHILE2, REPEAT_WHILE]
-
-  LoopConverter(Pattern pattern, String expression, List<Integer> positions) {
+  LoopConverter(Pattern pattern, String expression) {
     this.matcher = pattern
     this.expression = expression
-    this.blockIdPositions = positions
   }
 
   static LoopConverter match(String line) {
@@ -43,14 +38,41 @@ enum LoopConverter {
   }
 
   String convertLine(String line, ConversionContext context) {
-    if (blockStarts.contains(this)) context.start(LOOP)
-    def convertedLine = convertLine(line, context.geCurrentId())
-    if (blockEnds.contains(this)) context.end(LOOP)
+    String loopId = null
+    String loopBlockId = null
 
-    return convertedLine
+    switch (this) {
+      case WHILE_IS:
+      case WHILE:
+      case REPEAT:
+        context.start(BlockType.LOOP)
+        loopId = context.geCurrentId()
+        context.start(BlockType.LOOP_BLOCK)
+        loopBlockId = context.geCurrentId()
+        break
+
+      case ENDWHILE:
+      case ENDWHILE2:
+        context.end(BlockType.LOOP_BLOCK)
+        loopId = context.geCurrentId()
+        context.end(BlockType.LOOP)
+        break
+
+      case REPEAT_WHILE:
+        context.end(BlockType.LOOP_BLOCK)
+        loopId = context.geCurrentId()
+        context.end(BlockType.LOOP)
+        break
+    }
+
+    return convertLine(line, loopId, loopBlockId)
   }
 
-  String convertLine(String line, String loopId) {
-    return stringFormatLine(line, expression, loopId, blockIdPositions)
+  String convertLine(String line, String loopId, String loopBlockId) {
+    List<String> exprData = Utility.extractBetweenBalancedParentheses(line)
+    def binding = [loopId: loopId, loopBlockId: loopBlockId, exprData: exprData]
+
+    def engine = new SimpleTemplateEngine()
+    return engine.createTemplate(expression).make(binding).toString()
   }
 }

@@ -9,16 +9,23 @@
       "name": null,
       "children": [
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "read data",
-          "children": []
-        },
-        {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "generate diagrams",
-          "children": []
+          "type": "LOOP_BLOCK",
+          "idx": 2,
+          "name": null,
+          "children": [
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "read data",
+              "children": []
+            },
+            {
+              "type": "ACTION",
+              "idx": 0,
+              "name": "generate diagrams",
+              "children": []
+            }
+          ]
         }
       ]
     }
