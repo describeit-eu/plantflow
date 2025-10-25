@@ -1,6 +1,6 @@
 package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.block.BlockNode
+
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -76,8 +76,9 @@ abstract class PlantFlowScript extends DelegatingScript {
     cl()
 
     def forkBlock = executionContext.end(FORK, forkId)
+
     if (! forkBlock.isFinished()) {
-      throw new StopCalculateNextException("Fork NOT finished - id:$forkId")
+      throw new StopCalculateNext("Fork NOT finished - id:$forkId")
     }
 
     return this
@@ -97,7 +98,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     return this
   }
 
-  void loop(String loopId, Closure cl) {
+  PlantFlowScript loop(String loopId, Closure cl) {
     log.info('loop() - id:{}', loopId)
 
     executionContext.start(LOOP, loopId)
@@ -107,6 +108,8 @@ abstract class PlantFlowScript extends DelegatingScript {
     cl()
 
     executionContext.end(LOOP, loopId)
+
+    return this
   }
 
   PlantFlowScript loopBlock(String loopBlockId, Closure cl) {
@@ -123,7 +126,7 @@ abstract class PlantFlowScript extends DelegatingScript {
     return this
   }
 
-  void conditional(String conditionalId, Closure cl) {
+  PlantFlowScript conditional(String conditionalId, Closure cl) {
     log.info('conditional() - id:{}', conditionalId)
 
     executionContext.start(CONDITIONAL, conditionalId)
@@ -133,6 +136,8 @@ abstract class PlantFlowScript extends DelegatingScript {
     cl()
 
     executionContext.end(CONDITIONAL, conditionalId)
+
+    return this
   }
 
   PlantFlowScript ifBlock(String ifBlockId, Closure cl) {

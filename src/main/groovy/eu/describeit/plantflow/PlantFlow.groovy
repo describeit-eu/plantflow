@@ -3,7 +3,7 @@ package eu.describeit.plantflow
 import eu.describeit.plantflow.engine.CalculateNextContext
 import eu.describeit.plantflow.engine.PlantFlowAction
 import eu.describeit.plantflow.engine.PlantFlowScript
-import eu.describeit.plantflow.engine.StopCalculateNextException
+import eu.describeit.plantflow.engine.StopCalculateNext
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -49,7 +49,7 @@ class PlantFlow {
   List<PlantFlowAction> calculateNext() {
     try {
       pflowScript.run()
-    } catch (StopCalculateNextException ex) {
+    } catch (StopCalculateNext ex) {
       log.info('calculateNext() - {}', ex.message)
     }
     return pflowScript.nextActions

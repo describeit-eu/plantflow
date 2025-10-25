@@ -3,8 +3,8 @@ package eu.describeit.plantflow.engine
 import groovy.transform.CompileStatic
 
 @CompileStatic
-class StopCalculateNextException extends RuntimeException {
-  StopCalculateNextException(String message) {
+class StopCalculateNext extends RuntimeException {
+  StopCalculateNext(String message) {
     super(message)
   }
 }
