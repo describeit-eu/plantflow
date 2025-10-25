@@ -9,31 +9,31 @@ import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 
 class NestedPlantFlowTest extends Specification {
   String puml = """
-      @startuml
-      start
-      :before loop;
-      while (count < 3)
-        :before if;
-        if (ready) then (go)
-          :if A1;
-          :if A2;
-        else (wait)
-          :else B1;
-          :else B2;
-        endif
-        :middle loop;
-        fork
-          :parallel A1;
-          :parallel A2;
-        fork again
-          :parallel B1;
-          :parallel B2;
-        end merge
-        :after fork;
-      endwhile
-      :after loop;
-      end
-      @enduml
+    @startuml
+    start
+    :before loop;
+    while (count < 3)
+      :before if;
+      if (ready) then (go)
+        :if A1;
+        :if A2;
+      else (wait)
+        :else B1;
+        :else B2;
+      endif
+      :middle loop;
+      fork
+        :parallel A1;
+        :parallel A2;
+      fork again
+        :parallel B1;
+        :parallel B2;
+      end merge
+      :after fork;
+    endwhile
+    :after loop;
+    end
+    @enduml
     """.stripIndent().trim()
 
   def "builds ContextTree JSON for nested flow"() {
@@ -132,7 +132,8 @@ class NestedPlantFlowTest extends Specification {
 
     then:
     String expectedPflow = '''
-    if (isActive("before loop", "ROOT_BLOCK0")) return
+    rootBlock("ROOT_BLOCK0") {
+      if (isActive("before loop", "ROOT_BLOCK0")) return
       loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) { loopBlock("LOOP_BLOCK2") {
         if (isActive("before if", "LOOP_BLOCK2")) return
         conditional("CONDITIONAL3") { if (eval("ready", null, "CONDITIONAL3")) { ifBlock("IF_BLOCK4") { // go
@@ -153,7 +154,8 @@ class NestedPlantFlowTest extends Specification {
         if (isActive("after fork", "LOOP_BLOCK2")) return
       } } } // LOOP1
       if (isActive("after loop", "ROOT_BLOCK0")) return
-      '''.stripIndent().trim()
+    }
+    '''.stripIndent().trim()
 
     actualPflow.contains(expectedPflow)
   }

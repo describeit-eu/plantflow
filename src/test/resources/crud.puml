@@ -1,6 +1,5 @@
 @startuml
 start
-
 :update;
 fork
   while (true)
@@ -12,6 +11,5 @@ fork again
     :activate;
   endwhile
 end merge
-
 end
 @enduml

@@ -1,3 +1,4 @@
-
-if (isActive("Hello world", "ROOT_BLOCK0")) return
-if (isActive("groovy goodness", "ROOT_BLOCK0")) return
+rootBlock("ROOT_BLOCK0") {
+  if (isActive("Hello world", "ROOT_BLOCK0")) return
+  if (isActive("groovy goodness", "ROOT_BLOCK0")) return
+}

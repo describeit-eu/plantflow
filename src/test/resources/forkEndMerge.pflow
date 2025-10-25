@@ -1,9 +1,11 @@
-fork("FORK1") { forkBlock("FORK_BLOCK2") {
-  if (isActive("action 1", "FORK_BLOCK2")) return
-} forkBlock("FORK_BLOCK3") {
-  if (isActive("action 2", "FORK_BLOCK3")) return
-} forkBlock("FORK_BLOCK4") {
-  if (isActive("action 3", "FORK_BLOCK4")) return
-  if (isActive("action 4", "FORK_BLOCK4")) return
-} } // FORK1
-if (isActive("action 5", "ROOT_BLOCK0")) return
+rootBlock("ROOT_BLOCK0") {
+  fork("FORK1") { forkBlock("FORK_BLOCK2") {
+    if (isActive("action 1", "FORK_BLOCK2")) return
+  } forkBlock("FORK_BLOCK3") {
+    if (isActive("action 2", "FORK_BLOCK3")) return
+  } forkBlock("FORK_BLOCK4") {
+    if (isActive("action 3", "FORK_BLOCK4")) return
+    if (isActive("action 4", "FORK_BLOCK4")) return
+  } } // FORK1
+  if (isActive("action 5", "ROOT_BLOCK0")) return
+}

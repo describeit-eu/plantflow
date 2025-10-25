@@ -16,8 +16,10 @@ final class PlantUmlConverter {
   static final List<String> illegalLines = ['stop']
 
   String convertToPlantFlowDsl(final String pumlText) {
+    String extraIndent = ''
+
     pumlText.eachLine { String line ->
-      String tab = line.takeWhile { it == ' ' }
+      String tab = line.takeWhile { it == ' ' } + (line != 'end' ? extraIndent : '')
       String lineTrimmed = line.trim()
       String lineConverted = ''
 
@@ -26,8 +28,8 @@ final class PlantUmlConverter {
         case ~/^-.*->$/   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop  : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''           : log.trace('convertToPlantFlowDsl() - EMPTY line:{}', line); break
-        case 'start'      : context.start(BlockType.ROOT_BLOCK); break
-        case 'end'        : context.end(BlockType.ROOT_BLOCK); break
+        case 'start'      : context.start(BlockType.ROOT_BLOCK); lineConverted = "rootBlock(\"${context.geCurrentId()}\") {"; extraIndent = '  '; break
+        case 'end'        : context.end(BlockType.ROOT_BLOCK); lineConverted = '}'; break
         case ~/^:.*;$/    : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
         case illegalLines : throw new IllegalArgumentException('Cannot handle puml line:' + line)
         default           : lineConverted = convertExpression(lineTrimmed, context); break
@@ -40,6 +42,8 @@ final class PlantUmlConverter {
       } else {
         throw new IllegalArgumentException('Unknown case for line:' + line)
       }
+
+      log.info('convertToPlantFlowDsl() - lineConverted:{}', lineConverted)
     }
 
     log.info('convertToPlantFlowDsl() - context:{}', context)

@@ -12,19 +12,19 @@ class ScenarioConverterTest extends Specification {
   @Unroll
   def "convert complete puml resource file: #fileName"() {
     given:
-    def puml = Utility.getResourceText("${fileName}.puml")
-    def expectedPflow = Utility.getResourceText("${fileName}.pflow")
+    String puml          = Utility.getResourceText(fileName+'.puml')
+    String expectedPflow = Utility.getResourceText(fileName+'.pflow')
+    String expectedJson  = Utility.getResourceText(fileName+'Context.json')
 
     when:
     def converter = new PlantUmlConverter()
-    def resultPflow = converter.convertToPlantFlowDsl(puml)
+    String resultPflow = converter.convertToPlantFlowDsl(puml)
 
     then:
     resultPflow.contains(expectedPflow)
 
     when:
-    def actualJson = converter.context.toJson()
-    def expectedJson = Utility.getResourceText(fileName+'Context.json')
+    String actualJson = converter.context.toJson()
 
     then:
     assertThatJson(actualJson).isEqualTo(expectedJson)

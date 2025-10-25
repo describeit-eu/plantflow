@@ -66,6 +66,12 @@ abstract class PlantFlowScript extends DelegatingScript {
     return returnValue as Boolean
   }
 
+  PlantFlowScript rootBlock(String rootId, Closure cl) {
+    log.info("rootBlock() - id:{}", rootId)
+
+    return this
+  }
+
   PlantFlowScript fork(String forkId, Closure cl) {
     log.info("fork() - id:{}", forkId)
 

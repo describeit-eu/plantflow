@@ -1,3 +1,7 @@
-loop("LOOP1") { while (eval("true", null, "LOOP1")) { loopBlock("LOOP_BLOCK2") {
-  if (isActive("do something", "LOOP_BLOCK2")) return
-} } } // LOOP1
+rootBlock("ROOT_BLOCK0") {
+  loop("LOOP1") { while (eval("true", null, "LOOP1")) { loopBlock("LOOP_BLOCK2") {
+    if (isActive("do something", "LOOP_BLOCK2")) return
+  } } } // LOOP1
+  
+  
+}
