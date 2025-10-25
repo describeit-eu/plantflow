@@ -33,7 +33,7 @@ class Utility {
     return PlantFlow.class.getClassLoader().getResource(file).text.trim()
   }
 
-  private static List<String> extractBetweenBalancedParentheses(String line) {
+  static List<String> extractBetweenBalancedParentheses(String line) {
     List<String> results = []
     Matcher matcher = balancedParenthesesPattern.matcher(line)
 

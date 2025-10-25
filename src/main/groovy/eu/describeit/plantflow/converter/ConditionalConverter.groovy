@@ -1,36 +1,35 @@
 package eu.describeit.plantflow.converter
 
+import eu.describeit.plantflow.Utility
+import groovy.text.SimpleTemplateEngine
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import java.util.regex.Pattern
 
 import static eu.describeit.plantflow.block.BlockType.CONDITIONAL
-import static eu.describeit.plantflow.Utility.stringFormatLine
 
 @CompileStatic
 @Slf4j
 enum ConditionalConverter {
-  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/,             'conditional("%s") { if (eval("%s", null, "%s")) { // %s',     [0, 2]),
-  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/,         'conditional("%s") { if (eval("%s", "%s", "%s")) { // is',     [0, 3]),
-  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/,     'conditional("%s") { if (eval("%s", "%s", "%s")) { // equals', [0, 3]),
-  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/,         'else if (eval("%s", null, "%s")) { // %s',                    [1]),
-  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/,     'else if (eval("%s", "%s", "%s")) { // is',                    [2]),
-  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/, 'else if (eval("%s", "%s", "%s")) { // equals',                [2]),
-  ELSE          (~ /^else *\(.*\)$/,                         '} else { // %s %s',                                           [1]),
-  ENDIF         (~ /^endif$/,                                '} } // %s',                                                   [0]),
+  IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/,             'conditional("$conditionalId") { if (eval("${exprData[0]}", null, "$conditionalId")) { // ${exprData[1]}'),
+  IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/,         'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // is'),
+  IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/,     'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // equals'),
+  ELSEIF_THEN   (~ /^elseif *\(.*\) *then *\(.*\)$/,         'else if (eval("${exprData[0]}", null, "$conditionalId")) { // ${exprData[1]}'),
+  ELSEIF_IS     (~ /^elseif *\(.*\) *is *\(.*\) *then$/,     'else if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // is'),
+  ELSEIF_EQUALS (~ /^elseif *\(.*\) *equals *\(.*\) *then$/, 'else if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { // equals'),
+  ELSE          (~ /^else *\(.*\)$/,                         '} else { // ${exprData[0]} $conditionalId'),
+  ENDIF         (~ /^endif$/,                                '} } // $conditionalId'),
 
   final Pattern matcher
   final String expression
-  final List<Integer> blockIdPositions
 
   private static final List blockStarts = [IF_THEN, IF_IS, IF_EQUALS]
   private static final List blockEnds   = [ENDIF]
 
-  ConditionalConverter(Pattern pattern, String expression, List<Integer> positions) {
+  ConditionalConverter(Pattern pattern, String expression) {
     this.matcher = pattern
     this.expression = expression
-    this.blockIdPositions = positions
   }
 
   static ConditionalConverter match(String line) {
@@ -52,7 +51,11 @@ enum ConditionalConverter {
     return convertedLine
   }
 
-  String convertLine(String line, String conditionId) {
-    return stringFormatLine(line, expression, conditionId, blockIdPositions)
+  String convertLine(String line, String conditionalId) {
+    List<String> exprData = Utility.extractBetweenBalancedParentheses(line)
+    def binding = [conditionalId: conditionalId, exprData: exprData]
+
+    def engine = new SimpleTemplateEngine()
+    return engine.createTemplate(expression).make(binding).toString()
   }
 }
