@@ -24,9 +24,9 @@ abstract class PlantFlowScript extends DelegatingScript {
   Object run() {
     executionContext.initialise()
 
-    executionContext.start(SEQ, 'SEQ0')
+    executionContext.start(ROOT_BLOCK, 'ROOT_BLOCK0')
     def result = scriptBody()
-    executionContext.end(SEQ, 'SEQ0')
+    executionContext.end(ROOT_BLOCK, 'ROOT_BLOCK0')
 
     log.trace('run() - # of nextActions:{}', nextActions.size())
 

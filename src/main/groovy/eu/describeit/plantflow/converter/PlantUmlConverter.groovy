@@ -26,8 +26,8 @@ final class PlantUmlConverter {
         case ~/^-.*->$/   : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case linesToDrop  : log.debug('convertToPlantFlowDsl() - DROPPING line:{}', line); break
         case ''           : log.trace('convertToPlantFlowDsl() - EMPTY line:{}', line); break
-        case 'start'      : context.start(BlockType.SEQ); break
-        case 'end'        : context.end(BlockType.SEQ); break
+        case 'start'      : context.start(BlockType.ROOT_BLOCK); break
+        case 'end'        : context.end(BlockType.ROOT_BLOCK); break
         case ~/^:.*;$/    : lineConverted = convertLineToActionMethod(lineTrimmed, context); break
         case illegalLines : throw new IllegalArgumentException('Cannot handle puml line:' + line)
         default           : lineConverted = convertExpression(lineTrimmed, context); break

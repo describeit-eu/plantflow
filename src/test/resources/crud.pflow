@@ -1,4 +1,4 @@
-if (isActive("update", "SEQ0")) return
+if (isActive("update", "ROOT_BLOCK0")) return
 fork("FORK1") { forkBlock("FORK_BLOCK2") {
   loop("LOOP3") { while (eval("true", null, "LOOP3")) { loopBlock("LOOP_BLOCK4") {
     if (isActive("update", "LOOP_BLOCK4")) return

@@ -47,7 +47,7 @@ class NestedPlantFlowTest extends Specification {
     then:
     String expectedJson = '''
     {
-      "type": "SEQ", "idx": 0, "name": null, "children": [
+      "type": "ROOT_BLOCK", "idx": 0, "name": null, "children": [
         { "type": "ACTION", "idx": 0, "name": "before loop", "children": [] },
         {
           "type": "LOOP", "idx": 1, "name": null, "children": [
@@ -100,7 +100,7 @@ class NestedPlantFlowTest extends Specification {
     def blockTree = new ObjectMapper().readValue(actualJson, BlockNode)
 
     then:
-    blockTree.type == BlockType.SEQ
+    blockTree.type == BlockType.ROOT_BLOCK
     blockTree.idx == 0
     blockTree.children.size() == 3
     blockTree.children[0].type == BlockType.ACTION
@@ -132,7 +132,7 @@ class NestedPlantFlowTest extends Specification {
 
     then:
     String expectedPflow = '''
-    if (isActive("before loop", "SEQ0")) return
+    if (isActive("before loop", "ROOT_BLOCK0")) return
       loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) { loopBlock("LOOP_BLOCK2") {
         if (isActive("before if", "LOOP_BLOCK2")) return
         conditional("CONDITIONAL3") { if (eval("ready", null, "CONDITIONAL3")) { ifBlock("IF_BLOCK4") { // go
@@ -152,7 +152,7 @@ class NestedPlantFlowTest extends Specification {
         } } // FORK6
         if (isActive("after fork", "LOOP_BLOCK2")) return
       } } } // LOOP1
-      if (isActive("after loop", "SEQ0")) return
+      if (isActive("after loop", "ROOT_BLOCK0")) return
       '''.stripIndent().trim()
 
     actualPflow.contains(expectedPflow)

@@ -8,7 +8,6 @@ import groovy.transform.ToString
 import groovy.util.logging.Slf4j
 
 import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT
-import static eu.describeit.plantflow.block.BlockType.SEQ
 
 @Slf4j
 @ToString(includePackage=false)
