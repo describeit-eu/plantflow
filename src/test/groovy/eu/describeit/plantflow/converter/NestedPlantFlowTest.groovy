@@ -47,87 +47,47 @@ class NestedPlantFlowTest extends Specification {
     then:
     String expectedJson = '''
     {
-      "type": "SEQ",
-      "idx": 0,
-      "name": null,
-      "children": [
+      "type": "SEQ", "idx": 0, "name": null, "children": [
+        { "type": "ACTION", "idx": 0, "name": "before loop", "children": [] },
         {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "before loop",
-          "children": []
-        },
-        {
-          "type": "LOOP",
-          "idx": 1,
-          "name": null,
-          "children": [
-            {
-              "type": "ACTION",
-              "idx": 0,
-              "name": "before if",
-              "children": []
-            },
-            {
-              "type": "CONDITIONAL",
-              "idx": 2,
-              "name": null,
-              "children": [
-                { "type": "IF_BLOCK", "idx": 3, "name": null, "children": [
-                  { "type": "ACTION", "idx": 0, "name": "if A1", "children": [] },
-                  { "type": "ACTION", "idx": 0, "name": "if A2", "children": [] }
-                ] },
-                { "type": "ELSE_BLOCK", "idx": 4, "name": null, "children": [
-                  { "type": "ACTION", "idx": 0, "name": "else B1", "children": [] },
-                  { "type": "ACTION", "idx": 0, "name": "else B2", "children": [] }
-                ] }
+          "type": "LOOP", "idx": 1, "name": null, "children": [
+            { "type": "ACTION", "idx": 0, "name": "before if", "children": [] },
+            { "type": "CONDITIONAL", "idx": 2, "name": null, "children": [
+                {
+                  "type": "IF_BLOCK", "idx": 3, "name": null, "children": [
+                    { "type": "ACTION", "idx": 0, "name": "if A1", "children": [] },
+                    { "type": "ACTION", "idx": 0, "name": "if A2", "children": [] }
+                  ]
+                },
+                {
+                  "type": "ELSE_BLOCK", "idx": 4, "name": null, "children": [
+                    { "type": "ACTION", "idx": 0, "name": "else B1", "children": [] },
+                    { "type": "ACTION", "idx": 0, "name": "else B2", "children": [] }
+                  ]
+                }
               ]
             },
+            { "type": "ACTION","idx": 0, "name": "middle loop", "children": [] },
             {
-              "type": "ACTION",
-              "idx": 0,
-              "name": "middle loop",
-              "children": []
-            },
-            {
-              "type": "FORK",
-              "idx": 5,
-              "name": null,
-              "children": [
+              "type": "FORK", "idx": 5, "name": null, "children": [
                 {
-                  "type": "FORK_BLOCK",
-                  "idx": 6,
-                  "name": null,
-                  "children": [
+                  "type": "FORK_BLOCK", "idx": 6, "name": null, "children": [
                     { "type": "ACTION", "idx": 0, "name": "parallel A1", "children": [] },
                     { "type": "ACTION", "idx": 0, "name": "parallel A2", "children": [] }
                   ]
                 },
                 {
-                  "type": "FORK_BLOCK",
-                  "idx": 7,
-                  "name": null,
-                  "children": [
+                  "type": "FORK_BLOCK", "idx": 7, "name": null, "children": [
                     { "type": "ACTION", "idx": 0, "name": "parallel B1", "children": [] },
                     { "type": "ACTION", "idx": 0, "name": "parallel B2", "children": [] }
                   ]
                 }
               ]
             },
-            {
-              "type": "ACTION",
-              "idx": 0,
-              "name": "after fork",
-              "children": []
-            }
+            { "type": "ACTION", "idx": 0, "name": "after fork", "children": [] }
           ]
         },
-        {
-          "type": "ACTION",
-          "idx": 0,
-          "name": "after loop",
-          "children": []
-        }
+        { "type": "ACTION", "idx": 0, "name": "after loop", "children": [] }
       ]
     }
     '''.stripIndent().trim()
