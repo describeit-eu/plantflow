@@ -1,9 +1,8 @@
 package eu.describeit.plantflow
 
-import eu.describeit.plantflow.engine.CalculateNextContext
-import eu.describeit.plantflow.engine.PlantFlowAction
-import eu.describeit.plantflow.engine.PlantFlowScript
-import eu.describeit.plantflow.engine.StopCalculateNext
+import eu.describeit.plantflow.calculate.engine.CalculateNextContext
+import eu.describeit.plantflow.calculate.engine.CalculateNextScript
+import eu.describeit.plantflow.calculate.engine.StopCalculateNext
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -15,7 +14,7 @@ import static Utility.getResourceText
 @CompileStatic
 class PlantFlow {
   Map<String, PlantFlowAction> pflowActions
-  PlantFlowScript pflowScript
+  CalculateNextScript pflowScript
   Binding pflowBinding
 
   PlantFlow(String pflowName, List<PlantFlowAction> actions, Binding binding) {
@@ -31,7 +30,7 @@ class PlantFlow {
 
   private void initPflowScript(String pflowName) {
     CompilerConfiguration cc = new CompilerConfiguration()
-    cc.setScriptBaseClass(PlantFlowScript.class.getName())
+    cc.setScriptBaseClass(CalculateNextScript.class.getName())
 
     // method calls are statically bound to PlantFlowScript, while internal evaluation remains mockable
     cc.addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
@@ -39,7 +38,7 @@ class PlantFlow {
     def engine = new GroovyScriptEngine("src/test/resources")
     engine.setConfig(cc)
 
-    pflowScript = (PlantFlowScript) engine.createScript(pflowName+'.pflow', pflowBinding)
+    pflowScript = (CalculateNextScript) engine.createScript(pflowName+'.pflow', pflowBinding)
     pflowScript.setDelegate(pflowScript)
 
     pflowScript.executionContext = new CalculateNextContext(getResourceText(pflowName+'Context.json'))

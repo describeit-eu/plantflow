@@ -1,18 +1,18 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static ForkConverter.FORK
-import static ForkConverter.FORK_AGAIN
-import static ForkConverter.END_MERGE
+import static CalculateNextForkConverter.FORK
+import static CalculateNextForkConverter.FORK_AGAIN
+import static CalculateNextForkConverter.END_MERGE
 
-class ForkConverterTest extends Specification {
+class CalculateNextForkConverterTest extends Specification {
 
   @Unroll
   def "match() returns correct enum for '#line'"() {
     expect:
-    ForkConverter.match(line) == expected
+    CalculateNextForkConverter.match(line) == expected
 
     where:
     line         || expected
@@ -35,7 +35,7 @@ class ForkConverterTest extends Specification {
 
   def "convert() returns null String for unknown expression"() {
     when:
-    def result = ForkConverter.convert('unknown something', new ConversionContext())
+    def result = CalculateNextForkConverter.convert('unknown something', new CalculateNextConversionContext())
 
     then:
     result == null

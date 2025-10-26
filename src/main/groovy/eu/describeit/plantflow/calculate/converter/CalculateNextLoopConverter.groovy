@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import eu.describeit.plantflow.Utility
 import eu.describeit.plantflow.block.BlockType
@@ -10,7 +10,7 @@ import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-enum LoopConverter {
+enum CalculateNextLoopConverter {
   WHILE_IS     (~ /^while *\(.*\) *is *\(.*\)$/,                     'loop("$loopId") { while (eval("${exprData[0]}", "${exprData[1]}", "$loopId")) { loopBlock("$loopBlockId") { // is'),
   WHILE        (~ /^while *\(.*\)$/,                                 'loop("$loopId") { while (eval("${exprData[0]}", null, "$loopId")) { loopBlock("$loopBlockId") {'),
   REPEAT       (~ /^repeat$/,                                        'loop("$loopId") { do { loopBlock("$loopBlockId") {'),
@@ -21,23 +21,23 @@ enum LoopConverter {
   final Pattern matcher
   final String expression
 
-  LoopConverter(Pattern pattern, String expression) {
+  CalculateNextLoopConverter(Pattern pattern, String expression) {
     this.matcher = pattern
     this.expression = expression
   }
 
-  static LoopConverter match(String line) {
-    return values().find { LoopConverter lc -> (line ==~ lc.matcher) } as LoopConverter
+  static CalculateNextLoopConverter match(String line) {
+    return values().find { CalculateNextLoopConverter lc -> (line ==~ lc.matcher) } as CalculateNextLoopConverter
   }
 
-  static String convert(String line, ConversionContext context) {
+  static String convert(String line, CalculateNextConversionContext context) {
     def converter = match(line)
 
     if (!converter) return null
     else            return converter.convertLine(line, context)
   }
 
-  String convertLine(String line, ConversionContext context) {
+  String convertLine(String line, CalculateNextConversionContext context) {
     String loopId = null
     String loopBlockId = null
 

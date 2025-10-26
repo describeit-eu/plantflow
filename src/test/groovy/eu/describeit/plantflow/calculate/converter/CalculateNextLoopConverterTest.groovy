@@ -1,21 +1,21 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static LoopConverter.ENDWHILE
-import static LoopConverter.REPEAT_WHILE
-import static LoopConverter.WHILE
-import static LoopConverter.WHILE_IS
-import static eu.describeit.plantflow.converter.LoopConverter.ENDWHILE2
-import static eu.describeit.plantflow.converter.LoopConverter.REPEAT
+import static CalculateNextLoopConverter.ENDWHILE
+import static CalculateNextLoopConverter.REPEAT_WHILE
+import static CalculateNextLoopConverter.WHILE
+import static CalculateNextLoopConverter.WHILE_IS
+import static CalculateNextLoopConverter.ENDWHILE2
+import static CalculateNextLoopConverter.REPEAT
 
-class LoopConverterTest extends Specification {
+class CalculateNextLoopConverterTest extends Specification {
 
   @Unroll
   def "match returns correct enum for '#line'"() {
     expect:
-    LoopConverter.match(line) == expected
+    CalculateNextLoopConverter.match(line) == expected
 
     where:
     line                                           || expected
@@ -44,7 +44,7 @@ class LoopConverterTest extends Specification {
 
   def "convert returns null for unknown expression"() {
     when:
-    def result = LoopConverter.convert('unknown something', new ConversionContext())
+    def result = CalculateNextLoopConverter.convert('unknown something', new CalculateNextConversionContext())
 
     then:
     result == null

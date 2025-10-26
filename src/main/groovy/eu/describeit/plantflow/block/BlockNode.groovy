@@ -1,8 +1,7 @@
 package eu.describeit.plantflow.block
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore
-import eu.describeit.plantflow.engine.PlantFlowAction
+import eu.describeit.plantflow.PlantFlowAction
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
 

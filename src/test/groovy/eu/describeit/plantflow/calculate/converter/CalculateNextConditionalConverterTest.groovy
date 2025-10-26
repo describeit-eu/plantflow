@@ -1,23 +1,23 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static ConditionalConverter.ELSEIF_EQUALS
-import static ConditionalConverter.ELSEIF_IS
-import static ConditionalConverter.ELSEIF_THEN
-import static ConditionalConverter.IF_EQUALS
-import static ConditionalConverter.IF_THEN
-import static ConditionalConverter.IF_IS
-import static ConditionalConverter.ELSE
-import static ConditionalConverter.ENDIF
+import static CalculateNextConditionalConverter.ELSEIF_EQUALS
+import static CalculateNextConditionalConverter.ELSEIF_IS
+import static CalculateNextConditionalConverter.ELSEIF_THEN
+import static CalculateNextConditionalConverter.IF_EQUALS
+import static CalculateNextConditionalConverter.IF_THEN
+import static CalculateNextConditionalConverter.IF_IS
+import static CalculateNextConditionalConverter.ELSE
+import static CalculateNextConditionalConverter.ENDIF
 
-class ConditionalConverterTest extends Specification {
+class CalculateNextConditionalConverterTest extends Specification {
 
   @Unroll
   def "match returns correct enum for '#line'"() {
     expect:
-    ConditionalConverter.match(line) == expected
+    CalculateNextConditionalConverter.match(line) == expected
 
     where:
     line                               || expected
@@ -54,7 +54,7 @@ class ConditionalConverterTest extends Specification {
 
   def "convert returns null for unknown expression"() {
     when:
-    def result = ConditionalConverter.convert('unknown something', new ConversionContext())
+    def result = CalculateNextConditionalConverter.convert('unknown something', new CalculateNextConversionContext())
 
     then:
     result == null

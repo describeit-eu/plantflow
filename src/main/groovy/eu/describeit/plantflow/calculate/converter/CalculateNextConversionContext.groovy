@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import eu.describeit.plantflow.block.BlockType
@@ -12,7 +12,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT
 @Slf4j
 @ToString(includePackage=false)
 @CompileStatic
-class ConversionContext {
+class CalculateNextConversionContext {
   final Stack<BlockNode> blockStack = new Stack<>()
   BlockNode rootNode = null
   int counter = 0

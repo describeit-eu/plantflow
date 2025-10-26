@@ -1,9 +1,9 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import spock.lang.Specification
 import spock.lang.Unroll
 
-class PlantUmlConverterTest extends Specification {
+class CalculateNextConverterTest extends Specification {
 
   def "drops lines start with @ and arrow-like lines"() {
     given:
@@ -14,7 +14,7 @@ class PlantUmlConverterTest extends Specification {
     """.stripIndent().trim()
 
     when:
-    String result = new PlantUmlConverter().convertToPlantFlowDsl(puml)
+    String result = new CalculateNextConverter().convertToPlantFlowDsl(puml)
 
     then:
     !result.contains('@startuml')
@@ -25,7 +25,7 @@ class PlantUmlConverterTest extends Specification {
   @Unroll
   def "convert keywords and preserve indentation - #line"() {
     when:
-    String result = new PlantUmlConverter().convertToPlantFlowDsl(line)
+    String result = new CalculateNextConverter().convertToPlantFlowDsl(line)
 
     then:
     result == expected
@@ -46,7 +46,7 @@ class PlantUmlConverterTest extends Specification {
     String puml = ":do something;\n:do another;"
 
     when:
-    String result = new PlantUmlConverter().convertToPlantFlowDsl(puml)
+    String result = new CalculateNextConverter().convertToPlantFlowDsl(puml)
 
     then:
     result.contains('if (isActive("do something")) return')
@@ -55,7 +55,7 @@ class PlantUmlConverterTest extends Specification {
 
   def "convertToPlantFlowDsl throws IllegalArgumentException for unknown expression"() {
     when:
-    new PlantUmlConverter().convertToPlantFlowDsl('unknown something')
+    new CalculateNextConverter().convertToPlantFlowDsl('unknown something')
 
     then:
     def ex = thrown(IllegalArgumentException)

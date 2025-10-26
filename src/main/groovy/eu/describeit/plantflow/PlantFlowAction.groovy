@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.engine
+package eu.describeit.plantflow
 
 import groovy.transform.CompileStatic
 

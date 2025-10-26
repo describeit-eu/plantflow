@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import eu.describeit.plantflow.block.BlockType
 import groovy.text.SimpleTemplateEngine
@@ -9,7 +9,7 @@ import java.util.regex.Pattern
 
 @CompileStatic
 @Slf4j
-enum ForkConverter {
+enum CalculateNextForkConverter {
   FORK       (~ /^fork$/       , 'fork("$forkId") { forkBlock("$branchId") {'),
   FORK_AGAIN (~ /^fork again$/ , '} forkBlock("$branchId") {'),
   END_MERGE  (~ /^end merge$/  , '} } // $forkId'),
@@ -17,23 +17,23 @@ enum ForkConverter {
   final Pattern matcher
   final String expression
 
-  ForkConverter(Pattern pattern, String expression) {
+  CalculateNextForkConverter(Pattern pattern, String expression) {
     this.matcher = pattern
     this.expression = expression
   }
 
-  static ForkConverter match(String line) {
-    return values().find { ForkConverter lc -> (line ==~ lc.matcher) } as ForkConverter
+  static CalculateNextForkConverter match(String line) {
+    return values().find { CalculateNextForkConverter lc -> (line ==~ lc.matcher) } as CalculateNextForkConverter
   }
 
-  static String convert(String line, ConversionContext context) {
+  static String convert(String line, CalculateNextConversionContext context) {
     def converter = match(line)
 
     if (!converter) return null
     else            return converter.convertLine(context)
   }
 
-  String convertLine(ConversionContext context) {
+  String convertLine(CalculateNextConversionContext context) {
     String forkId = null
     String branchId = null
 

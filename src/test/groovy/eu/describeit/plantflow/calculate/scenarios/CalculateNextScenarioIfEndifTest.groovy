@@ -1,11 +1,11 @@
-package eu.describeit.plantflow.scenarios
+package eu.describeit.plantflow.calculate.scenarios
 
 import eu.describeit.plantflow.PlantFlow
-import eu.describeit.plantflow.engine.PlantFlowAction
+import eu.describeit.plantflow.PlantFlowAction
 import spock.lang.Specification
 import spock.lang.Unroll
 
-class ScenarioIfEndifTest extends Specification {
+class CalculateNextScenarioIfEndifTest extends Specification {
   @Unroll
   void 'basic scenario for pflow: #fileName'() {
     given:

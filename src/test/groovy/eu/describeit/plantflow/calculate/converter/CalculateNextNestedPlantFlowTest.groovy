@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import eu.describeit.plantflow.block.BlockNode
@@ -7,7 +7,7 @@ import spock.lang.Specification
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 
-class NestedPlantFlowTest extends Specification {
+class CalculateNextNestedPlantFlowTest extends Specification {
   String puml = """
     @startuml
     start
@@ -38,7 +38,7 @@ class NestedPlantFlowTest extends Specification {
 
   def "builds ContextTree JSON for nested flow"() {
     given:
-    def converter = new PlantUmlConverter()
+    def converter = new CalculateNextConverter()
 
     when:
     converter.convertToPlantFlowDsl(puml)
@@ -125,7 +125,7 @@ class NestedPlantFlowTest extends Specification {
 
   def "builds PlantFlow Script for nested flow"() {
     given:
-    def converter = new PlantUmlConverter()
+    def converter = new CalculateNextConverter()
 
     when:
     String actualPflow = converter.convertToPlantFlowDsl(puml).stripIndent().trim()

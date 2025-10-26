@@ -1,10 +1,10 @@
-package eu.describeit.plantflow.scenarios
+package eu.describeit.plantflow.calculate.scenarios
 
 import eu.describeit.plantflow.PlantFlow
-import eu.describeit.plantflow.engine.PlantFlowAction
+import eu.describeit.plantflow.PlantFlowAction
 import spock.lang.Specification
 
-class ScenarioCrudTest extends Specification {
+class CalculateNextScenarioCrudTest extends Specification {
 
   void 'crud with two infinite loops inside fork produces actions from both branches'() {
     given:

@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import eu.describeit.plantflow.block.BlockType
 import groovy.transform.CompileStatic
@@ -8,9 +8,9 @@ import static org.apache.commons.lang3.StringUtils.substringBetween
 
 @CompileStatic
 @Slf4j
-final class PlantUmlConverter {
+final class CalculateNextConverter {
   StringBuffer pflowBuffer = new StringBuffer()
-  ConversionContext context = new ConversionContext()
+  CalculateNextConversionContext context = new CalculateNextConversionContext()
 
   static final List<String> linesToDrop  = ['detach']
   static final List<String> illegalLines = ['stop']
@@ -51,7 +51,7 @@ final class PlantUmlConverter {
     return pflowBuffer.toString()
   }
 
-  private static String convertLineToActionMethod(String line, ConversionContext context) {
+  private static String convertLineToActionMethod(String line, CalculateNextConversionContext context) {
     String actionName = substringBetween(line, ':', ';')
     String contextId = context.geCurrentId()
 
@@ -63,10 +63,10 @@ final class PlantUmlConverter {
     else           return "if (isActive(\"${actionName}\")) return"
   }
 
-  private static String convertExpression(String line, ConversionContext context) {
-    String convertedLine = ConditionalConverter.convert(line, context)
-    if (convertedLine == null) convertedLine = LoopConverter.convert(line, context)
-    if (convertedLine == null) convertedLine = ForkConverter.convert(line, context)
+  private static String convertExpression(String line, CalculateNextConversionContext context) {
+    String convertedLine = CalculateNextConditionalConverter.convert(line, context)
+    if (convertedLine == null) convertedLine = CalculateNextLoopConverter.convert(line, context)
+    if (convertedLine == null) convertedLine = CalculateNextForkConverter.convert(line, context)
 
     return convertedLine
   }

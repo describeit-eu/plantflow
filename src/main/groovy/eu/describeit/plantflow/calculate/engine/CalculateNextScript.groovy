@@ -1,5 +1,6 @@
-package eu.describeit.plantflow.engine
+package eu.describeit.plantflow.calculate.engine
 
+import eu.describeit.plantflow.PlantFlowAction
 import eu.describeit.plantflow.block.BlockNode
 import eu.describeit.plantflow.block.BlockType
 import groovy.transform.CompileStatic
@@ -10,7 +11,7 @@ import static eu.describeit.plantflow.block.BlockType.*
 
 @CompileStatic
 @Slf4j
-abstract class PlantFlowScript extends DelegatingScript {
+abstract class CalculateNextScript extends DelegatingScript {
   CalculateNextContext executionContext
 
   Map<String, PlantFlowAction> actions
@@ -65,47 +66,47 @@ abstract class PlantFlowScript extends DelegatingScript {
     return returnValue as Boolean
   }
 
-  PlantFlowScript rootBlock(String rootBlockId, Closure cl) {
+  CalculateNextScript rootBlock(String rootBlockId, Closure cl) {
     executeBlock(ROOT_BLOCK, rootBlockId, cl)
     return this
   }
 
-  PlantFlowScript fork(String forkId, Closure cl) {
+  CalculateNextScript fork(String forkId, Closure cl) {
     executeBlock(FORK, forkId, cl)
     return this
   }
 
-  PlantFlowScript forkBlock(String forkBlockId, Closure cl) {
+  CalculateNextScript forkBlock(String forkBlockId, Closure cl) {
     executeBlock(FORK_BLOCK, forkBlockId, cl)
     return this
   }
 
-  PlantFlowScript loop(String loopId, Closure cl) {
+  CalculateNextScript loop(String loopId, Closure cl) {
     executeBlock(LOOP, loopId, cl)
     return this
   }
 
-  PlantFlowScript loopBlock(String loopBlockId, Closure cl) {
+  CalculateNextScript loopBlock(String loopBlockId, Closure cl) {
     executeBlock(LOOP_BLOCK, loopBlockId, cl)
     return this
   }
 
-  PlantFlowScript conditional(String conditionalId, Closure cl) {
+  CalculateNextScript conditional(String conditionalId, Closure cl) {
     executeBlock(CONDITIONAL, conditionalId, cl)
     return this
   }
 
-  PlantFlowScript ifBlock(String ifBlockId, Closure cl) {
+  CalculateNextScript ifBlock(String ifBlockId, Closure cl) {
     executeBlock(IF_BLOCK, ifBlockId, cl)
     return this
   }
 
-  PlantFlowScript elseIfBlock(String elseIfBlockId, Closure cl) {
+  CalculateNextScript elseIfBlock(String elseIfBlockId, Closure cl) {
     executeBlock(ELSEIF_BLOCK, elseIfBlockId, cl)
     return this
   }
 
-  PlantFlowScript elseBlock(String elseBlockId, Closure cl) {
+  CalculateNextScript elseBlock(String elseBlockId, Closure cl) {
     executeBlock(ELSE_BLOCK, elseBlockId, cl)
     return this
   }

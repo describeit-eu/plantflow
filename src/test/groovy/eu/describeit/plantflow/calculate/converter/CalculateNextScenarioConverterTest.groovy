@@ -1,13 +1,12 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import eu.describeit.plantflow.Utility
-import eu.describeit.plantflow.block.BlockNode
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson
 
-class ScenarioConverterTest extends Specification {
+class CalculateNextScenarioConverterTest extends Specification {
 
   @Unroll
   def "convert complete puml resource file: #fileName"() {
@@ -17,7 +16,7 @@ class ScenarioConverterTest extends Specification {
     String expectedJson  = Utility.getResourceText(fileName+'Context.json')
 
     when:
-    def converter = new PlantUmlConverter()
+    def converter = new CalculateNextConverter()
     String resultPflow = converter.convertToPlantFlowDsl(puml)
 
     then:

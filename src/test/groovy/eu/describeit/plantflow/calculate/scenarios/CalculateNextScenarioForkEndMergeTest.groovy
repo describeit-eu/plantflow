@@ -1,10 +1,10 @@
-package eu.describeit.plantflow.scenarios
+package eu.describeit.plantflow.calculate.scenarios
 
 import eu.describeit.plantflow.PlantFlow
-import eu.describeit.plantflow.engine.PlantFlowAction
+import eu.describeit.plantflow.PlantFlowAction
 import spock.lang.Specification
 
-class ScenarioForkEndMergeTest extends Specification {
+class CalculateNextScenarioForkEndMergeTest extends Specification {
 
   void 'basic scenario'() {
     given:

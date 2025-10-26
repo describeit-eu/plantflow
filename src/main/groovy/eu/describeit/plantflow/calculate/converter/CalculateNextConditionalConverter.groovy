@@ -1,4 +1,4 @@
-package eu.describeit.plantflow.converter
+package eu.describeit.plantflow.calculate.converter
 
 import eu.describeit.plantflow.Utility
 import groovy.text.SimpleTemplateEngine
@@ -11,7 +11,7 @@ import static eu.describeit.plantflow.block.BlockType.*
 
 @CompileStatic
 @Slf4j
-enum ConditionalConverter {
+enum CalculateNextConditionalConverter {
   IF_THEN       (~ /^if *\(.*\) *then *\(.*\)$/,             'conditional("$conditionalId") { if (eval("${exprData[0]}", null, "$conditionalId")) { ifBlock("$branchId") { // ${exprData[1]}'),
   IF_IS         (~ /^if *\(.*\) *is *\(.*\) *then$/,         'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { ifBlock("$branchId") { // is'),
   IF_EQUALS     (~ /^if *\(.*\) *equals *\(.*\) *then$/,     'conditional("$conditionalId") { if (eval("${exprData[0]}", "${exprData[1]}", "$conditionalId")) { ifBlock("$branchId") { // equals'),
@@ -27,23 +27,23 @@ enum ConditionalConverter {
   private static final List blockStarts = [IF_THEN, IF_IS, IF_EQUALS]
   private static final List blockEnds   = [ENDIF]
 
-  ConditionalConverter(Pattern pattern, String expression) {
+  CalculateNextConditionalConverter(Pattern pattern, String expression) {
     this.matcher = pattern
     this.expression = expression
   }
 
-  static ConditionalConverter match(String line) {
-    return values().find { ConditionalConverter ec -> (line ==~ ec.matcher) } as ConditionalConverter
+  static CalculateNextConditionalConverter match(String line) {
+    return values().find { CalculateNextConditionalConverter ec -> (line ==~ ec.matcher) } as CalculateNextConditionalConverter
   }
 
-  static String convert(String line, ConversionContext context) {
+  static String convert(String line, CalculateNextConversionContext context) {
     def converter = match(line)
 
     if (!converter) return null
     else            return converter.convertLine(line, context)
   }
 
-  String convertLine(String line, ConversionContext context) {
+  String convertLine(String line, CalculateNextConversionContext context) {
     String conditionalId = null
     String branchId = null
 
