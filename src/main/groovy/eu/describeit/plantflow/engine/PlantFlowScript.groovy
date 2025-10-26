@@ -1,6 +1,7 @@
 package eu.describeit.plantflow.engine
 
-
+import eu.describeit.plantflow.block.BlockNode
+import eu.describeit.plantflow.block.BlockType
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import org.codehaus.groovy.runtime.InvokerHelper
@@ -64,137 +65,66 @@ abstract class PlantFlowScript extends DelegatingScript {
     return returnValue as Boolean
   }
 
-  PlantFlowScript rootBlock(String rootId, Closure cl) {
-    log.info("rootBlock() - id:{}", rootId)
-    
-    executionContext.start(ROOT_BLOCK, rootId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    def rootBlock = executionContext.end(ROOT_BLOCK, rootId)
-
-    if (! rootBlock.isFinished()) {
-      throw new StopCalculateNext("RootBlock NOT finished - id:$rootId")
-    }
-
+  PlantFlowScript rootBlock(String rootBlockId, Closure cl) {
+    executeBlock(ROOT_BLOCK, rootBlockId, cl)
     return this
   }
 
   PlantFlowScript fork(String forkId, Closure cl) {
-    log.info("fork() - id:{}", forkId)
-
-    executionContext.start(FORK, forkId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    def forkBlock = executionContext.end(FORK, forkId)
-
-    if (! forkBlock.isFinished()) {
-      throw new StopCalculateNext("Fork NOT finished - id:$forkId")
-    }
-
+    executeBlock(FORK, forkId, cl)
     return this
   }
 
   PlantFlowScript forkBlock(String forkBlockId, Closure cl) {
-    log.info("forkBlock() - id:{}", forkBlockId)
-
-    executionContext.start(FORK_BLOCK, forkBlockId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    executionContext.end(FORK_BLOCK, forkBlockId)
-
+    executeBlock(FORK_BLOCK, forkBlockId, cl)
     return this
   }
 
   PlantFlowScript loop(String loopId, Closure cl) {
-    log.info('loop() - id:{}', loopId)
-
-    executionContext.start(LOOP, loopId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    executionContext.end(LOOP, loopId)
-
+    executeBlock(LOOP, loopId, cl)
     return this
   }
 
   PlantFlowScript loopBlock(String loopBlockId, Closure cl) {
-    log.info("loopBlock() - id:{}", loopBlockId)
-
-    executionContext.start(LOOP_BLOCK, loopBlockId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    executionContext.end(LOOP_BLOCK, loopBlockId)
-
+    executeBlock(LOOP_BLOCK, loopBlockId, cl)
     return this
   }
 
   PlantFlowScript conditional(String conditionalId, Closure cl) {
-    log.info('conditional() - id:{}', conditionalId)
-
-    executionContext.start(CONDITIONAL, conditionalId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    executionContext.end(CONDITIONAL, conditionalId)
-
+    executeBlock(CONDITIONAL, conditionalId, cl)
     return this
   }
 
   PlantFlowScript ifBlock(String ifBlockId, Closure cl) {
-    log.info("ifBlock() - id:{}", ifBlockId)
-
-    executionContext.start(IF_BLOCK, ifBlockId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    executionContext.end(IF_BLOCK, ifBlockId)
-
+    executeBlock(IF_BLOCK, ifBlockId, cl)
     return this
   }
 
   PlantFlowScript elseIfBlock(String elseIfBlockId, Closure cl) {
-    log.info("elseIfBlock() - id:{}", elseIfBlockId)
-
-    executionContext.start(ELSEIF_BLOCK, elseIfBlockId)
-
-    cl.delegate = this
-    cl.resolveStrategy = Closure.DELEGATE_FIRST
-    cl()
-
-    executionContext.end(ELSEIF_BLOCK, elseIfBlockId)
-
+    executeBlock(ELSEIF_BLOCK, elseIfBlockId, cl)
     return this
   }
 
   PlantFlowScript elseBlock(String elseBlockId, Closure cl) {
-    log.info("elseBlock() - id:{}", elseBlockId)
+    executeBlock(ELSE_BLOCK, elseBlockId, cl)
+    return this
+  }
+  
+  private BlockNode executeBlock(BlockType type, String blockId, Closure cl) {
+    log.info("executeBlock() - type:{}, id:{}", type, blockId)
 
-    executionContext.start(ELSE_BLOCK, elseBlockId)
+    executionContext.start(type, blockId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
-    executionContext.end(ELSE_BLOCK, elseBlockId)
+    BlockNode block = executionContext.end(type, blockId)
 
-    return this
+    if (! block.isFinished()) {
+      throw new StopCalculateNext("$type NOT finished - id:$blockId")
+    }
+
+    return block
   }
 }
