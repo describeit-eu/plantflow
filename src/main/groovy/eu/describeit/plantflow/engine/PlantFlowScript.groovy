@@ -24,9 +24,7 @@ abstract class PlantFlowScript extends DelegatingScript {
   Object run() {
     executionContext.initialise()
 
-    executionContext.start(ROOT_BLOCK, 'ROOT_BLOCK0')
     def result = scriptBody()
-    executionContext.end(ROOT_BLOCK, 'ROOT_BLOCK0')
 
     log.trace('run() - # of nextActions:{}', nextActions.size())
 
@@ -68,6 +66,18 @@ abstract class PlantFlowScript extends DelegatingScript {
 
   PlantFlowScript rootBlock(String rootId, Closure cl) {
     log.info("rootBlock() - id:{}", rootId)
+    
+    executionContext.start(ROOT_BLOCK, rootId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    def rootBlock = executionContext.end(ROOT_BLOCK, rootId)
+
+    if (! rootBlock.isFinished()) {
+      throw new StopCalculateNext("RootBlock NOT finished - id:$rootId")
+    }
 
     return this
   }
