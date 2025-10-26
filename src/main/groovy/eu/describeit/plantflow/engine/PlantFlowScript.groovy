@@ -173,6 +173,14 @@ abstract class PlantFlowScript extends DelegatingScript {
   PlantFlowScript elseIfBlock(String elseIfBlockId, Closure cl) {
     log.info("elseIfBlock() - id:{}", elseIfBlockId)
 
+    executionContext.start(ELSEIF_BLOCK, elseIfBlockId)
+
+    cl.delegate = this
+    cl.resolveStrategy = Closure.DELEGATE_FIRST
+    cl()
+
+    executionContext.end(ELSEIF_BLOCK, elseIfBlockId)
+
     return this
   }
 
