@@ -42,6 +42,14 @@ class BlockNode {
     }
   }
 
+  List<BlockNode> find(BlockType type) {
+    List<BlockNode> nodes = children.findAll { BlockNode node -> node.type == type }
+
+    for (BlockNode subChild : children) nodes.addAll(subChild.find(type))
+
+    return nodes
+  }
+
   @JsonIgnore
   Boolean isFinished() {
     children.every { BlockNode child ->
