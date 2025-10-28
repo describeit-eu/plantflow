@@ -12,19 +12,19 @@ import static eu.describeit.plantflow.block.BlockType.*
 @CompileStatic
 @Slf4j
 abstract class CalculateNextScript extends DelegatingScript {
-  CalculateNextContext executionContext
+  CalculateNextContext calculateContext
 
   Map<String, PlantFlowAction> actions
 
   abstract Object scriptBody()
 
   List<PlantFlowAction> getNextActions() {
-    return executionContext.nextActions
+    return calculateContext.nextActions
   }
 
   @Override
   Object run() {
-    executionContext.initialise()
+    calculateContext.initialise()
 
     def result = scriptBody()
 
@@ -43,7 +43,7 @@ abstract class CalculateNextScript extends DelegatingScript {
     if (anAction) {
       if (anAction.activate()) {
         log.info("isActive( true ) - name:{}, blockId:{}", anAction.name, blockId)
-        executionContext.addAction(anAction, blockId)
+        calculateContext.addAction(anAction, blockId)
         return true
       } else {
         log.info("isActive( false ) - inactive name:{}, blockId:{}", anAction.name, blockId)
@@ -57,7 +57,7 @@ abstract class CalculateNextScript extends DelegatingScript {
   Boolean eval(String expression, String expectedValue, String blockId) {
     log.info("eval() - expression:{}, expectedValue:{}, blockId:{}", expression, expectedValue, blockId)
 
-    executionContext.check(blockId)
+    calculateContext.check(blockId)
 
     // Use Groovy MOP to allow mocking Script.evaluate(String) via metaclass
     def evalResult = InvokerHelper.invokeMethod(this, 'evaluate', expression)
@@ -114,13 +114,13 @@ abstract class CalculateNextScript extends DelegatingScript {
   private BlockNode executeBlock(BlockType type, String blockId, Closure cl) {
     log.info("executeBlock() - type:{}, id:{}", type, blockId)
 
-    executionContext.start(type, blockId)
+    calculateContext.start(type, blockId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
-    BlockNode block = executionContext.end(type, blockId)
+    BlockNode block = calculateContext.end(type, blockId)
 
     if (! block.isFinished()) {
       throw new StopCalculateNext("$type NOT finished - id:$blockId")
