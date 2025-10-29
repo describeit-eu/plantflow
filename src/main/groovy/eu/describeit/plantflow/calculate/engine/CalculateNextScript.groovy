@@ -76,7 +76,14 @@ abstract class CalculateNextScript extends DelegatingScript {
   }
 
   CalculateNextScript forkBlock(String forkBlockId, Closure cl) {
-    executeBlock(FORK_BLOCK, forkBlockId, cl)
+    try {
+      executeBlock(FORK_BLOCK, forkBlockId, cl)
+    } catch (StopCalculateNext ex) {
+      log.info('forkBlock() - stopped by {}', ex.message)
+      Block block = calculateContext.endBlock(FORK_BLOCK, forkBlockId)
+      if (! block.isFinished()) throw new StopCalculateNext(block)
+
+    }
     return this
   }
 

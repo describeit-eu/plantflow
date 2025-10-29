@@ -15,7 +15,7 @@ class Block {
   BlockType type
   int idx = 0
   String name = null
-  final List<Block> children = []
+  List<Block> children = []
 
   @JsonIgnore
   List<PlantFlowAction> nextActions = []

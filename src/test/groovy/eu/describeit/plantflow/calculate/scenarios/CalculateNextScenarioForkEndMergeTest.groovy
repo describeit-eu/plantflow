@@ -26,5 +26,38 @@ class CalculateNextScenarioForkEndMergeTest extends Specification {
     0 * action4.isActive()
     0 * action5.isActive()
     nextActions.size() == 3
+
+    when:
+    nextActions = pflow.calculateNext()
+
+    then:
+    1 * action1.isActive() >> false
+    1 * action2.isActive() >> true
+    1 * action3.isActive() >> false
+    1 * action4.isActive() >> true
+    0 * action5.isActive()
+    nextActions.size() == 2
+
+    when:
+    nextActions = pflow.calculateNext()
+
+    then:
+    1 * action1.isActive() >> false
+    1 * action2.isActive() >> false
+    1 * action3.isActive() >> false
+    1 * action4.isActive() >> false
+    1 * action5.isActive() >> true
+    nextActions.size() == 1
+
+    when:
+    nextActions = pflow.calculateNext()
+
+    then:
+    1 * action1.isActive() >> false
+    1 * action2.isActive() >> false
+    1 * action3.isActive() >> false
+    1 * action4.isActive() >> false
+    1 * action5.isActive() >> false
+    nextActions.size() == 0
   }
 }
