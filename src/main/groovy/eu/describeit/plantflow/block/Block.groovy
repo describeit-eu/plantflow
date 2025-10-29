@@ -9,12 +9,12 @@ import static eu.describeit.plantflow.block.BlockType.ACTION
 
 @CompileStatic
 @ToString(includePackage=false, includes="id")
-class BlockNode {
+class Block {
 
   BlockType type
   int idx = 0
   String name = null
-  final List<BlockNode> children = []
+  final List<Block> children = []
 
   @JsonIgnore
   List<PlantFlowAction> nextActions = []
@@ -24,35 +24,35 @@ class BlockNode {
     return type.toString() + idx
   }
 
-  void addChildren(BlockNode child) {
+  void addChildren(Block child) {
     children.add(child)
   }
 
   void addAction(String name) {
-    children.add(new BlockNode(type: ACTION, name: name))
+    children.add(new Block(type: ACTION, name: name))
   }
 
-  BlockNode find(String id) {
-    BlockNode child= children.find { BlockNode node -> node.id == id }
+  Block find(String id) {
+    Block child= children.find { Block node -> node.id == id }
 
     if (!child) {
-      for (BlockNode subChild : children) return subChild.find(id)
+      for (Block subChild : children) return subChild.find(id)
     } else {
       return child
     }
   }
 
-  List<BlockNode> find(BlockType type) {
-    List<BlockNode> nodes = children.findAll { BlockNode node -> node.type == type }
+  List<Block> find(BlockType type) {
+    List<Block> nodes = children.findAll { Block node -> node.type == type }
 
-    for (BlockNode subChild : children) nodes.addAll(subChild.find(type))
+    for (Block subChild : children) nodes.addAll(subChild.find(type))
 
     return nodes
   }
 
   @JsonIgnore
   Boolean isFinished() {
-    children.every { BlockNode child ->
+    children.every { Block child ->
       if (child.type != ACTION) return child.nextActions.empty
       else                      return true
     }

@@ -2,7 +2,7 @@ package eu.describeit.plantflow.calculate.converter
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import eu.describeit.plantflow.block.BlockType
-import eu.describeit.plantflow.block.BlockNode
+import eu.describeit.plantflow.block.Block
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
@@ -13,12 +13,12 @@ import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT
 @ToString(includePackage=false)
 @CompileStatic
 class CalculateNextConversionContext {
-  final Stack<BlockNode> blockStack = new Stack<>()
-  BlockNode rootNode = null
+  final Stack<Block> blockStack = new Stack<>()
+  Block rootNode = null
   int counter = 0
 
   void start(BlockType type) {
-    BlockNode newBlock = new BlockNode(type: type, idx: counter++)
+    Block newBlock = new Block(type: type, idx: counter++)
 
     if (blockStack) blockStack.peek().addChildren(newBlock)
     else            rootNode = newBlock
@@ -35,7 +35,7 @@ class CalculateNextConversionContext {
   void end(BlockType type) {
     check(type)
 
-    BlockNode lastBlock = blockStack.pop()
+    Block lastBlock = blockStack.pop()
     log.info('end() - last block:{}', lastBlock)
   }
 
@@ -43,7 +43,7 @@ class CalculateNextConversionContext {
     return geCurrent()?.id
   }
 
-  BlockNode geCurrent() {
+  Block geCurrent() {
     return blockStack ? blockStack.last : null
   }
 

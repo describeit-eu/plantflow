@@ -1,7 +1,7 @@
 package eu.describeit.plantflow.calculate.engine
 
 import eu.describeit.plantflow.PlantFlowAction
-import eu.describeit.plantflow.block.BlockNode
+import eu.describeit.plantflow.block.Block
 import eu.describeit.plantflow.block.BlockType
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -33,24 +33,20 @@ abstract class CalculateNextScript extends DelegatingScript {
     return result
   }
 
-  Boolean isActive(String action) {
-    return isActive(action, null)
-  }
-
-  Boolean isActive(String action, String blockId) {
+  void isActive(String action, String blockId) {
     PlantFlowAction anAction = actions[action]
+    def currentBlock = calculateContext.check(blockId)
 
     if (anAction) {
       if (anAction.activate()) {
-        log.info("isActive( true ) - name:{}, blockId:{}", anAction.name, blockId)
+        log.info("isActive( true ) - action:'{}' {}", anAction.name, currentBlock)
         calculateContext.addAction(anAction, blockId)
-        return true
+        throw new StopCalculateNext(action, currentBlock)
       } else {
-        log.info("isActive( false ) - inactive name:{}, blockId:{}", anAction.name, blockId)
-        return false
+        log.info("isActive( false ) - action:'{}' {}", anAction.name, currentBlock)
       }
     } else {
-      throw new MissingPropertyException("Action '$action' was not found")
+      throw new MissingPropertyException("Action '$action' was not found in block: $currentBlock")
     }
   }
 
@@ -114,7 +110,7 @@ abstract class CalculateNextScript extends DelegatingScript {
     return this
   }
   
-  private BlockNode executeBlock(BlockType type, String blockId, Closure cl) {
+  private Block executeBlock(BlockType type, String blockId, Closure cl) {
     log.info("executeBlock() - type:{}, id:{}", type, blockId)
 
     calculateContext.start(type, blockId)
@@ -123,11 +119,9 @@ abstract class CalculateNextScript extends DelegatingScript {
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
-    BlockNode block = calculateContext.end(type, blockId)
+    Block block = calculateContext.end(type, blockId)
 
-    if (!block.isFinished()) {
-      throw new StopCalculateNext("$type NOT finished - id:$blockId")
-    }
+    if (! block.isFinished()) throw new StopCalculateNext(block)
 
     return block
   }

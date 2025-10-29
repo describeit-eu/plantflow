@@ -49,7 +49,7 @@ class PlantFlow {
     try {
       pflowScript.run()
     } catch (StopCalculateNext ex) {
-      log.info('calculateNext() - {}', ex.message)
+      log.info('calculateNext() - stopped by {}', ex.message)
     }
     return pflowScript.nextActions
   }

@@ -1,7 +1,7 @@
 package eu.describeit.plantflow.calculate.converter
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import eu.describeit.plantflow.block.BlockNode
+import eu.describeit.plantflow.block.Block
 import eu.describeit.plantflow.block.BlockType
 import spock.lang.Specification
 
@@ -97,7 +97,7 @@ class CalculateNextNestedPlantFlowTest extends Specification {
     assertThatJson(actualJson).isEqualTo(expectedJson)
 
     when: ""
-    def blockTree = new ObjectMapper().readValue(actualJson, BlockNode)
+    def blockTree = new ObjectMapper().readValue(actualJson, Block)
 
     then:
     blockTree.type == BlockType.ROOT_BLOCK
