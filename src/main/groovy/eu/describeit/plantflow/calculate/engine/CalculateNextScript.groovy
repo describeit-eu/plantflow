@@ -57,7 +57,9 @@ abstract class CalculateNextScript extends DelegatingScript {
   Boolean eval(String expression, String expectedValue, String blockId) {
     log.info("eval() - expression:{}, expectedValue:{}, blockId:{}", expression, expectedValue, blockId)
 
-    calculateContext.check(blockId)
+    def currentBlock = calculateContext.check(blockId)
+    if (! currentBlock.finished()) {
+    }
 
     // Use Groovy MOP to allow mocking Script.evaluate(String) via metaclass
     def evalResult = InvokerHelper.invokeMethod(this, 'evaluate', expression)
@@ -122,7 +124,7 @@ abstract class CalculateNextScript extends DelegatingScript {
 
     BlockNode block = calculateContext.end(type, blockId)
 
-    if (! block.isFinished()) {
+    if (!block.isFinished()) {
       throw new StopCalculateNext("$type NOT finished - id:$blockId")
     }
 

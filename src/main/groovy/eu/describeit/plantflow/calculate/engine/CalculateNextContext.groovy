@@ -35,15 +35,18 @@ class CalculateNextContext {
     return blockStack.push(nextBlock)
   }
 
-  void addAction(PlantFlowAction action, String blockId) {
+  BlockNode addAction(PlantFlowAction action, String blockId) {
     check(blockId)
     blockStack.last.nextActions.add(action)
     nextActions.add(action)
+    return blockStack.last
   }
 
-  void check(BlockType type = null, String id) {
+  BlockNode check(BlockType type = null, String id) {
     if (type) assert blockStack.last.type == type
     assert blockStack.last.id == id
+
+    return blockStack.last
   }
 
   BlockNode end(BlockType type, String id) {
