@@ -37,8 +37,8 @@ class CalculateNextContext {
   }
 
   Block addAction(PlantFlowAction action, String blockId) {
-    check(blockId)
-    blockStack.last.nextActions.add(action)
+    def currentBlock = check(blockId)
+    currentBlock.addNextAction(action)
     nextActions.add(action)
     return blockStack.last
   }

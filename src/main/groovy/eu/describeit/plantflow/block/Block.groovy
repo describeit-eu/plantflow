@@ -6,6 +6,7 @@ import groovy.transform.CompileStatic
 import groovy.transform.ToString
 
 import static eu.describeit.plantflow.block.BlockType.ACTION
+import static eu.describeit.plantflow.block.BlockType.FORK
 
 @CompileStatic
 @ToString(includePackage=false, includes="id")
@@ -30,6 +31,12 @@ class Block {
 
   void addAction(String name) {
     children.add(new Block(type: ACTION, name: name))
+  }
+
+  void addNextAction(PlantFlowAction action) {
+    assert type != FORK && nextActions.empty, "$this cannot have more than one next Action"
+
+    nextActions.add(action)
   }
 
   Block find(String id) {
