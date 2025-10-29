@@ -35,7 +35,7 @@ abstract class CalculateNextScript extends DelegatingScript {
 
   void isActive(String action, String blockId) {
     PlantFlowAction anAction = actions[action]
-    def currentBlock = calculateContext.check(blockId)
+    def currentBlock = calculateContext.checkBlock(blockId)
 
     if (anAction) {
       if (anAction.isActive()) {
@@ -53,7 +53,7 @@ abstract class CalculateNextScript extends DelegatingScript {
   Boolean eval(String expression, String expectedValue, String blockId) {
     log.info("eval() - expression:{}, expectedValue:{}, blockId:{}", expression, expectedValue, blockId)
 
-    def currentBlock = calculateContext.check(blockId)
+    def currentBlock = calculateContext.checkBlock(blockId)
 
     if (! currentBlock.isFinished()) {
     }
@@ -113,13 +113,13 @@ abstract class CalculateNextScript extends DelegatingScript {
   private Block executeBlock(BlockType type, String blockId, Closure cl) {
     log.info("executeBlock() - type:{}, id:{}", type, blockId)
 
-    calculateContext.start(type, blockId)
+    calculateContext.startBlock(type, blockId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
-    Block block = calculateContext.end(type, blockId)
+    Block block = calculateContext.endBlock(type, blockId)
 
     if (! block.isFinished()) throw new StopCalculateNext(block)
 

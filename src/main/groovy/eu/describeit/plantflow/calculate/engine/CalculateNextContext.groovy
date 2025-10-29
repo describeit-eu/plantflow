@@ -24,35 +24,37 @@ class CalculateNextContext {
     nextActions = []
   }
 
-  Block start(BlockType type, String id) {
+  Block startBlock(BlockType type, String id) {
     final Block nextBlock
 
     if (rootBlock.id == id) nextBlock = rootBlock
     else                    nextBlock = rootBlock.find(id)
 
-    log.info('start() - {}', nextBlock)
+    assert nextBlock, "Unable to find Block type:$type, id:$id"
+
+    log.info('startBlock() - {}', nextBlock)
 
     nextBlock.nextActions = []
     return blockStack.push(nextBlock)
   }
 
   Block addAction(PlantFlowAction action, String blockId) {
-    def currentBlock = check(blockId)
+    def currentBlock = checkBlock(blockId)
     currentBlock.addNextAction(action)
     nextActions.add(action)
     return blockStack.last
   }
 
-  Block check(BlockType type = null, String id) {
+  Block checkBlock(BlockType type = null, String id) {
     if (type) assert blockStack.last.type == type
     assert blockStack.last.id == id
 
     return blockStack.last
   }
 
-  Block end(BlockType type, String id) {
-    def currentBlock = check(type, id)
-    log.info('end() - {}', currentBlock)
+  Block endBlock(BlockType type, String id) {
+    def currentBlock = checkBlock(type, id)
+    log.info('endBlock() - {}', currentBlock)
 
     return blockStack.pop()
   }
