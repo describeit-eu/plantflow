@@ -59,8 +59,8 @@ final class CalculateNextConverter {
 
     context.addAction(contextId, actionName)
 
-    if (contextId) return "if (isActive(\"${actionName}\", \"${contextId}\")) return"
-    else           return "if (isActive(\"${actionName}\")) return"
+    if (contextId) return "isActive(\"${actionName}\", \"${contextId}\")"
+    else           return "isActive(\"${actionName}\")"
   }
 
   private static String convertExpression(String line, CalculateNextConversionContext context) {

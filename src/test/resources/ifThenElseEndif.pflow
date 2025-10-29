@@ -1,7 +1,7 @@
 rootBlock("ROOT_BLOCK0") {
   conditional("CONDITIONAL1") { if (eval("actions['process all']", null, "CONDITIONAL1")) { ifBlock("IF_BLOCK2") { // yes
-    if (isActive("process all", "IF_BLOCK2")) return
+    isActive("process all", "IF_BLOCK2")
   } } else { elseBlock("ELSE_BLOCK3") { // no CONDITIONAL1
-    if (isActive("process none", "ELSE_BLOCK3")) return
+    isActive("process none", "ELSE_BLOCK3")
   } } } // CONDITIONAL1
 }

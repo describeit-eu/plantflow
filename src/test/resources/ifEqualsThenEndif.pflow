@@ -1,5 +1,5 @@
 rootBlock("ROOT_BLOCK0") {
   conditional("CONDITIONAL1") { if (eval("new String('yes')", "yes", "CONDITIONAL1")) { ifBlock("IF_BLOCK2") { // equals
-    if (isActive("process all", "IF_BLOCK2")) return
+    isActive("process all", "IF_BLOCK2")
   } } } // CONDITIONAL1
 }

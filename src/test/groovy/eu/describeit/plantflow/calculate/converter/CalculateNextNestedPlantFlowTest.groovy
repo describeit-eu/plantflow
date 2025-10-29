@@ -133,27 +133,27 @@ class CalculateNextNestedPlantFlowTest extends Specification {
     then:
     String expectedPflow = '''
     rootBlock("ROOT_BLOCK0") {
-      if (isActive("before loop", "ROOT_BLOCK0")) return
+      isActive("before loop", "ROOT_BLOCK0")
       loop("LOOP1") { while (eval("count < 3", null, "LOOP1")) { loopBlock("LOOP_BLOCK2") {
-        if (isActive("before if", "LOOP_BLOCK2")) return
+        isActive("before if", "LOOP_BLOCK2")
         conditional("CONDITIONAL3") { if (eval("ready", null, "CONDITIONAL3")) { ifBlock("IF_BLOCK4") { // go
-          if (isActive("if A1", "IF_BLOCK4")) return
-          if (isActive("if A2", "IF_BLOCK4")) return
+          isActive("if A1", "IF_BLOCK4")
+          isActive("if A2", "IF_BLOCK4")
         } } else { elseBlock("ELSE_BLOCK5") { // wait CONDITIONAL3
-          if (isActive("else B1", "ELSE_BLOCK5")) return
-          if (isActive("else B2", "ELSE_BLOCK5")) return
+          isActive("else B1", "ELSE_BLOCK5")
+          isActive("else B2", "ELSE_BLOCK5")
         } } } // CONDITIONAL3
-        if (isActive("middle loop", "LOOP_BLOCK2")) return
+        isActive("middle loop", "LOOP_BLOCK2")
         fork("FORK6") { forkBlock("FORK_BLOCK7") {
-          if (isActive("parallel A1", "FORK_BLOCK7")) return
-          if (isActive("parallel A2", "FORK_BLOCK7")) return
+          isActive("parallel A1", "FORK_BLOCK7")
+          isActive("parallel A2", "FORK_BLOCK7")
         } forkBlock("FORK_BLOCK8") {
-          if (isActive("parallel B1", "FORK_BLOCK8")) return
-          if (isActive("parallel B2", "FORK_BLOCK8")) return
+          isActive("parallel B1", "FORK_BLOCK8")
+          isActive("parallel B2", "FORK_BLOCK8")
         } } // FORK6
-        if (isActive("after fork", "LOOP_BLOCK2")) return
+        isActive("after fork", "LOOP_BLOCK2")
       } } } // LOOP1
-      if (isActive("after loop", "ROOT_BLOCK0")) return
+      isActive("after loop", "ROOT_BLOCK0")
     }
     '''.stripIndent().trim()
 

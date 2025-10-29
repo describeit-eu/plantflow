@@ -58,7 +58,8 @@ abstract class CalculateNextScript extends DelegatingScript {
     log.info("eval() - expression:{}, expectedValue:{}, blockId:{}", expression, expectedValue, blockId)
 
     def currentBlock = calculateContext.check(blockId)
-    if (! currentBlock.finished()) {
+
+    if (! currentBlock.isFinished()) {
     }
 
     // Use Groovy MOP to allow mocking Script.evaluate(String) via metaclass

@@ -32,11 +32,11 @@ class CalculateNextConverterTest extends Specification {
 
     where:
     line                         || expected
-    ':doIt;'                     || 'if (isActive("doIt")) return\n'
+    ':doIt;'                     || 'isActive("doIt")\n'
     'repeat'                     || 'loop("LOOP0") { do { loopBlock("LOOP_BLOCK1") {\n'
     'fork'                       || 'fork("FORK0") { forkBlock("FORK_BLOCK1") {\n'
     'if (a > b) then (explain)'  || 'conditional("CONDITIONAL0") { if (eval("a > b", null, "CONDITIONAL0")) { ifBlock("IF_BLOCK1") { // explain\n'
-    '  :doIt;'                   || '  if (isActive("doIt")) return\n'
+    '  :doIt;'                   || '  isActive("doIt")\n'
     '    repeat'                 || '    loop("LOOP0") { do { loopBlock("LOOP_BLOCK1") {\n'
     '      fork'                 || '      fork("FORK0") { forkBlock("FORK_BLOCK1") {\n'
   }
@@ -49,8 +49,8 @@ class CalculateNextConverterTest extends Specification {
     String result = new CalculateNextConverter().convertToPlantFlowDsl(puml)
 
     then:
-    result.contains('if (isActive("do something")) return')
-    result.contains('if (isActive("do another")) return')
+    result.contains('isActive("do something")')
+    result.contains('isActive("do another")')
   }
 
   def "convertToPlantFlowDsl throws IllegalArgumentException for unknown expression"() {
