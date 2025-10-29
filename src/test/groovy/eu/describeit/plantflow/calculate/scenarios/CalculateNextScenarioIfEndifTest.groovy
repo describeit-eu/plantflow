@@ -16,7 +16,7 @@ class CalculateNextScenarioIfEndifTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> true
+    1 * action1.isActive() >> true
     nextActions
     nextActions[0].name == 'process all'
 
@@ -24,7 +24,7 @@ class CalculateNextScenarioIfEndifTest extends Specification {
     nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> false
+    1 * action1.isActive() >> false
     nextActions.size() == 0
 
     where:

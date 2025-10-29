@@ -16,7 +16,7 @@ class CalculateNextScenarioWhileInfiniteTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> true
+    1 * action1.isActive() >> true
     nextActions.size() == 1
 
     // TODO: this scenario needs to be extended

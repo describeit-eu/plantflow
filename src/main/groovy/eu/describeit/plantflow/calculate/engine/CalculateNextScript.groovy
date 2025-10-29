@@ -38,7 +38,7 @@ abstract class CalculateNextScript extends DelegatingScript {
     def currentBlock = calculateContext.check(blockId)
 
     if (anAction) {
-      if (anAction.activate()) {
+      if (anAction.isActive()) {
         log.info("isActive( true ) - action:'{}' {}", anAction.name, currentBlock)
         calculateContext.addAction(anAction, blockId)
         throw new StopCalculateNext(action, currentBlock)

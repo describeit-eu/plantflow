@@ -16,8 +16,8 @@ class CalculateNextScenarioSequenceTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> true
-    0 * action2.activate() >> false
+    1 * action1.isActive() >> true
+    0 * action2.isActive() >> false
     nextActions
     nextActions[0].name == 'Hello world'
 
@@ -25,8 +25,8 @@ class CalculateNextScenarioSequenceTest extends Specification {
     nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> false
-    1 * action2.activate() >> true
+    1 * action1.isActive() >> false
+    1 * action2.isActive() >> true
     nextActions
     nextActions[0].name == 'groovy goodness'
 
@@ -34,8 +34,8 @@ class CalculateNextScenarioSequenceTest extends Specification {
     nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> false
-    1 * action2.activate() >> false
+    1 * action1.isActive() >> false
+    1 * action2.isActive() >> false
     nextActions.size() == 0
   }
 }

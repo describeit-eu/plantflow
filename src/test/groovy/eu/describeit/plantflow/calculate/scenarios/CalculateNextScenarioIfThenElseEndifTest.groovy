@@ -16,16 +16,16 @@ class CalculateNextScenarioIfThenElseEndifTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * processAll.activate() >> true
-    0 * processNone.activate()
+    1 * processAll.isActive() >> true
+    0 * processNone.isActive()
     nextActions[0].name == 'process all'
 
     when:
     nextActions = pflow.calculateNext()
 
     then:
-    1 * processAll.activate() >> false
-    0 * processNone.activate()
+    1 * processAll.isActive() >> false
+    0 * processNone.isActive()
     nextActions.isEmpty()
   }
 }

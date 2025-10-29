@@ -20,11 +20,11 @@ class CalculateNextScenarioForkEndMergeTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * action1.activate() >> true
-    1 * action2.activate() >> true
-    1 * action3.activate() >> true
-    0 * action4.activate()
-    0 * action5.activate()
+    1 * action1.isActive() >> true
+    1 * action2.isActive() >> true
+    1 * action3.isActive() >> true
+    0 * action4.isActive()
+    0 * action5.isActive()
     nextActions.size() == 3
   }
 }

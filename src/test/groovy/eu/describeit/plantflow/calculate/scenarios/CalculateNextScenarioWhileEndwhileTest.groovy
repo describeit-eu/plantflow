@@ -34,32 +34,32 @@ class CalculateNextScenarioWhileEndwhileTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * readFile.activate() >> true
-    0 * closeFile.activate()
+    1 * readFile.isActive() >> true
+    0 * closeFile.isActive()
     nextActions*.name == ['read file']
 
     when: '2nd run - while condition still true -> execute body again'
     nextActions = pflow.calculateNext()
 
     then:
-    1 * readFile.activate() >> true
-    0 * closeFile.activate()
+    1 * readFile.isActive() >> true
+    0 * closeFile.isActive()
     nextActions*.name == ['read file']
 
     when: '3rd run - while condition becomes false -> proceed after loop (close file)'
     nextActions = pflow.calculateNext()
 
     then:
-    0 * readFile.activate()
-    1 * closeFile.activate() >> true
+    0 * readFile.isActive()
+    1 * closeFile.isActive() >> true
     nextActions*.name == ['close file']
 
     when: '4th run - no more actions'
     nextActions = pflow.calculateNext()
 
     then:
-    0 * readFile.activate()
-    1 * closeFile.activate() >> false
+    0 * readFile.isActive()
+    1 * closeFile.isActive() >> false
     nextActions.isEmpty()
   }
 }

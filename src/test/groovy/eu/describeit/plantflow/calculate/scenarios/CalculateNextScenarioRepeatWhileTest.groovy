@@ -34,39 +34,39 @@ class CalculateNextScenarioRepeatWhileTest extends Specification {
 
     then:
     nextActions*.name == ['read data']
-    1 * readData.activate() >> true
-    0 * generateDiagrams.activate()
+    1 * readData.isActive() >> true
+    0 * generateDiagrams.isActive()
 
     when: '2nd calculateNext() - second action from body'
     nextActions = pflow.calculateNext()
 
     then:
     nextActions*.name == ['generate diagrams']
-    1 * readData.activate() >> false
-    1 * generateDiagrams.activate() >> true
+    1 * readData.isActive() >> false
+    1 * generateDiagrams.isActive() >> true
 
     when: '3rd calculateNext() - first execution of while() loops to enable first action'
     nextActions = pflow.calculateNext()
 
     then:
-    2 * readData.activate() >>> [false, true]
-    1 * generateDiagrams.activate() >> false
+    2 * readData.isActive() >>> [false, true]
+    1 * generateDiagrams.isActive() >> false
     nextActions*.name == ['read data']
 
     when: '4th calculateNext() - second action again'
     nextActions = pflow.calculateNext()
 
     then:
-    1 * readData.activate() >> false
-    1 * generateDiagrams.activate() >> true
+    1 * readData.isActive() >> false
+    1 * generateDiagrams.isActive() >> true
     nextActions*.name == ['generate diagrams']
 
     when: '5th calculateNext() - second execution of while() leaves the loop'
     nextActions = pflow.calculateNext()
 
     then:
-    1 * readData.activate() >> false
-    1 * generateDiagrams.activate() >> false
+    1 * readData.isActive() >> false
+    1 * generateDiagrams.isActive() >> false
     nextActions.isEmpty()
   }
 }

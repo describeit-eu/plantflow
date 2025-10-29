@@ -18,27 +18,27 @@ class CalculateNextScenarioCrudTest extends Specification {
     def nextActions = pflow.calculateNext()
 
     then:
-    1 * update.activate() >> true
-    1 * deactivate.activate() >> true
-    0 * activate.activate()
+    1 * update.isActive() >> true
+    1 * deactivate.isActive() >> true
+    0 * activate.isActive()
     nextActions*.name as Set == ['update', 'deactivate'] as Set
 
     when: '2nd run - first branch inactive, second branch returns activate'
     nextActions = pflow.calculateNext()
 
     then:
-    1 * update.activate() >> false
-    1 * deactivate.activate() >> false
-    1 * activate.activate() >> true
+    1 * update.isActive() >> false
+    1 * deactivate.isActive() >> false
+    1 * activate.isActive() >> true
     nextActions*.name == ['activate']
 
     when: '3rd run - no branch produces actions'
     nextActions = pflow.calculateNext()
 
     then:
-    1 * update.activate() >> false
-    1 * deactivate.activate() >> false
-    1 * activate.activate() >> false
+    1 * update.isActive() >> false
+    1 * deactivate.isActive() >> false
+    1 * activate.isActive() >> false
     nextActions.isEmpty()
   }
 }
