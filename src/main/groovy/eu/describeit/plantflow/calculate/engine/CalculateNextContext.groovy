@@ -25,12 +25,9 @@ class CalculateNextContext {
   }
 
   Block startBlock(BlockType type, String id) {
-    final Block nextBlock
+    final Block nextBlock = rootBlock.find(id)
 
-    if (rootBlock.id == id) nextBlock = rootBlock
-    else                    nextBlock = rootBlock.find(id)
-
-    assert nextBlock, "Unable to find Block type:$type, id:$id"
+    assert nextBlock, "Unable to find Block by id:$id"
 
     log.info('startBlock() - {}', nextBlock)
 

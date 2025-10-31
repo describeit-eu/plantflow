@@ -41,15 +41,18 @@ class BlockTest extends Specification {
 
   def "find(String id) finds nested node by id (via first branch recursion)"() {
     given:
-    def root = new Block(type: BlockType.ROOT_BLOCK)
-    def loop = new Block(type: BlockType.LOOP, idx: 1)
-    def target = new Block(type: BlockType.IF_BLOCK, idx: 5)
+    def root = new Block(type: BlockType.ROOT_BLOCK, idx: 0)
+    def cond = new Block(type: BlockType.CONDITIONAL, idx: 1)
+    def loop = new Block(type: BlockType.LOOP, idx: 2)
+    def target = new Block(type: BlockType.LOOP_BLOCK, idx: 5)
+    root.addChildren(cond)
     loop.addChildren(target)
     root.addChildren(loop)
     root.addChildren(new Block(type: BlockType.ELSE_BLOCK, idx: 2))
 
     expect:
-    root.find('IF_BLOCK5').is(target)
+    root.find('ROOT_BLOCK0').is(root)
+    root.find('LOOP_BLOCK5').is(target)
   }
 
   def "find(BlockType) returns all nodes of the given type recursively"() {

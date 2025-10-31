@@ -39,14 +39,20 @@ class Block {
     nextActions.add(action)
   }
 
-  Block find(String id) {
-    Block child= children.find { Block node -> node.id == id }
+  Block find(String blockId) {
+    if (this.id == blockId) return this
 
-    if (!child) {
-      for (Block subChild : children) return subChild.find(id)
+    Block foundChild = children.find { Block node -> node.id == blockId }
+
+    if (foundChild) {
+      return foundChild
     } else {
-      return child
+      for (Block subChild : children) {
+        foundChild = subChild.find(blockId)
+        if (foundChild) return foundChild
+      }
     }
+    return null
   }
 
   List<Block> find(BlockType type) {

@@ -47,6 +47,7 @@ class PlantFlow {
 
   List<PlantFlowAction> calculateNext() {
     try {
+      log.info('run() --------------------------------------------------')
       pflowScript.run()
     } catch (StopCalculateNext ex) {
       log.info('calculateNext() - stopped by {}', ex.message)

@@ -7,16 +7,18 @@ import spock.lang.Specification
 
 @Slf4j
 class CalculateNextScenarioWhileEndwhileTest extends Specification {
+  PlantFlowAction openFile
   PlantFlowAction readFile
   PlantFlowAction closeFile
   PlantFlow pflow
   List<String> scriptEvaluateMockResults = ['not empty', 'not empty', 'empty', 'empty']
 
   void mockPlantFlow() {
+    openFile = Mock() { getName() >> 'open file' }
     readFile = Mock() { getName() >> 'read file' }
     closeFile = Mock() { getName() >> 'close file' }
 
-    pflow = new PlantFlow('whileEndwhile', [readFile, closeFile])
+    pflow = new PlantFlow('whileEndwhile', [openFile, readFile, closeFile])
 
     pflow.pflowScript.metaClass.evaluate = { String expression ->
       assert expression == 'check filesize ?'

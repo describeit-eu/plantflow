@@ -1,4 +1,5 @@
 rootBlock("ROOT_BLOCK0") {
+  isActive("open file", "ROOT_BLOCK0")
   loop("LOOP1") { while (eval("check filesize ?", "not empty", "LOOP1")) { loopBlock("LOOP_BLOCK2") { // is
     isActive("read file", "LOOP_BLOCK2")
   } } } // empty LOOP1

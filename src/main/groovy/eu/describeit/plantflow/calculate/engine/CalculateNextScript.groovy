@@ -28,7 +28,7 @@ abstract class CalculateNextScript extends DelegatingScript {
 
     def result = scriptBody()
 
-    log.trace('run() - # of nextActions:{}', nextActions.size())
+    log.trace('run() - nextActions:{} result:{}', nextActions, result)
 
     return result
   }
@@ -39,11 +39,11 @@ abstract class CalculateNextScript extends DelegatingScript {
 
     if (anAction) {
       if (anAction.isActive()) {
-        log.info("isActive( true ) - action:'{}' {}", anAction.name, currentBlock)
+        log.info("isActive( true ) - action:'{}' in {}", anAction.name, currentBlock)
         calculateContext.addAction(anAction, blockId)
         throw new StopCalculateNext(action, currentBlock)
       } else {
-        log.info("isActive( false ) - action:'{}' {}", anAction.name, currentBlock)
+        log.info("isActive( false ) - action:'{}' in {}", anAction.name, currentBlock)
       }
     } else {
       throw new MissingPropertyException("Action '$action' was not found in block: $currentBlock")
@@ -51,11 +51,14 @@ abstract class CalculateNextScript extends DelegatingScript {
   }
 
   Boolean eval(String expression, String expectedValue, String blockId) {
-    log.info("eval() - expression:{}, expectedValue:{}, blockId:{}", expression, expectedValue, blockId)
+    log.info("eval() - expression:'{}' expectedValue:'{}' blockId:'{}'", expression, expectedValue, blockId)
 
     def currentBlock = calculateContext.checkBlock(blockId)
 
     if (! currentBlock.isFinished()) {
+      //
+    } else {
+      //log.warn('eval() - current block is finished:{}', currentBlock)
     }
 
     // Use Groovy MOP to allow mocking Script.evaluate(String) via metaclass
@@ -81,8 +84,7 @@ abstract class CalculateNextScript extends DelegatingScript {
     } catch (StopCalculateNext ex) {
       log.info('forkBlock() - stopped by {}', ex.message)
       Block block = calculateContext.endBlock(FORK_BLOCK, forkBlockId)
-      if (! block.isFinished()) throw new StopCalculateNext(block)
-
+      if (! block.isFinished()) throw ex
     }
     return this
   }

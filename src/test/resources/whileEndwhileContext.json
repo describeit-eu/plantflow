@@ -4,6 +4,12 @@
   "name": null,
   "children": [
     {
+      "type": "ACTION",
+      "idx": 0,
+      "name": "open file",
+      "children": []
+    },
+    {
       "type": "LOOP",
       "idx": 1,
       "name": null,

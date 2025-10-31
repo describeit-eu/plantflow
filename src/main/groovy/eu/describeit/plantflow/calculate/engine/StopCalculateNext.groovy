@@ -13,7 +13,7 @@ class StopCalculateNext extends RuntimeException {
   }
 
   StopCalculateNext(Block block) {
-    super("Stopping block:$block")
+    super("$block")
     stoppingBlock = block
   }
 }
