@@ -7,11 +7,12 @@ import spock.lang.Specification
 
 @Slf4j
 class CalculateNextScenarioWhileEndwhileTest extends Specification {
+  final List<String> scriptEvaluateMockResults = ['not empty', 'not empty', 'empty', 'empty']
+
   PlantFlowAction openFile
   PlantFlowAction readFile
   PlantFlowAction closeFile
   PlantFlow pflow
-  List<String> scriptEvaluateMockResults = ['not empty', 'not empty', 'empty', 'empty']
 
   void mockPlantFlow() {
     openFile = Mock() { getName() >> 'open file' }
@@ -32,10 +33,20 @@ class CalculateNextScenarioWhileEndwhileTest extends Specification {
     given:
     mockPlantFlow()
 
-    when: '1st run - while condition true -> execute body (read file)'
+    when: '0st run - execute Action "open file"'
     def nextActions = pflow.calculateNext()
+    
+    then:
+    1 * openFile.isActive() >> true
+    0 * readFile.isActive()
+    0 * closeFile.isActive()
+    nextActions*.name == ['open file']
+
+    when: '1st run - while condition true -> execute body (read file)'
+    nextActions = pflow.calculateNext()
 
     then:
+    1 * openFile.isActive() >> false
     1 * readFile.isActive() >> true
     0 * closeFile.isActive()
     nextActions*.name == ['read file']
@@ -44,7 +55,8 @@ class CalculateNextScenarioWhileEndwhileTest extends Specification {
     nextActions = pflow.calculateNext()
 
     then:
-    1 * readFile.isActive() >> true
+    1 * openFile.isActive() >> false
+    1 * readFile.isActive()  >> true
     0 * closeFile.isActive()
     nextActions*.name == ['read file']
 
@@ -52,7 +64,10 @@ class CalculateNextScenarioWhileEndwhileTest extends Specification {
     nextActions = pflow.calculateNext()
 
     then:
+    1 * openFile.isActive() >> false
     0 * readFile.isActive()
+    
+    and:
     1 * closeFile.isActive() >> true
     nextActions*.name == ['close file']
 
@@ -60,6 +75,7 @@ class CalculateNextScenarioWhileEndwhileTest extends Specification {
     nextActions = pflow.calculateNext()
 
     then:
+    1 * openFile.isActive() >> false
     0 * readFile.isActive()
     1 * closeFile.isActive() >> false
     nextActions.isEmpty()

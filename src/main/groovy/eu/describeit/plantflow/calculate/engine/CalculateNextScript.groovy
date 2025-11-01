@@ -130,8 +130,7 @@ abstract class CalculateNextScript extends DelegatingScript {
 
     Block block = calculateContext.endBlock(type, blockId)
 
-    if (! block.isFinished()) throw new StopCalculateNext(block)
-
-    return block
+    if (block.type == LOOP || block.isFinished()) return block
+    else                                          throw new StopCalculateNext(block)
   }
 }
