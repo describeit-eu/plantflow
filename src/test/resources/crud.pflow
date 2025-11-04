@@ -1,5 +1,5 @@
 rootBlock("ROOT_BLOCK0") {
-  isActive("update", "ROOT_BLOCK0")
+  isActive("init", "ROOT_BLOCK0")
   fork("FORK1") { forkBlock("FORK_BLOCK2") {
     loop("LOOP3") { while (eval("true", null, "LOOP3")) { loopBlock("LOOP_BLOCK4") {
       isActive("update", "LOOP_BLOCK4")

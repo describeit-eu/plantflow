@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import eu.describeit.plantflow.PlantFlowAction
 import groovy.transform.CompileStatic
 import groovy.transform.ToString
+import groovy.util.logging.Slf4j
 
 import static eu.describeit.plantflow.block.BlockType.ACTION
 import static eu.describeit.plantflow.block.BlockType.FORK
 
+@Slf4j
 @CompileStatic
 @ToString(includePackage=false, includes="id")
 class Block {
@@ -24,6 +26,10 @@ class Block {
   String getId() {
     return type.toString() + idx
   }
+  
+  void initialise() {
+    nextActions.clear()
+  }
 
   void addChildren(Block child) {
     children.add(child)
@@ -34,6 +40,7 @@ class Block {
   }
 
   void addNextAction(PlantFlowAction action) {
+    log.info('addNextAction() - name:{} in {}', action.name, this)
     assert type != FORK && nextActions.empty, "$this cannot have more than one next Action"
 
     nextActions.add(action)
@@ -62,12 +69,17 @@ class Block {
 
     return nodes
   }
+  
+  Boolean notFinished() {
+    return !isFinished()
+  }
 
   @JsonIgnore
   Boolean isFinished() {
-    children.every { Block child ->
-      if (child.type != ACTION) return child.nextActions.empty
-      else                      return true
+    boolean childrenStatus = children.every { Block child ->
+      child.type == ACTION ? true : child.nextActions.empty
     }
+
+    return children.empty && childrenStatus
   }
 }

@@ -6,7 +6,7 @@
     {
       "type": "ACTION",
       "idx": 0,
-      "name": "update",
+      "name": "init",
       "children": []
     },
     {

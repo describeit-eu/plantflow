@@ -1,6 +1,6 @@
 @startuml
 start
-:update;
+:init;
 fork
   while (true)
     :update;

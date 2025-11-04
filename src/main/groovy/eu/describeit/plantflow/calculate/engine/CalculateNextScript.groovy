@@ -12,19 +12,19 @@ import static eu.describeit.plantflow.block.BlockType.*
 @CompileStatic
 @Slf4j
 abstract class CalculateNextScript extends DelegatingScript {
-  CalculateNextContext calculateContext
+  CalculateNextContext context
 
   Map<String, PlantFlowAction> actions
 
   abstract Object scriptBody()
 
   List<PlantFlowAction> getNextActions() {
-    return calculateContext.nextActions
+    return context.nextActions
   }
 
   @Override
   Object run() {
-    calculateContext.initialise()
+    context.initialise()
 
     def result = scriptBody()
 
@@ -34,13 +34,13 @@ abstract class CalculateNextScript extends DelegatingScript {
   }
 
   void isActive(String action, String blockId) {
+    def currentBlock = context.checkBlock(blockId)
     PlantFlowAction anAction = actions[action]
-    def currentBlock = calculateContext.checkBlock(blockId)
 
     if (anAction) {
       if (anAction.isActive()) {
         log.info("isActive( true ) - action:'{}' in {}", anAction.name, currentBlock)
-        calculateContext.addAction(anAction, blockId)
+        context.addAction(anAction, blockId)
         throw new StopCalculateNext(action, currentBlock)
       } else {
         log.info("isActive( false ) - action:'{}' in {}", anAction.name, currentBlock)
@@ -53,9 +53,9 @@ abstract class CalculateNextScript extends DelegatingScript {
   Boolean eval(String expression, String expectedValue, String blockId) {
     log.info("eval() - expression:'{}' expectedValue:'{}' blockId:'{}'", expression, expectedValue, blockId)
 
-    def currentBlock = calculateContext.checkBlock(blockId)
+    def currentBlock = context.checkBlock(blockId)
 
-    if (! currentBlock.isFinished()) {
+    if (currentBlock.notFinished()) {
       //
     } else {
       //log.warn('eval() - current block is finished:{}', currentBlock)
@@ -83,8 +83,8 @@ abstract class CalculateNextScript extends DelegatingScript {
       executeBlock(FORK_BLOCK, forkBlockId, cl)
     } catch (StopCalculateNext ex) {
       log.info('forkBlock() - stopped by {}', ex.message)
-      Block block = calculateContext.endBlock(FORK_BLOCK, forkBlockId)
-      if (! block.isFinished()) throw ex
+      Block block = context.endBlock(FORK_BLOCK, forkBlockId)
+      if (block.notFinished()) throw ex
     }
     return this
   }
@@ -95,7 +95,13 @@ abstract class CalculateNextScript extends DelegatingScript {
   }
 
   CalculateNextScript loopBlock(String loopBlockId, Closure cl) {
-    executeBlock(LOOP_BLOCK, loopBlockId, cl)
+    try {
+      executeBlock(LOOP_BLOCK, loopBlockId, cl)
+    } catch (StopCalculateNext ex) {
+      log.info('forkBlock() - stopped by {}', ex.message)
+      Block loopBlock = context.endBlock(LOOP_BLOCK, loopBlockId)
+      if (loopBlock.notFinished()) throw ex
+    }
     return this
   }
 
@@ -122,13 +128,13 @@ abstract class CalculateNextScript extends DelegatingScript {
   private Block executeBlock(BlockType type, String blockId, Closure cl) {
     log.info("executeBlock() - type:{}, id:{}", type, blockId)
 
-    calculateContext.startBlock(type, blockId)
+    context.startBlock(type, blockId)
 
     cl.delegate = this
     cl.resolveStrategy = Closure.DELEGATE_FIRST
     cl()
 
-    Block block = calculateContext.endBlock(type, blockId)
+    Block block = context.endBlock(type, blockId)
 
     if (block.type == LOOP || block.isFinished()) return block
     else                                          throw new StopCalculateNext(block)

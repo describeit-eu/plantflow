@@ -13,7 +13,7 @@ class CalculateNextContext {
   final Block rootBlock
   final Stack<Block> blockStack = new Stack<>()
 
-  List<PlantFlowAction> nextActions
+  List<PlantFlowAction> nextActions = []
 
   CalculateNextContext(String json) {
     ObjectMapper mapper = new ObjectMapper()
@@ -21,7 +21,7 @@ class CalculateNextContext {
   }
 
   void initialise() {
-    nextActions = []
+    nextActions.clear()
   }
 
   Block startBlock(BlockType type, String id) {
@@ -31,7 +31,7 @@ class CalculateNextContext {
 
     log.info('startBlock() - {}', nextBlock)
 
-    nextBlock.nextActions = []
+    nextBlock.initialise()
     return blockStack.push(nextBlock)
   }
 

@@ -41,7 +41,7 @@ class PlantFlow {
     pflowScript = (CalculateNextScript) engine.createScript(pflowName+'.pflow', pflowBinding)
     pflowScript.setDelegate(pflowScript)
 
-    pflowScript.calculateContext = new CalculateNextContext(getResourceText(pflowName+'Context.json'))
+    pflowScript.context = new CalculateNextContext(getResourceText(pflowName+'Context.json'))
     pflowScript.actions = pflowActions
   }
 
