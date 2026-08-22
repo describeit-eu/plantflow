@@ -33,7 +33,7 @@ enum CalculateNextForkConverter {
     else            return converter.convertLine(context)
   }
 
-  String convertLine(CalculateNextConversionContext context) {
+  private String convertLine(CalculateNextConversionContext context) {
     String forkId = null
     String branchId = null
 
@@ -61,7 +61,7 @@ enum CalculateNextForkConverter {
     return convertExpression(forkId, branchId)
   }
 
-  String convertExpression(String forkId, String branchId) {
+  private String convertExpression(String forkId, String branchId) {
     def binding = [forkId: forkId, branchId: branchId]
     def engine = new SimpleTemplateEngine()
 

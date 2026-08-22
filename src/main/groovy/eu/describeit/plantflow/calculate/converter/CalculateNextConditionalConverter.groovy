@@ -24,8 +24,8 @@ enum CalculateNextConditionalConverter {
   final Pattern matcher
   final String expression
 
-  private static final List blockStarts = [IF_THEN, IF_IS, IF_EQUALS]
-  private static final List blockEnds   = [ENDIF]
+//  private static final List blockStarts = [IF_THEN, IF_IS, IF_EQUALS]
+//  private static final List blockEnds   = [ENDIF]
 
   CalculateNextConditionalConverter(Pattern pattern, String expression) {
     this.matcher = pattern
@@ -43,7 +43,7 @@ enum CalculateNextConditionalConverter {
     else            return converter.convertLine(line, context)
   }
 
-  String convertLine(String line, CalculateNextConversionContext context) {
+  private String convertLine(String line, CalculateNextConversionContext context) {
     String conditionalId = null
     String branchId = null
 
@@ -84,7 +84,7 @@ enum CalculateNextConditionalConverter {
     return convertLine(line, conditionalId, branchId)
   }
 
-  String convertLine(String line, String conditionalId, String branchId) {
+  private String convertLine(String line, String conditionalId, String branchId) {
     List<String> exprData = Utility.extractBetweenBalancedParentheses(line)
     def binding = [conditionalId: conditionalId, branchId: branchId, exprData: exprData]
 

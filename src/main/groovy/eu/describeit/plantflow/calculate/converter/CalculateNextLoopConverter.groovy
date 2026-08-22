@@ -37,7 +37,7 @@ enum CalculateNextLoopConverter {
     else            return converter.convertLine(line, context)
   }
 
-  String convertLine(String line, CalculateNextConversionContext context) {
+  private String convertLine(String line, CalculateNextConversionContext context) {
     String loopId = null
     String loopBlockId = null
 
@@ -68,7 +68,7 @@ enum CalculateNextLoopConverter {
     return convertLine(line, loopId, loopBlockId)
   }
 
-  String convertLine(String line, String loopId, String loopBlockId) {
+  private String convertLine(String line, String loopId, String loopBlockId) {
     List<String> exprData = Utility.extractBetweenBalancedParentheses(line)
     def binding = [loopId: loopId, loopBlockId: loopBlockId, exprData: exprData]
 
