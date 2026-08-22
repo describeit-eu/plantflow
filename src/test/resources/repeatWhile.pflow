@@ -1,6 +1,0 @@
-rootBlock("ROOT_BLOCK0") {
-  loop("LOOP1") { do { loopBlock("LOOP_BLOCK2") {
-    isActive("read data", "LOOP_BLOCK2")
-    isActive("generate diagrams", "LOOP_BLOCK2")
-  } } while (eval("more data?", "yes", "LOOP1")) } // not ("no")
-}

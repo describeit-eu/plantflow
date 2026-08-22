@@ -1,4 +1,0 @@
-rootBlock("ROOT_BLOCK0") {
-  isActive("Hello world", "ROOT_BLOCK0")
-  isActive("groovy goodness", "ROOT_BLOCK0")
-}

@@ -1,7 +1,0 @@
-rootBlock("ROOT_BLOCK0") {
-  loop("LOOP1") { while (eval("true", null, "LOOP1")) { loopBlock("LOOP_BLOCK2") {
-    isActive("do something", "LOOP_BLOCK2")
-  } } } // LOOP1
-  
-  
-}
