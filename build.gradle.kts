@@ -2,6 +2,12 @@ plugins {
   id("groovy")
 }
 
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(25)
+  }
+}
+
 val groovyVersion    = "5.1.0"
 val slf4jVersion     = "2.0.18"
 val logbackVersion   = "1.6.3"
