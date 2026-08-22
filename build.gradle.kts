@@ -2,16 +2,15 @@ plugins {
   id("groovy")
 }
 
-val groovyVersion    = "4.0.28"
+val groovyVersion    = "4.0.33"
 val slf4jVersion     = "2.0.17"
 val logbackVersion   = "1.5.18"
 
 val junitVersion     = "5.13.4"
-val spockVersion     = "2.4-M6-groovy-4.0"
+val spockVersion     = "2.4-groovy-4.0"
 //val bytebuddyVersion = "1.17.7"
 //val mockitoVersion   = "5.20.0"
 val jsonUnitVersion  = "5.0.0"
-val orgJsonVersion   = "20250517"
 
 group = "eu.describeit"
 version = "1.0-SNAPSHOT"
@@ -44,7 +43,6 @@ dependencies {
 //  testImplementation("org.mockito:mockito-core:$mockitoVersion")
   testImplementation("net.javacrumbs.json-unit:json-unit:$jsonUnitVersion")
   testImplementation("net.javacrumbs.json-unit:json-unit-assertj:$jsonUnitVersion")
-  testImplementation("org.json:json:$orgJsonVersion")
 }
 
 tasks.test {
