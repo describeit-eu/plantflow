@@ -1,0 +1,100 @@
+package eu.describeit.plantflow
+
+import spock.lang.Specification
+
+class ActivityDiagramParserSpec extends Specification {
+
+    def "should parse single action linear activity diagram into PetriNet"() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :process order;
+            end
+            @enduml
+        '''
+        def parser = new ActivityDiagramParser()
+
+        when:
+        def net = parser.parse(puml)
+
+        then:
+        net != null
+        net.places.size() == 2
+        net.transitions.size() == 1
+
+        and:
+        net.startPlace.id == "P_start"
+        net.startPlace.index == 0
+        net.endPlace.id == "P_end"
+        net.endPlace.index == 1
+
+        and:
+        def transition = net.transitions[0]
+        transition.id == "T_0"
+        transition.index == 0
+        transition.label == "process order"
+        transition.actionKey == "process order"
+
+        and:
+        net.incidenceMatrix.getInputWeight(0, 0) == 1
+        net.incidenceMatrix.getOutputWeight(0, 0) == 0
+        net.incidenceMatrix.getInputWeight(1, 0) == 0
+        net.incidenceMatrix.getOutputWeight(1, 0) == 1
+        net.incidenceMatrix.getIncidence(0, 0) == -1
+        net.incidenceMatrix.getIncidence(1, 0) == 1
+    }
+
+    def "should parse multi-action linear activity diagram into PetriNet"() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :Hello world;
+            :groovy goodness;
+            end
+            @enduml
+        '''
+        def parser = new ActivityDiagramParser()
+
+        when:
+        def net = parser.parse(puml)
+
+        then:
+        net.places.size() == 3
+        net.transitions.size() == 2
+
+        and:
+        net.places[0].id == "P_start"
+        net.places[1].id == "P_1"
+        net.places[2].id == "P_end"
+
+        and:
+        net.transitions[0].label == "Hello world"
+        net.transitions[1].label == "groovy goodness"
+
+        and:
+        // T_0: consumes from P_start (0), produces to P_1 (1)
+        net.incidenceMatrix.getInputPlaces(0) == [net.places[0]]
+        net.incidenceMatrix.getOutputPlaces(0) == [net.places[1]]
+
+        // T_1: consumes from P_1 (1), produces to P_end (2)
+        net.incidenceMatrix.getInputPlaces(1) == [net.places[1]]
+        net.incidenceMatrix.getOutputPlaces(1) == [net.places[2]]
+    }
+
+    def "should parse diagram from file"() {
+        given:
+        def parser = new ActivityDiagramParser()
+        def file = new File("src/test/data/puml/sequence.puml")
+
+        when:
+        def net = parser.parse(file)
+
+        then:
+        net.places.size() == 3
+        net.transitions.size() == 2
+        net.transitions[0].label == "Hello world"
+        net.transitions[1].label == "groovy goodness"
+    }
+}
