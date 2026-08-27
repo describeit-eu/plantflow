@@ -1,6 +1,15 @@
 plugins {
-  id("groovy")
+  groovy
+  jacoco
+  codenarc
+  id("name.remal.jacoco-to-cobertura") version "2.0.4"
 }
+
+//buildscript {
+//  dependencies {
+//    classpath("org.gmetrics:GMetrics:3.0.0")
+//  }
+//}
 
 java {
   toolchain {
@@ -25,19 +34,33 @@ repositories {
   mavenCentral()
 }
 
+codenarc {
+  toolVersion = "4.0.0"
+  configFile = file("${rootProject.projectDir}/config/codenarc/rules.groovy")
+  reportFormat = "console"
+  isIgnoreFailures = false
+  maxPriority1Violations = 0
+}
+
+tasks.codenarcTest {
+  configFile = file("${rootProject.projectDir}/config/codenarc/test-rules.groovy")
+}
+
 dependencies {
   implementation("org.apache.groovy:groovy:$groovyVersion")
   implementation("org.apache.groovy:groovy-json:$groovyVersion")
-  implementation("org.apache.groovy:groovy-templates:$groovyVersion")
-  implementation("com.fasterxml.jackson.core:jackson-databind:2.22.2")
+//  implementation("org.apache.groovy:groovy-templates:$groovyVersion")
+//  implementation("com.fasterxml.jackson.core:jackson-databind:2.22.2")
 
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")
   implementation("ch.qos.logback:logback-classic:${logbackVersion}")
 
+  implementation("org.gmetrics:GMetrics:3.0.0")
+  
   // Commons dependencies
-  implementation("org.apache.commons:commons-lang3:3.20.0")
-  implementation("org.apache.commons:commons-text:1.15.0")
+//  implementation("org.apache.commons:commons-lang3:3.20.0")
+//  implementation("org.apache.commons:commons-text:1.15.0")
     
   // Test dependencies
   testImplementation(platform("org.junit:junit-bom:$junitVersion"))
@@ -53,4 +76,18 @@ dependencies {
 
 tasks.test {
   useJUnitPlatform()
+  // Ensure tests run before generating the report, and conversion runs after
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.withType<CodeNarc>().configureEach {
+  mustRunAfter("jacocoTestReport")
+}
+
+tasks.jacocoTestReport {
+  reports {
+    xml.required.set(true) // Required for the conversion
+    html.required.set(true)
+  }
+  finalizedBy(tasks.jacocoTestReportToCobertura)
 }

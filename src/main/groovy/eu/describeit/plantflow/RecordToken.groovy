@@ -5,7 +5,6 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
 import java.time.Instant
-import java.util.UUID
 
 @CompileStatic
 @ToString(includeNames = true)

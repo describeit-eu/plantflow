@@ -114,6 +114,8 @@ class PlantFlow {
             return false
         }
 
+        log.info("fire() - {}", transition)
+
         ActionHandler actionHandler = null
         if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
             actionHandler = handlerRegistry.getAction(transition.actionKey)
@@ -161,6 +163,7 @@ class PlantFlow {
 
     boolean step() {
         List<Transition> enabledTransitions = getEnabledTransitions()
+        log.info("step() - enabledTransitions:{}", enabledTransitions)
         if (enabledTransitions.isEmpty()) {
             return false
         }
@@ -179,6 +182,7 @@ class PlantFlow {
         }
 
         while (step()) {
+            log.info("runUntilEnd() - enabledTransitions:{}", enabledTransitions[0])
             // keep stepping until no enabled transitions remain
         }
 

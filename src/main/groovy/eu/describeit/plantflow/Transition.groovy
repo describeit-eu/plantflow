@@ -5,7 +5,7 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
 
 @CompileStatic
-@ToString(includeNames = true)
+@ToString(includeNames = true, includePackage = false)
 @EqualsAndHashCode
 class Transition {
     final String id

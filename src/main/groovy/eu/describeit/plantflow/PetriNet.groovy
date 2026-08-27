@@ -19,10 +19,10 @@ class PetriNet {
     }
 
     Place getPlaceById(String id) {
-        return places.find { it.id == id }
+        return places.find { place -> place.id == id }
     }
 
     Transition getTransitionById(String id) {
-        return transitions.find { it.id == id }
+        return transitions.find {transition -> transition.id == id }
     }
 }
