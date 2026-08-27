@@ -136,6 +136,47 @@ class PlantFlowSpec extends Specification {
         ex.message.contains("unregistered step")
     }
 
+    def "should throw UnregisteredHandlerException when evaluating isEnabled for unregistered action handler"() {
+        given: "a workflow with an unregistered action step and a seeded token"
+        def puml = '''
+            @startuml
+            start
+            :unregistered step;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+        engine.seedToken(RecordToken.of())
+        def transition = engine.petriNet.transitions[0]
+
+        when: "checking if the transition is enabled"
+        engine.isEnabled(transition)
+
+        then: "it immediately raises UnregisteredHandlerException"
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains("unregistered step")
+    }
+
+    def "should throw UnregisteredHandlerException when evaluating getEnabledTransitions with unregistered action handler"() {
+        given: "a workflow with an unregistered action step and a seeded token"
+        def puml = '''
+            @startuml
+            start
+            :unregistered step;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+        engine.seedToken(RecordToken.of())
+
+        when: "querying enabled transitions"
+        engine.getEnabledTransitions()
+
+        then: "it immediately raises UnregisteredHandlerException"
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains("unregistered step")
+    }
+
     def "should execute step by step"() {
         given:
         def puml = '''

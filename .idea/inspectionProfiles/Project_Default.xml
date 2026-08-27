@@ -38,11 +38,13 @@
     <inspection_tool class="CodeNarc.DirectConnectionManagement" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.DoubleCheckedLocking" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.DuplicateNumberLiteral" enabled="true" level="WARNING" enabled_by_default="true">
-      <option name="doNotApplyToFileNames" value="*.md" />
+      <option name="doNotApplyToFileNames" value="*.md,rules.groovy" />
+      <option name="doNotApplyToFilesMatching" value="" />
       <option name="ignoreNumbers" value="0,1,-1" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.DuplicateStringLiteral" enabled="true" level="WARNING" enabled_by_default="true">
-      <option name="doNotApplyToFileNames" value="*.md" />
+      <option name="doNotApplyToFileNames" value="*.md,rules.groovy" />
+      <option name="doNotApplyToFilesMatching" value="" />
       <option name="ignoreStrings" value="false,true" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.ElseBlockBraces" enabled="false" level="WARNING" enabled_by_default="false" />

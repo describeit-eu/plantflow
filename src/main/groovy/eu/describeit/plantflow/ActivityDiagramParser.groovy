@@ -16,11 +16,6 @@ class ActivityDiagramParser {
         return parse(file.getText(StandardCharsets.UTF_8.name()))
     }
 
-    PetriNet parse(Reader reader) {
-        if (reader == null) throw new IllegalArgumentException("Reader cannot be null")
-        return parse(reader.text)
-    }
-
     PetriNet parse(String pumlContent) {
         if (pumlContent == null || pumlContent.trim().isEmpty()) {
             throw new IllegalArgumentException("PlantUML content cannot be empty")
@@ -68,16 +63,11 @@ class ActivityDiagramParser {
         Place startPlace = new Place("P_start", 0, "start")
         places.add(startPlace)
 
-        if (n == 1) {
-            Place endPlace = new Place("P_end", 1, "end")
-            places.add(endPlace)
-        } else {
-            for (int i = 1; i < n; i++) {
-                places.add(new Place("P_${i}", i, "P_${i}"))
-            }
-            Place endPlace = new Place("P_end", n, "end")
-            places.add(endPlace)
+        for (int i = 1; i < n; i++) {
+            places.add(new Place("P_${i}", i, "P_${i}"))
         }
+        Place endPlace = new Place("P_end", n, "end")
+        places.add(endPlace)
 
         List<Transition> transitions = []
         for (int i = 0; i < n; i++) {
@@ -95,7 +85,6 @@ class ActivityDiagramParser {
         }
 
         IncidenceMatrix incidenceMatrix = new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
-        Place endPlace = places[numPlaces - 1]
 
         return new PetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
     }

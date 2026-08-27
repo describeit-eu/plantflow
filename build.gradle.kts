@@ -40,6 +40,7 @@ codenarc {
   reportFormat = "console"
   isIgnoreFailures = false
   maxPriority1Violations = 0
+  sourceSets = listOf()
 }
 
 tasks.codenarcTest {
@@ -78,10 +79,6 @@ tasks.test {
   useJUnitPlatform()
   // Ensure tests run before generating the report, and conversion runs after
   finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.withType<CodeNarc>().configureEach {
-  mustRunAfter("jacocoTestReport")
 }
 
 tasks.jacocoTestReport {

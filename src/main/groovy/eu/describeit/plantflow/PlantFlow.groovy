@@ -96,6 +96,10 @@ class PlantFlow {
             }
         }
 
+        if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
+            handlerRegistry.getAction(transition.actionKey)
+        }
+
         return true
     }
 
@@ -182,7 +186,6 @@ class PlantFlow {
         }
 
         while (step()) {
-            log.info("runUntilEnd() - enabledTransitions:{}", enabledTransitions[0])
             // keep stepping until no enabled transitions remain
         }
 

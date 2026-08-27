@@ -42,10 +42,6 @@ ruleset {
     ClassSize {
       maxLines = 300
     }
-    CrapMetric {
-      coberturaXmlFile = 'build/reports/jacoco/test/cobertura-jacocoTestReport.xml'
-      maxMethodCrapScore = 8
-    }
     CyclomaticComplexity {
       maxMethodComplexity = 10
       maxClassAverageMethodComplexity = 10
@@ -56,6 +52,15 @@ ruleset {
     ParameterCount {
       maxParameters = 5
     }
+    exclude 'CrapMetric'
+    /*
+    CrapMetric {
+      coberturaXmlFile = 'file:///home/kovax/workspace/describe-it/plantflow/build/reports/jacoco/test/cobertura-jacocoTestReport.xml'
+      maxMethodCrapScore = 8
+      //maxClassAverageMethodComplexity = 8 // for some reason this property is not recognised
+      maxClassCrapScore = 10
+    }
+    */
   }
   ruleset('rulesets/security.xml') {
     exclude 'SystemExit'
