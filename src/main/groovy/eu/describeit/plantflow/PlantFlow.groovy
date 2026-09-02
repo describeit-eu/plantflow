@@ -36,27 +36,8 @@ class PlantFlow {
         return new PlantFlow(pumlFile, handlerRegistry)
     }
 
-    static PlantFlow from(PetriNet petriNet, HandlerRegistry handlerRegistry = new HandlerRegistry()) {
-        return new PlantFlow(petriNet, handlerRegistry)
-    }
-
-    PlantFlow registerAction(String label, ActionHandler handler) {
-        handlerRegistry.registerAction(label, handler)
-        return this
-    }
-
     PlantFlow registerAction(String label, Closure handler) {
         handlerRegistry.registerAction(label, handler)
-        return this
-    }
-
-    PlantFlow registerGuard(String label, GuardPredicate predicate) {
-        handlerRegistry.registerGuard(label, predicate)
-        return this
-    }
-
-    PlantFlow registerGuard(String label, Closure predicate) {
-        handlerRegistry.registerGuard(label, predicate)
         return this
     }
 
@@ -65,10 +46,6 @@ class PlantFlow {
             token = RecordToken.of()
         }
         marking.addToken(petriNet.startPlace, token)
-    }
-
-    void seedToken(Map<String, Object> payload) {
-        seedToken(RecordToken.of(payload ?: [:]))
     }
 
     boolean isEnabled(Transition transition) {
