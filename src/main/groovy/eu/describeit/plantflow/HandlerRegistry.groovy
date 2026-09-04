@@ -44,13 +44,12 @@ class HandlerRegistry {
         guards.put(label, new GuardPredicate() {
             @Override
             boolean evaluate(ExecutionContext context, RecordToken token) {
-                Object res = predicate.call(context, token)
-                return Boolean.TRUE.equals(res) || (res instanceof Boolean && (Boolean) res)
+                return predicate(context, token) as Boolean
             }
         })
         return this
     }
-
+    
     ActionHandler getAction(String label) {
         ActionHandler handler = actions.get(label)
         if (handler == null) {

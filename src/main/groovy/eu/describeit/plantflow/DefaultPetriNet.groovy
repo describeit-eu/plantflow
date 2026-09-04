@@ -92,11 +92,6 @@ class DefaultPetriNet implements PetriNet {
 
         log.info('fire() - {}', transition)
 
-        ActionHandler actionHandler = null
-        if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
-            actionHandler = handlerRegistry.getAction(transition.actionKey)
-        }
-
         List<Place> inputPlaces = incidenceMatrix.getInputPlaces(transition.index)
         List<RecordToken> consumedTokens = []
 
@@ -112,19 +107,7 @@ class DefaultPetriNet implements PetriNet {
             }
         }
 
-        RecordToken primaryToken = consumedTokens.isEmpty() ? RecordToken.of() : consumedTokens.get(0)
-        RecordToken outputToken = primaryToken
-
-        if (actionHandler != null) {
-            Object result = actionHandler.execute(executionContext, primaryToken)
-            if (result instanceof RecordToken) {
-                outputToken = (RecordToken) result
-            } else if (result instanceof Map) {
-                @SuppressWarnings('unchecked')
-                Map<String, Object> newPayload = (Map<String, Object>) result
-                outputToken = primaryToken.withPayload(newPayload)
-            }
-        }
+        RecordToken outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
 
         List<Place> outputPlaces = incidenceMatrix.getOutputPlaces(transition.index)
         for (Place p : outputPlaces) {
@@ -135,5 +118,22 @@ class DefaultPetriNet implements PetriNet {
         }
 
         return true
+    }
+
+    private RecordToken getActionOutputToken(List<RecordToken> consumedTokens, Transition transition, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
+        RecordToken emptyToken = consumedTokens.isEmpty() ? RecordToken.of() : consumedTokens.get(0)
+
+        if (transition.actionKey) {
+            ActionHandler actionHandler = handlerRegistry.getAction(transition.actionKey)
+
+            Object result = actionHandler.execute(executionContext, emptyToken)
+            if (result instanceof RecordToken recordToken) {
+                return recordToken
+            } else if (result instanceof Map mapResult) {
+                return emptyToken.withPayload(mapResult)
+            }
+        }
+        return emptyToken
+
     }
 }
