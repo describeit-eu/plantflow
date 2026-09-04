@@ -1,6 +1,7 @@
 package eu.describeit.plantflow
 
 import groovy.transform.CompileStatic
+import groovy.transform.NullCheck
 import groovy.util.logging.Slf4j
 
 @Slf4j
@@ -12,12 +13,12 @@ class PlantFlow {
     final Marking marking
     ExecutionContext executionContext
 
+    @NullCheck
     PlantFlow(PetriNet petriNet, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
-        if (petriNet == null) throw new IllegalArgumentException('PetriNet cannot be null')
         this.petriNet = petriNet
-        this.handlerRegistry = handlerRegistry ?: new HandlerRegistry()
+        this.handlerRegistry = handlerRegistry
         this.marking = new Marking(petriNet.places)
-        this.executionContext = executionContext ?: new ExecutionContext()
+        this.executionContext = executionContext
     }
 
     PlantFlow(String pumlContent, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
@@ -60,15 +61,16 @@ class PlantFlow {
 
     boolean step() {
         List<Transition> enabledTransitions = getEnabledTransitions()
+
         log.info('step() - enabledTransitions:{}', enabledTransitions)
-        if (enabledTransitions.isEmpty()) {
-            return false
-        }
-        return fire(enabledTransitions.get(0))
+        
+        if (enabledTransitions) return fire(enabledTransitions.get(0))
+
+        return false
     }
 
     Marking runUntilEnd(RecordToken token = null, ExecutionContext context = null) {
-        if (context != null) {
+        if (context) {
             this.executionContext = context
         }
         return petriNet.runUntilEnd(marking, handlerRegistry, executionContext, token)

@@ -45,19 +45,17 @@ class IncidenceMatrix {
     }
 
     List<Place> getInputPlaces(int transitionIndex) {
-        List<Place> result = []
-        for (int p = 0; p < places.size(); p++) {
-            if (inputMatrix[p][transitionIndex] > 0) {
-                result.add(places[p])
-            }
-        }
-        return Collections.unmodifiableList(result)
+        return getPlaces(inputMatrix, transitionIndex)
     }
 
     List<Place> getOutputPlaces(int transitionIndex) {
+        return getPlaces(outputMatrix, transitionIndex)
+    }
+    
+    private List<Place> getPlaces(int[][] inputMatrix, int transitionIndex) {
         List<Place> result = []
         for (int p = 0; p < places.size(); p++) {
-            if (outputMatrix[p][transitionIndex] > 0) {
+            if (inputMatrix[p][transitionIndex] > 0) {
                 result.add(places[p])
             }
         }

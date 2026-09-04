@@ -28,6 +28,7 @@
     <inspection_tool class="CodeNarc.ClosureInGString" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.CompileStatic" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="doNotApplyToFileNames" value="rules.groovy, test-rules.groovy, *.md" />
+      <option name="doNotApplyToFilesMatching" value=".*Spec\.groovy" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.ConsecutiveBlankLines" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.CoupledTestCase" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -39,12 +40,10 @@
     <inspection_tool class="CodeNarc.DoubleCheckedLocking" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.DuplicateNumberLiteral" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="doNotApplyToFileNames" value="*.md,rules.groovy" />
-      <option name="doNotApplyToFilesMatching" value="" />
       <option name="ignoreNumbers" value="0,1,-1" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.DuplicateStringLiteral" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="doNotApplyToFileNames" value="*.md,rules.groovy" />
-      <option name="doNotApplyToFilesMatching" value="" />
       <option name="ignoreStrings" value="false,true" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.ElseBlockBraces" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -112,9 +111,10 @@
     </inspection_tool>
     <inspection_tool class="CodeNarc.MethodReturnTypeRequired" enabled="true" level="WEAK WARNING" enabled_by_default="true" editorAttributes="INFO_ATTRIBUTES">
       <option name="doNotApplyToFileNames" value="*.md" />
-      <option name="doNotApplyToFilesMatching" value="" />
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.MethodSize" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
       <option name="maxLines" value="40" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.MissingBlankLineAfterImports" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
@@ -188,6 +188,7 @@
     <inspection_tool class="CodeNarc.UseOfNotifyMethod" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.VariableTypeRequired" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="doNotApplyToFileNames" value="*.md" />
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.VolatileArrayField" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.VolatileLongOrDoubleField" enabled="false" level="WARNING" enabled_by_default="false" />

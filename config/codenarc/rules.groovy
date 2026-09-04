@@ -12,6 +12,7 @@ ruleset {
     exclude 'NoDef'
   }
   ruleset('rulesets/design.xml') {
+    exclude 'Instanceof'
     exclude 'NestedForLoop'
   }
   ruleset('rulesets/dry.xml') {

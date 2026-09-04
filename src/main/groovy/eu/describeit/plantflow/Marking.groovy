@@ -29,24 +29,12 @@ class Marking {
         addToken(place.index, token)
     }
 
-    void addToken(String placeId, RecordToken token) {
-        Integer idx = placeIndexMap.get(placeId)
-        if (idx != null) {
-            addToken(idx, token)
-        }
-    }
-
     boolean removeToken(int placeIndex, RecordToken token) {
         return tokenVector[placeIndex].remove(token)
     }
 
     boolean removeToken(Place place, RecordToken token) {
         return removeToken(place.index, token)
-    }
-
-    boolean removeToken(String placeId, RecordToken token) {
-        Integer idx = placeIndexMap.get(placeId)
-        return idx != null ? removeToken(idx, token) : false
     }
 
     List<RecordToken> getTokens(int placeIndex) {

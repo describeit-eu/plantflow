@@ -65,12 +65,4 @@ class HandlerRegistry {
         }
         return predicate
     }
-
-    boolean hasAction(String label) {
-        return actions.containsKey(label)
-    }
-
-    boolean hasGuard(String label) {
-        return guards.containsKey(label)
-    }
 }

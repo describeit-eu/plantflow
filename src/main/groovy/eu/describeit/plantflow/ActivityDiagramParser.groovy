@@ -1,17 +1,20 @@
 package eu.describeit.plantflow
 
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 
 import java.nio.charset.StandardCharsets
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 @CompileStatic
+@Slf4j
 class ActivityDiagramParser {
 
     private static final Pattern ACTION_PATTERN = Pattern.compile('^\\s*:(.+);\\s*$')
     private static final String START = 'start'
     private static final String END = 'end'
+    private static final String STOP = 'stop'
 
     PetriNet parse(File file) {
         if (file == null) throw new IllegalArgumentException('File cannot be null')
@@ -29,33 +32,41 @@ class ActivityDiagramParser {
 
     private List<String> extractActionLabels(List<String> lines) {
         List<String> actionLabels = []
-        boolean hasStart = false
-        boolean hasEnd = false
+        Boolean hasStart = false
+        Boolean hasEnd = false
 
         for (String rawLine : lines) {
             String line = rawLine.trim()
-            if (line.isEmpty() || line.startsWith("'") || line.startsWith('@startuml') || line.startsWith('@enduml')) {
-                continue
-            }
+            Boolean skip = false
 
-            if (line == START) {
-                hasStart = true
-                continue
-            }
+            (skip, hasStart, hasEnd) = checkLine(line, hasStart, hasEnd)
 
-            if (line == END || line == 'stop') {
-                hasEnd = true
-                continue
-            }
-
-            Matcher matcher = ACTION_PATTERN.matcher(line)
-            if (matcher.matches()) {
-                actionLabels.add(matcher.group(1).trim())
+            if (!skip) {
+                Matcher matcher = ACTION_PATTERN.matcher(line)
+                if (matcher.matches()) {
+                    actionLabels.add(matcher.group(1).trim())
+                }
             }
         }
 
         validateDiagramStructure(hasStart, hasEnd, actionLabels)
         return actionLabels
+    }
+
+    private Tuple3<Boolean, Boolean, Boolean> checkLine(String line, Boolean hasStart, Boolean hasEnd) {
+        Tuple3<Boolean, Boolean, Boolean> result = [false, hasStart, hasEnd]
+
+        if (line.isEmpty() || line.startsWith("'") || line.startsWith('@startuml') || line.startsWith('@enduml')) {
+            result = [true, hasStart, hasEnd]
+        } else if (line == START) {
+            result = [true, true, hasEnd]
+        } else if (line == END || line == STOP) {
+            result = [true, hasStart, true]
+        }
+
+        log.info('checkLine() - line:"{}" result:{}', line, result)
+
+        return result
     }
 
     private void validateDiagramStructure(boolean hasStart, boolean hasEnd, List<String> actionLabels) {

@@ -147,8 +147,8 @@ class DefaultPetriNet implements PetriNet {
 
         if (transition.actionKey) {
             ActionHandler actionHandler = handlerRegistry.getAction(transition.actionKey)
-
             Object result = actionHandler.execute(executionContext, emptyToken)
+
             if (result instanceof RecordToken recordToken) {
                 return recordToken
             } else if (result instanceof Map mapResult) {
@@ -156,6 +156,5 @@ class DefaultPetriNet implements PetriNet {
             }
         }
         return emptyToken
-
     }
 }
