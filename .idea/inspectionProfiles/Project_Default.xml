@@ -193,5 +193,6 @@
     <inspection_tool class="CodeNarc.VolatileLongOrDoubleField" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.WaitOutsideOfWhileLoop" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.WhileStatementBraces" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="GrMethodMayBeStatic" enabled="false" level="WARNING" enabled_by_default="false" />
   </profile>
 </component>

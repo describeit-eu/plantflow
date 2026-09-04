@@ -23,11 +23,15 @@ class ActivityDiagramParser {
             throw new IllegalArgumentException('PlantUML content cannot be empty')
         }
 
+        List<String> actionLabels = extractActionLabels(pumlContent.readLines())
+        return constructPetriNet(actionLabels)
+    }
+
+    private List<String> extractActionLabels(List<String> lines) {
         List<String> actionLabels = []
         boolean hasStart = false
         boolean hasEnd = false
 
-        List<String> lines = pumlContent.readLines()
         for (String rawLine : lines) {
             String line = rawLine.trim()
             if (line.isEmpty() || line.startsWith("'") || line.startsWith('@startuml') || line.startsWith('@enduml')) {
@@ -50,6 +54,11 @@ class ActivityDiagramParser {
             }
         }
 
+        validateDiagramStructure(hasStart, hasEnd, actionLabels)
+        return actionLabels
+    }
+
+    private void validateDiagramStructure(boolean hasStart, boolean hasEnd, List<String> actionLabels) {
         if (!hasStart) {
             throw new IllegalArgumentException('Diagram must contain \'start\'')
         }
@@ -59,16 +68,17 @@ class ActivityDiagramParser {
         if (actionLabels.isEmpty()) {
             throw new IllegalArgumentException('Diagram must contain at least one action transition')
         }
+    }
 
+    private PetriNet constructPetriNet(List<String> actionLabels) {
         int n = actionLabels.size()
-        List<Place> places = []
         Place startPlace = new Place('P_start', 0, START)
-        places.add(startPlace)
+        Place endPlace = new Place('P_end', n, END)
 
+        List<Place> places = [startPlace]
         for (int i = 1; i < n; i++) {
             places.add(new Place("P_${i}", i, "P_${i}"))
         }
-        Place endPlace = new Place('P_end', n, END)
         places.add(endPlace)
 
         List<Transition> transitions = []
@@ -76,6 +86,11 @@ class ActivityDiagramParser {
             transitions.add(new Transition("T_${i}", i, actionLabels[i]))
         }
 
+        IncidenceMatrix incidenceMatrix = constructIncidenceMatrix(places, transitions, n)
+        return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
+    }
+
+    private IncidenceMatrix constructIncidenceMatrix(List<Place> places, List<Transition> transitions, int n) {
         int numPlaces = places.size()
         int numTransitions = transitions.size()
         int[][] inputMatrix = new int[numPlaces][numTransitions]
@@ -86,8 +101,6 @@ class ActivityDiagramParser {
             outputMatrix[i + 1][i] = 1
         }
 
-        IncidenceMatrix incidenceMatrix = new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
-
-        return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
+        return new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
     }
 }
