@@ -42,10 +42,8 @@ class PlantFlow {
     }
 
     void seedToken(RecordToken token) {
-        if (token == null) {
-            token = RecordToken.of()
-        }
-        marking.addToken(petriNet.startPlace, token)
+        RecordToken tokenToSeed = token ?: RecordToken.of()
+        marking.addToken(petriNet.startPlace, tokenToSeed)
     }
 
     boolean isEnabled(Transition transition) {
