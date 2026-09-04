@@ -5,13 +5,13 @@ import spock.lang.Specification
 
 class PetriNetSpec extends Specification {
 
-    @Shared def pStart = new Place("P_start", 0, "start")
-    @Shared def pMid = new Place("P_mid", 1, "mid")
-    @Shared def pEnd = new Place("P_end", 2, "end")
-    @Shared def t1 = new Transition("T_0", 0, "step1")
-    @Shared def t2 = new Transition("T_1", 1, "step2")
+    @Shared def pStart = new Place('P_start', 0, 'start')
+    @Shared def pMid = new Place('P_mid', 1, 'mid')
+    @Shared def pEnd = new Place('P_end', 2, 'end')
+    @Shared def t1 = new Transition('T_0', 0, 'step1')
+    @Shared def t2 = new Transition('T_1', 1, 'step2')
 
-    def "should lookup place by id: #lookupId"() {
+    def 'should lookup place by id: #lookupId'() {
         given:
         PetriNet net = new TestPetriNet(places: [pStart, pMid, pEnd])
 
@@ -20,13 +20,13 @@ class PetriNetSpec extends Specification {
 
         where:
         lookupId    | expectedPlace
-        "P_start"   | pStart
-        "P_mid"     | pMid
-        "P_end"     | pEnd
-        "P_unknown" | null
+        'P_start'   | pStart
+        'P_mid'     | pMid
+        'P_end'     | pEnd
+        'P_unknown' | null
     }
 
-    def "should lookup transition by id: #lookupId"() {
+    def 'should lookup transition by id: #lookupId'() {
         given:
         PetriNet net = new TestPetriNet(transitions: [t1, t2])
 
@@ -35,12 +35,12 @@ class PetriNetSpec extends Specification {
 
         where:
         lookupId    | expectedTransition
-        "T_0"       | t1
-        "T_1"       | t2
-        "T_unknown" | null
+        'T_0'       | t1
+        'T_1'       | t2
+        'T_unknown' | null
     }
 
-    def "should determine if marking is empty across all net places: #description"() {
+    def 'should determine if marking is empty across all net places: #description'() {
         given:
         def marking = new Marking([pStart, pMid, pEnd])
         tokenPlaces.each { Place p ->
@@ -54,13 +54,13 @@ class PetriNetSpec extends Specification {
 
         where:
         description              | tokenPlaces      | expectedEmpty
-        "no tokens in any place" | []               | true
-        "token in start place"   | [pStart]         | false
-        "token in end place"     | [pEnd]           | false
-        "token in both places"   | [pStart, pEnd]   | false
+        'no tokens in any place' | []               | true
+        'token in start place'   | [pStart]         | false
+        'token in end place'     | [pEnd]           | false
+        'token in both places'   | [pStart, pEnd]   | false
     }
 
-    def "should execute default runUntilEnd workflow loop"() {
+    def 'should execute default runUntilEnd workflow loop'() {
         given:
         def marking = new Marking([pStart, pMid, pEnd])
         def registry = new HandlerRegistry()
@@ -85,7 +85,7 @@ class PetriNetSpec extends Specification {
         resultMarking == marking
     }
 
-    def "should auto-seed token when runUntilEnd is called on empty marking"() {
+    def 'should auto-seed token when runUntilEnd is called on empty marking'() {
         given:
         def marking = new Marking([pStart, pMid, pEnd])
         def net = new TestPetriNet(

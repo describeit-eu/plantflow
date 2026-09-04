@@ -4,12 +4,12 @@ import spock.lang.Specification
 
 class MarkingSpec extends Specification {
 
-    def "should manage tokens in vector indexed places"() {
+    def 'should manage tokens in vector indexed places'() {
         given:
-        def pStart = new Place("P_start", 0, "start")
-        def pEnd = new Place("P_end", 1, "end")
+        def pStart = new Place('P_start', 0, 'start')
+        def pEnd = new Place('P_end', 1, 'end')
         def marking = new Marking([pStart, pEnd])
-        def token = RecordToken.of([data: "initial"])
+        def token = RecordToken.of([data: 'initial'])
 
         when:
         marking.addToken(pStart, token)
@@ -20,7 +20,7 @@ class MarkingSpec extends Specification {
         marking.getTokenCount(pEnd) == 0
         marking.getTokens(pStart) == [token]
         marking.getTokens(0) == [token]
-        marking.getTokens("P_start") == [token]
+        marking.getTokens('P_start') == [token]
         marking.getMarkingVector() == [1, 0] as int[]
 
         when:

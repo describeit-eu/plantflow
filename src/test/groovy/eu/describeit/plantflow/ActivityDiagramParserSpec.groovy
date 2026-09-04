@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 class ActivityDiagramParserSpec extends Specification {
 
-    def "should parse single action linear activity diagram into PetriNet"() {
+    def 'should parse single action linear activity diagram into PetriNet'() {
         given:
         def puml = '''
             @startuml
@@ -24,17 +24,17 @@ class ActivityDiagramParserSpec extends Specification {
         net.transitions.size() == 1
 
         and:
-        net.startPlace.id == "P_start"
+        net.startPlace.id == 'P_start'
         net.startPlace.index == 0
-        net.endPlace.id == "P_end"
+        net.endPlace.id == 'P_end'
         net.endPlace.index == 1
 
         and:
         def transition = net.transitions[0]
-        transition.id == "T_0"
+        transition.id == 'T_0'
         transition.index == 0
-        transition.label == "process order"
-        transition.actionKey == "process order"
+        transition.label == 'process order'
+        transition.actionKey == 'process order'
 
         and:
         net.incidenceMatrix.getInputWeight(0, 0) == 1
@@ -45,7 +45,7 @@ class ActivityDiagramParserSpec extends Specification {
         net.incidenceMatrix.getIncidence(1, 0) == 1
     }
 
-    def "should parse multi-action linear activity diagram into PetriNet"() {
+    def 'should parse multi-action linear activity diagram into PetriNet'() {
         given:
         def puml = '''
             @startuml
@@ -65,13 +65,13 @@ class ActivityDiagramParserSpec extends Specification {
         net.transitions.size() == 2
 
         and:
-        net.places[0].id == "P_start"
-        net.places[1].id == "P_1"
-        net.places[2].id == "P_end"
+        net.places[0].id == 'P_start'
+        net.places[1].id == 'P_1'
+        net.places[2].id == 'P_end'
 
         and:
-        net.transitions[0].label == "Hello world"
-        net.transitions[1].label == "groovy goodness"
+        net.transitions[0].label == 'Hello world'
+        net.transitions[1].label == 'groovy goodness'
 
         and:
         // T_0: consumes from P_start (0), produces to P_1 (1)
@@ -83,10 +83,10 @@ class ActivityDiagramParserSpec extends Specification {
         net.incidenceMatrix.getOutputPlaces(1) == [net.places[2]]
     }
 
-    def "should parse diagram from file"() {
+    def 'should parse diagram from file'() {
         given:
         def parser = new ActivityDiagramParser()
-        def file = new File("src/test/data/puml/sequence.puml")
+        def file = new File('src/test/data/puml/sequence.puml')
 
         when:
         def net = parser.parse(file)
@@ -94,7 +94,7 @@ class ActivityDiagramParserSpec extends Specification {
         then:
         net.places.size() == 3
         net.transitions.size() == 2
-        net.transitions[0].label == "Hello world"
-        net.transitions[1].label == "groovy goodness"
+        net.transitions[0].label == 'Hello world'
+        net.transitions[1].label == 'groovy goodness'
     }
 }
