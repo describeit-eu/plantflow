@@ -12,11 +12,11 @@ class Marking {
     Marking(List<Place> places) {
         this.places = Collections.unmodifiableList(new ArrayList<>(places))
         this.placeIndexMap = new HashMap<>(places.size())
-        this.tokenVector = (List<RecordToken>[]) new List[places.size()]
+        this.tokenVector = new List[places.size()]
         for (int i = 0; i < places.size(); i++) {
             Place p = places[i]
             placeIndexMap.put(p.id, p.index)
-            tokenVector[i] = new ArrayList<RecordToken>()
+            tokenVector[i] = []
         }
     }
 
