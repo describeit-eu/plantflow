@@ -42,33 +42,20 @@ class DefaultPetriNet implements PetriNet {
 
     @Override
     boolean isEnabled(Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
-        if (transition == null) return false
+        if (transition == null) {
+            return false
+        }
 
         List<Place> inputPlaces = incidenceMatrix.getInputPlaces(transition.index)
-        for (Place p : inputPlaces) {
-            int requiredWeight = incidenceMatrix.getInputWeight(p.index, transition.index)
-            if (marking.getTokenCount(p) < requiredWeight) {
-                return false
-            }
+        if (!hasSufficientTokens(transition, marking, inputPlaces)) {
+            return false
         }
 
-        if (transition.guardKey != null && !transition.guardKey.isEmpty()) {
-            GuardPredicate guard = handlerRegistry.getGuard(transition.guardKey)
-            RecordToken tokenForGuard = null
-            if (!inputPlaces.isEmpty()) {
-                List<RecordToken> tokens = marking.getTokens(inputPlaces.get(0))
-                if (!tokens.isEmpty()) {
-                    tokenForGuard = tokens.get(0)
-                }
-            }
-            if (!guard.evaluate(executionContext, tokenForGuard)) {
-                return false
-            }
+        if (!isGuardSatisfied(transition, marking, handlerRegistry, executionContext, inputPlaces)) {
+            return false
         }
 
-        if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
-            handlerRegistry.getAction(transition.actionKey)
-        }
+        validateAction(transition, handlerRegistry)
 
         return true
     }
@@ -118,6 +105,41 @@ class DefaultPetriNet implements PetriNet {
         }
 
         return true
+    }
+
+    private boolean hasSufficientTokens(Transition transition, Marking marking, List<Place> inputPlaces) {
+        for (Place p : inputPlaces) {
+            int requiredWeight = incidenceMatrix.getInputWeight(p.index, transition.index)
+            if (marking.getTokenCount(p) < requiredWeight) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private boolean isGuardSatisfied(Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext, List<Place> inputPlaces) {
+        if (transition.guardKey) {
+            GuardPredicate guard = handlerRegistry.getGuard(transition.guardKey)
+            RecordToken tokenForGuard = getGuardToken(marking, inputPlaces)
+            return guard.evaluate(executionContext, tokenForGuard)
+        }
+        return true
+    }
+
+    private RecordToken getGuardToken(Marking marking, List<Place> inputPlaces) {
+        if (!inputPlaces.isEmpty()) {
+            List<RecordToken> tokens = marking.getTokens(inputPlaces.get(0))
+            if (!tokens.isEmpty()) {
+                return tokens.get(0)
+            }
+        }
+        return null
+    }
+
+    private void validateAction(Transition transition, HandlerRegistry handlerRegistry) {
+        if (transition.actionKey) {
+            handlerRegistry.getAction(transition.actionKey)
+        }
     }
 
     private RecordToken getActionOutputToken(List<RecordToken> consumedTokens, Transition transition, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
