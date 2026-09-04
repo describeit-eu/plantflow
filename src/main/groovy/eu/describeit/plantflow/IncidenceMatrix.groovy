@@ -11,8 +11,8 @@ class IncidenceMatrix {
     final int[][] incidenceMatrix
 
     IncidenceMatrix(List<Place> places, List<Transition> transitions, int[][] inputMatrix, int[][] outputMatrix) {
-        this.places = Collections.unmodifiableList(new ArrayList<>(places))
-        this.transitions = Collections.unmodifiableList(new ArrayList<>(transitions))
+        this.places = places.asUnmodifiable()
+        this.transitions = transitions.asUnmodifiable()
 
         int numPlaces = places.size()
         int numTransitions = transitions.size()
@@ -23,8 +23,9 @@ class IncidenceMatrix {
 
         for (int p = 0; p < numPlaces; p++) {
             for (int t = 0; t < numTransitions; t++) {
-                int inWeight = (inputMatrix != null && p < inputMatrix.length && t < inputMatrix[p].length) ? inputMatrix[p][t] : 0
+                int inWeight  = (inputMatrix  != null && p < inputMatrix.length  && t < inputMatrix[p].length)  ? inputMatrix[p][t]  : 0
                 int outWeight = (outputMatrix != null && p < outputMatrix.length && t < outputMatrix[p].length) ? outputMatrix[p][t] : 0
+
                 this.inputMatrix[p][t] = inWeight
                 this.outputMatrix[p][t] = outWeight
                 this.incidenceMatrix[p][t] = outWeight - inWeight

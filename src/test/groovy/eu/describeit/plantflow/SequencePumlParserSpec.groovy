@@ -2,7 +2,7 @@ package eu.describeit.plantflow
 
 import spock.lang.Specification
 
-class ActivityDiagramParserSpec extends Specification {
+class SequencePumlParserSpec extends Specification {
 
     def 'should parse single action linear activity diagram into PetriNet'() {
         given:
@@ -83,7 +83,7 @@ class ActivityDiagramParserSpec extends Specification {
         net.incidenceMatrix.getOutputPlaces(1) == [net.places[2]]
     }
 
-    def 'should parse diagram from file'() {
+    def 'should parse sequence.puml from file'() {
         given:
         def parser = new ActivityDiagramParser()
         def file = new File('src/test/data/puml/sequence.puml')
