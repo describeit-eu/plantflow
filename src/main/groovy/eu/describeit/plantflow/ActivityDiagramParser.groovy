@@ -10,6 +10,8 @@ import java.util.regex.Pattern
 class ActivityDiagramParser {
 
     private static final Pattern ACTION_PATTERN = Pattern.compile('^\\s*:(.+);\\s*$')
+    private static final String START = 'start'
+    private static final String END = 'end'
 
     PetriNet parse(File file) {
         if (file == null) throw new IllegalArgumentException('File cannot be null')
@@ -32,12 +34,12 @@ class ActivityDiagramParser {
                 continue
             }
 
-            if (line == 'start') {
+            if (line == START) {
                 hasStart = true
                 continue
             }
 
-            if (line == 'end' || line == 'stop') {
+            if (line == END || line == 'stop') {
                 hasEnd = true
                 continue
             }
@@ -60,13 +62,13 @@ class ActivityDiagramParser {
 
         int n = actionLabels.size()
         List<Place> places = []
-        Place startPlace = new Place('P_start', 0, 'start')
+        Place startPlace = new Place('P_start', 0, START)
         places.add(startPlace)
 
         for (int i = 1; i < n; i++) {
             places.add(new Place("P_${i}", i, "P_${i}"))
         }
-        Place endPlace = new Place('P_end', n, 'end')
+        Place endPlace = new Place('P_end', n, END)
         places.add(endPlace)
 
         List<Transition> transitions = []
