@@ -86,6 +86,6 @@ class ActivityDiagramParser {
 
         IncidenceMatrix incidenceMatrix = new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
 
-        return new PetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
+        return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
     }
 }

@@ -49,97 +49,15 @@ class PlantFlow {
     }
 
     boolean isEnabled(Transition transition) {
-        if (transition == null) return false
-
-        List<Place> inputPlaces = petriNet.incidenceMatrix.getInputPlaces(transition.index)
-        for (Place p : inputPlaces) {
-            int requiredWeight = petriNet.incidenceMatrix.getInputWeight(p.index, transition.index)
-            if (marking.getTokenCount(p) < requiredWeight) {
-                return false
-            }
-        }
-
-        if (transition.guardKey != null && !transition.guardKey.isEmpty()) {
-            GuardPredicate guard = handlerRegistry.getGuard(transition.guardKey)
-            RecordToken tokenForGuard = null
-            if (!inputPlaces.isEmpty()) {
-                List<RecordToken> tokens = marking.getTokens(inputPlaces[0])
-                if (!tokens.isEmpty()) {
-                    tokenForGuard = tokens[0]
-                }
-            }
-            if (!guard.evaluate(executionContext, tokenForGuard)) {
-                return false
-            }
-        }
-
-        if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
-            handlerRegistry.getAction(transition.actionKey)
-        }
-
-        return true
+        return petriNet.isEnabled(transition, marking, handlerRegistry, executionContext)
     }
 
     List<Transition> getEnabledTransitions() {
-        List<Transition> enabled = []
-        for (Transition t : petriNet.transitions) {
-            if (isEnabled(t)) {
-                enabled.add(t)
-            }
-        }
-        return Collections.unmodifiableList(enabled)
+        return petriNet.getEnabledTransitions(marking, handlerRegistry, executionContext)
     }
 
     boolean fire(Transition transition) {
-        if (!isEnabled(transition)) {
-            return false
-        }
-
-        log.info("fire() - {}", transition)
-
-        ActionHandler actionHandler = null
-        if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
-            actionHandler = handlerRegistry.getAction(transition.actionKey)
-        }
-
-        List<Place> inputPlaces = petriNet.incidenceMatrix.getInputPlaces(transition.index)
-        List<RecordToken> consumedTokens = []
-
-        for (Place p : inputPlaces) {
-            int requiredWeight = petriNet.incidenceMatrix.getInputWeight(p.index, transition.index)
-            for (int w = 0; w < requiredWeight; w++) {
-                List<RecordToken> available = marking.getTokens(p)
-                if (!available.isEmpty()) {
-                    RecordToken tokenToConsume = available[0]
-                    marking.removeToken(p, tokenToConsume)
-                    consumedTokens.add(tokenToConsume)
-                }
-            }
-        }
-
-        RecordToken primaryToken = consumedTokens.isEmpty() ? RecordToken.of() : consumedTokens[0]
-        RecordToken outputToken = primaryToken
-
-        if (actionHandler != null) {
-            Object result = actionHandler.execute(executionContext, primaryToken)
-            if (result instanceof RecordToken) {
-                outputToken = (RecordToken) result
-            } else if (result instanceof Map) {
-                @SuppressWarnings('unchecked')
-                Map<String, Object> newPayload = (Map<String, Object>) result
-                outputToken = primaryToken.withPayload(newPayload)
-            }
-        }
-
-        List<Place> outputPlaces = petriNet.incidenceMatrix.getOutputPlaces(transition.index)
-        for (Place p : outputPlaces) {
-            int produceWeight = petriNet.incidenceMatrix.getOutputWeight(p.index, transition.index)
-            for (int w = 0; w < produceWeight; w++) {
-                marking.addToken(p, outputToken)
-            }
-        }
-
-        return true
+        return petriNet.fire(transition, marking, handlerRegistry, executionContext)
     }
 
     boolean step() {
@@ -148,25 +66,14 @@ class PlantFlow {
         if (enabledTransitions.isEmpty()) {
             return false
         }
-        return fire(enabledTransitions[0])
+        return fire(enabledTransitions.get(0))
     }
 
     Marking runUntilEnd(RecordToken token = null, ExecutionContext context = null) {
         if (context != null) {
             this.executionContext = context
         }
-
-        if (token != null) {
-            this.seedToken(token)
-        } else if (isNetEmpty()) {
-            this.seedToken(RecordToken.of())
-        }
-
-        while (step()) {
-            // keep stepping until no enabled transitions remain
-        }
-
-        return marking
+        return petriNet.runUntilEnd(marking, handlerRegistry, executionContext, token)
     }
 
     List<RecordToken> getEndTokens() {
@@ -180,14 +87,5 @@ class PlantFlow {
 
     boolean isCompleted() {
         return !marking.isEmpty(petriNet.endPlace) && getEnabledTransitions().isEmpty()
-    }
-
-    private boolean isNetEmpty() {
-        for (Place p : petriNet.places) {
-            if (!marking.isEmpty(p)) {
-                return false
-            }
-        }
-        return true
     }
 }
