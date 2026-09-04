@@ -12,13 +12,13 @@ class ActivityDiagramParser {
     private static final Pattern ACTION_PATTERN = Pattern.compile('^\\s*:(.+);\\s*$')
 
     PetriNet parse(File file) {
-        if (file == null) throw new IllegalArgumentException("File cannot be null")
+        if (file == null) throw new IllegalArgumentException('File cannot be null')
         return parse(file.getText(StandardCharsets.UTF_8.name()))
     }
 
     PetriNet parse(String pumlContent) {
         if (pumlContent == null || pumlContent.trim().isEmpty()) {
-            throw new IllegalArgumentException("PlantUML content cannot be empty")
+            throw new IllegalArgumentException('PlantUML content cannot be empty')
         }
 
         List<String> actionLabels = []
@@ -28,16 +28,16 @@ class ActivityDiagramParser {
         List<String> lines = pumlContent.readLines()
         for (String rawLine : lines) {
             String line = rawLine.trim()
-            if (line.isEmpty() || line.startsWith("'") || line.startsWith("@startuml") || line.startsWith("@enduml")) {
+            if (line.isEmpty() || line.startsWith("'") || line.startsWith('@startuml') || line.startsWith('@enduml')) {
                 continue
             }
 
-            if (line == "start") {
+            if (line == 'start') {
                 hasStart = true
                 continue
             }
 
-            if (line == "end" || line == "stop") {
+            if (line == 'end' || line == 'stop') {
                 hasEnd = true
                 continue
             }
@@ -49,24 +49,24 @@ class ActivityDiagramParser {
         }
 
         if (!hasStart) {
-            throw new IllegalArgumentException("Diagram must contain 'start'")
+            throw new IllegalArgumentException('Diagram must contain \'start\'')
         }
         if (!hasEnd) {
-            throw new IllegalArgumentException("Diagram must contain 'end' or 'stop'")
+            throw new IllegalArgumentException('Diagram must contain \'end\' or \'stop\'')
         }
         if (actionLabels.isEmpty()) {
-            throw new IllegalArgumentException("Diagram must contain at least one action transition")
+            throw new IllegalArgumentException('Diagram must contain at least one action transition')
         }
 
         int n = actionLabels.size()
         List<Place> places = []
-        Place startPlace = new Place("P_start", 0, "start")
+        Place startPlace = new Place('P_start', 0, 'start')
         places.add(startPlace)
 
         for (int i = 1; i < n; i++) {
             places.add(new Place("P_${i}", i, "P_${i}"))
         }
-        Place endPlace = new Place("P_end", n, "end")
+        Place endPlace = new Place('P_end', n, 'end')
         places.add(endPlace)
 
         List<Transition> transitions = []

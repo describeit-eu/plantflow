@@ -70,6 +70,7 @@ ruleset {
     exclude 'NonSerializableFieldInSerializableClass'
   }
   ruleset('rulesets/unnecessary.xml') {
+    exclude 'UnnecessaryGetter'
     exclude 'UnnecessaryReturnKeyword'
   }
   ruleset('rulesets/unused.xml')

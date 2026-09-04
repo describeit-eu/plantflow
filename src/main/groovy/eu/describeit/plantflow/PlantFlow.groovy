@@ -13,7 +13,7 @@ class PlantFlow {
     ExecutionContext executionContext
 
     PlantFlow(PetriNet petriNet, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
-        if (petriNet == null) throw new IllegalArgumentException("PetriNet cannot be null")
+        if (petriNet == null) throw new IllegalArgumentException('PetriNet cannot be null')
         this.petriNet = petriNet
         this.handlerRegistry = handlerRegistry ?: new HandlerRegistry()
         this.marking = new Marking(petriNet.places)
@@ -62,7 +62,7 @@ class PlantFlow {
 
     boolean step() {
         List<Transition> enabledTransitions = getEnabledTransitions()
-        log.info("step() - enabledTransitions:{}", enabledTransitions)
+        log.info('step() - enabledTransitions:{}', enabledTransitions)
         if (enabledTransitions.isEmpty()) {
             return false
         }

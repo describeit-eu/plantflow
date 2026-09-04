@@ -15,8 +15,8 @@ class HandlerRegistry {
     }
 
     HandlerRegistry registerAction(String label, Closure handler) {
-        if (label == null) throw new IllegalArgumentException("Action label cannot be null")
-        if (handler == null) throw new IllegalArgumentException("Action handler cannot be null")
+        if (label == null) throw new IllegalArgumentException('Action label cannot be null')
+        if (handler == null) throw new IllegalArgumentException('Action handler cannot be null')
         actions.put(label, new ActionHandler() {
             @Override
             Object execute(ExecutionContext context, RecordToken token) {
@@ -34,8 +34,8 @@ class HandlerRegistry {
     }
 
     HandlerRegistry registerGuard(String label, Closure predicate) {
-        if (label == null) throw new IllegalArgumentException("Guard label cannot be null")
-        if (predicate == null) throw new IllegalArgumentException("Guard predicate cannot be null")
+        if (label == null) throw new IllegalArgumentException('Guard label cannot be null')
+        if (predicate == null) throw new IllegalArgumentException('Guard predicate cannot be null')
         guards.put(label, new GuardPredicate() {
             @Override
             boolean evaluate(ExecutionContext context, RecordToken token) {

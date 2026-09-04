@@ -90,7 +90,7 @@ class DefaultPetriNet implements PetriNet {
             return false
         }
 
-        log.info("fire() - {}", transition)
+        log.info('fire() - {}', transition)
 
         ActionHandler actionHandler = null
         if (transition.actionKey != null && !transition.actionKey.isEmpty()) {
