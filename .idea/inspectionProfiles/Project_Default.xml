@@ -22,6 +22,7 @@
       <option name="doNotApplyToFilesMatching" value=".md" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.ClassSize" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
       <option name="maxLines" value="300" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.ClassStartsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />

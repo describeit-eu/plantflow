@@ -97,4 +97,87 @@ class SequencePumlParserSpec extends Specification {
         net.transitions[0].label == 'Hello world'
         net.transitions[1].label == 'groovy goodness'
     }
+
+    def 'should parse activity diagram terminated with stop keyword'() {
+        given:
+        def puml = '''
+            @startuml
+            ' This is a comment
+            start
+            :step one;
+            :step two;
+            stop
+            @enduml
+        '''
+        def parser = new ActivityDiagramParser()
+
+        when:
+        def net = parser.parse(puml)
+
+        then:
+        net != null
+        net.places.size() == 3
+        net.transitions.size() == 2
+        net.startPlace.id == 'P_start'
+        net.endPlace.id == 'P_end'
+        net.transitions[0].label == 'step one'
+        net.transitions[1].label == 'step two'
+    }
+
+    def 'should ignore non-action unrecognized lines inside diagram'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            non-action unparsed line
+            :step two;
+            end
+            @enduml
+        '''
+        def parser = new ActivityDiagramParser()
+
+        when:
+        def net = parser.parse(puml)
+
+        then:
+        net != null
+        net.places.size() == 3
+        net.transitions.size() == 2
+        net.transitions[0].label == 'step one'
+        net.transitions[1].label == 'step two'
+    }
+
+    def 'should throw IllegalArgumentException when parsing null file'() {
+        given:
+        def parser = new ActivityDiagramParser()
+
+        when:
+        parser.parse((File) null)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'File cannot be null'
+    }
+
+    def 'should throw IllegalArgumentException for invalid diagram input: #scenario'() {
+        given:
+        def parser = new ActivityDiagramParser()
+
+        when:
+        parser.parse((String) content)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario                     | content                               | expectedMessage
+        'null content'               | null                                  | 'PlantUML content cannot be empty'
+        'empty string content'       | ''                                    | 'PlantUML content cannot be empty'
+        'whitespace-only content'    | '   \n  \t  '                         | 'PlantUML content cannot be empty'
+        'missing start'              | '@startuml\n:step 1;\nend\n@enduml'   | "Diagram must contain 'start'"
+        'missing end or stop'        | '@startuml\nstart\n:step 1;\n@enduml' | "Diagram must contain 'end' or 'stop'"
+        'missing action transitions' | '@startuml\nstart\nend\n@enduml'      | 'Diagram must contain at least one action transition'
+    }
 }

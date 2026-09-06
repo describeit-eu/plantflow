@@ -3,31 +3,63 @@ package eu.describeit.plantflow
 import spock.lang.Specification
 import java.time.Instant
 
+import static java.time.Instant.ofEpochMilli
+
 class RecordTokenSpec extends Specification {
 
-    def 'should create RecordToken with id, timestamp and payload'() {
-        given:
-        def id = 'tok-1'
-        def timestamp = Instant.now()
-        def payload = [orderId: 'ORD-123', amount: 99.9]
-
+    def 'should initialize RecordToken with fallback defaults when values are null or empty: #scenario'() {
         when:
-        def token = new RecordToken(id, timestamp, payload)
+        def token = new RecordToken(inputId, inputTimestamp, inputPayload)
 
         then:
-        token.id == id
-        token.timestamp == timestamp
-        token.payload == [orderId: 'ORD-123', amount: 99.9]
+        (expectedId == null) ? (token.id != null && !token.id.empty) : (token.id == expectedId)
+        (expectedTimestamp == null) ? (token.timestamp != null) : (token.timestamp == expectedTimestamp)
+        token.payload == expectedPayload
+
+        where:
+        scenario                              | inputId | inputTimestamp       | inputPayload | expectedId | expectedTimestamp  | expectedPayload
+        'all null parameters'                 | null    | null                 | null         | null       | null               | [:]
+        'empty id with nulls'                 | ''      | null                 | null         | null       | null               | [:]
+        'explicit id, null timestamp/payload' | 't-100' | null                 | null         | 't-100'    | null               | [:]
+        'explicit timestamp, null id/payload' | null    | ofEpochMilli(1000)   | null         | null       | ofEpochMilli(1000) | [:]
+        'explicit payload, null id/timestamp' | null    | null                 | [key: 'val'] | null       | null               | [key: 'val']
+        'all explicit values provided'        | 't-200' | ofEpochMilli(2000)   | [order: 123] | 't-200'    | ofEpochMilli(2000) | [order: 123]
     }
 
-    def 'should create RecordToken with generated id and current timestamp when only payload is provided'() {
+    def 'should create RecordToken via of() factory with default and custom payloads: #scenario'() {
         when:
-        def token = RecordToken.of([userId: 'user-1'])
+        def token = factoryCall()
 
         then:
         token.id != null
         token.timestamp != null
-        token.payload == [userId: 'user-1']
+        token.payload == expectedPayload
+
+        where:
+        scenario                  | factoryCall                               | expectedPayload
+        'no arguments (default)'  | { -> RecordToken.of() }                   | [:]
+        'custom payload provided' | { -> RecordToken.of([user: 'alice']) }    | [user: 'alice']
+        'null payload provided'   | { -> RecordToken.of(null) }               | [:]
+    }
+
+    def 'should create a new token with updated payload using withPayload: #scenario'() {
+        given:
+        def originalTimestamp = ofEpochMilli(5000)
+        def original = new RecordToken('tok-orig', originalTimestamp, [a: 1])
+
+        when:
+        def updated = original.withPayload(newPayload)
+
+        then:
+        updated.id == 'tok-orig'
+        updated.timestamp == originalTimestamp
+        updated.payload == expectedPayload
+
+        where:
+        scenario            | newPayload   | expectedPayload
+        'new map payload'   | [b: 2, c: 3] | [b: 2, c: 3]
+        'empty map payload' | [:]          | [:]
+        'null payload'      | null         | [:]
     }
 
     def 'token payload should be immutable'() {
@@ -40,5 +72,20 @@ class RecordTokenSpec extends Specification {
 
         then:
         thrown(UnsupportedOperationException)
+    }
+
+    def 'should satisfy equals, hashCode, and toString contracts'() {
+        given:
+        def ts = ofEpochMilli(1000)
+        def token1 = new RecordToken('tok-1', ts, [x: 10])
+        def token2 = new RecordToken('tok-1', ts, [x: 10])
+        def token3 = new RecordToken('tok-2', ts, [x: 10])
+
+        expect:
+        token1 == token2
+        token1.hashCode() == token2.hashCode()
+        token1 != token3
+        token1.toString().contains('id:tok-1')
+        token1.toString().contains('payload:[x:10]')
     }
 }

@@ -51,12 +51,12 @@ class DefaultPetriNetSpec extends Specification {
         def inputMatrix = [
             [1, 0], // P_start
             [0, 1], // P_mid
-            [0, 0]  // P_end
+            [0, 0],  // P_end
         ] as int[][]
         def outputMatrix = [
             [0, 0], // P_start
             [1, 0], // P_mid
-            [0, 1]  // P_end
+            [0, 1],  // P_end
         ] as int[][]
 
         def incidenceMatrix = new IncidenceMatrix([pStart, pMid, pEnd], [tGuard, tAction], inputMatrix, outputMatrix)
@@ -185,5 +185,131 @@ class DefaultPetriNetSpec extends Specification {
         finalMarking.isEmpty(pMid)
         !finalMarking.isEmpty(pEnd)
         finalMarking.getTokens(pEnd)[0].payload == [init: true, s1: true, s2: true]
+    }
+
+    def 'should handle action output tokens with various return types: #scenario'() {
+        given:
+        def pStart = new Place('P_start', 0, 'start')
+        def pEnd = new Place('P_end', 1, 'end')
+        def tAction = new Transition('T_0', 0, actionKey, actionKey, null)
+        def inputMatrix = [[1], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        if (actionKey && handlerResultSupplier) {
+            registry.registerAction(actionKey) { ExecutionContext ctx, RecordToken tok ->
+                return handlerResultSupplier.call(tok)
+            }
+        }
+
+        def marking = new Marking(net.places)
+        def initialToken = RecordToken.of([source: 'input'])
+        marking.addToken(pStart, initialToken)
+
+        when:
+        def fired = net.fire(tAction, marking, registry, new ExecutionContext())
+
+        then:
+        fired
+        marking.getTokenCount(pEnd) == 1
+        def produced = marking.getTokens(pEnd)[0]
+        produced.payload == expectedPayload
+        (produced.id == initialToken.id) == expectSameTokenId
+
+        where:
+        scenario              | actionKey | handlerResultSupplier                              | expectedPayload   | expectSameTokenId
+        'returns RecordToken' | 'act1'    | { RecordToken t -> RecordToken.of([custom: true]) }| [custom: true]    | false
+        'returns Map'         | 'act2'    | { RecordToken t -> [merged: 'yes'] }               | [merged: 'yes']   | true
+        'returns null'        | 'act3'    | { RecordToken t -> null }                          | [source: 'input'] | true
+        'returns String'      | 'act4'    | { RecordToken t -> 'non-map result' }              | [source: 'input'] | true
+        'no action key'       | null      | null                                               | [source: 'input'] | true
+    }
+
+    def 'should fire transition without input places generating fallback token'() {
+        given: 'a transition with 0 input places and 1 output place'
+        def pEnd = new Place('P_end', 0, 'end')
+        def tSource = new Transition('T_0', 0, 'produceAction', 'produceAction', null)
+        def inputMatrix = [[0]] as int[][]
+        def outputMatrix = [[1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pEnd], [tSource], inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pEnd], [tSource], incidenceMatrix, pEnd, pEnd)
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('produceAction') { ExecutionContext ctx, RecordToken tok ->
+            return [generated: true]
+        }
+
+        def marking = new Marking(net.places)
+
+        when:
+        def fired = net.fire(tSource, marking, registry, new ExecutionContext())
+
+        then:
+        fired
+        marking.getTokenCount(pEnd) == 1
+        marking.getTokens(pEnd)[0].payload == [generated: true]
+    }
+
+    def 'should evaluate guard with null token when input places are empty: #scenario'() {
+        given:
+        def pStart = new Place('P_start', 0, 'start')
+        def pEnd = new Place('P_end', 1, 'end')
+        def tGuarded = new Transition('T_0', 0, null, null, 'allowNullToken')
+
+        def inputMatrix = [[hasInput ? 1 : 0], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tGuarded], inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        registry.registerGuard('allowNullToken') { ExecutionContext ctx, RecordToken tok ->
+            return allow && tok == null
+        }
+
+        def marking = new Marking(net.places)
+
+        expect:
+        net.isEnabled(tGuarded, marking, registry, new ExecutionContext()) == expectedEnabled
+        !net.fire(null, marking, registry, new ExecutionContext())
+
+        where:
+        scenario                  | hasInput | allow | expectedEnabled
+        'no input places allowed' | false    | true  | true
+        'no input places denied'  | false    | false | false
+    }
+
+    def 'should fire transition with weighted arcs consuming and producing multiple tokens'() {
+        given: 'places and transition with arc weight 2'
+        def pStart = new Place('P_start', 0, 'start')
+        def pEnd = new Place('P_end', 1, 'end')
+        def tAction = new Transition('T_0', 0, 'consumeTwo', 'consumeTwo', null)
+
+        def inputMatrix = [[2], [0]] as int[][]
+        def outputMatrix = [[0], [2]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry().registerAction('consumeTwo') { ctx, tok ->
+            return [processedCount: 2]
+        }
+        def marking = new Marking(net.places)
+
+        when: 'insufficient tokens in start place'
+        marking.addToken(pStart, RecordToken.of())
+
+        then: 'transition is not enabled and fire fails'
+        !net.isEnabled(tAction, marking, registry, new ExecutionContext())
+        !net.fire(tAction, marking, registry, new ExecutionContext())
+
+        when: 'sufficient tokens (2) in start place'
+        marking.addToken(pStart, RecordToken.of())
+
+        then: 'transition is enabled and fires successfully consuming 2 and producing 2'
+        net.isEnabled(tAction, marking, registry, new ExecutionContext())
+        net.fire(tAction, marking, registry, new ExecutionContext())
+        marking.isEmpty(pStart)
+        marking.getTokenCount(pEnd) == 2
     }
 }
