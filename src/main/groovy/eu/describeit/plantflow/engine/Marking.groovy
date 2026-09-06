@@ -1,6 +1,6 @@
 package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.Token
+
 import groovy.transform.CompileStatic
 
 @CompileStatic

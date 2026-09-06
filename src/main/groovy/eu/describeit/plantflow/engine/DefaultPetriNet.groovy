@@ -4,7 +4,6 @@ import eu.describeit.plantflow.ActionHandler
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.GuardPredicate
 import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.Token
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 

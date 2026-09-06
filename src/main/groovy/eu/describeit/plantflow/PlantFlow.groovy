@@ -1,6 +1,7 @@
 package eu.describeit.plantflow
 
 import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.Token
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
 import groovy.transform.NullCheck

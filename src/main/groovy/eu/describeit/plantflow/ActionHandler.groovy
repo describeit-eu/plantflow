@@ -1,5 +1,6 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.Token
 import groovy.transform.CompileStatic
 
 @FunctionalInterface
