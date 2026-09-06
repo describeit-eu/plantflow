@@ -1,5 +1,6 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.RecordToken
 import spock.lang.Specification
 
 class MarkingSpec extends Specification {

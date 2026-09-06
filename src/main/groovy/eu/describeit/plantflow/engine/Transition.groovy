@@ -1,4 +1,4 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode

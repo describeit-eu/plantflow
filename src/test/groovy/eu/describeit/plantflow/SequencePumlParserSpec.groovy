@@ -1,5 +1,8 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.Place
+import eu.describeit.plantflow.engine.Transition
 import spock.lang.Specification
 
 class SequencePumlParserSpec extends Specification {

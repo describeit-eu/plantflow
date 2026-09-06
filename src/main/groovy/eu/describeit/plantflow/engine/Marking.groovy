@@ -1,5 +1,6 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.RecordToken
 import groovy.transform.CompileStatic
 
 @CompileStatic

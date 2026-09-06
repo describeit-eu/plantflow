@@ -1,5 +1,10 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.DefaultPetriNet
+import eu.describeit.plantflow.engine.IncidenceMatrix
+import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.Place
+import eu.describeit.plantflow.engine.Transition
 import spock.lang.Specification
 import java.time.Instant
 
@@ -30,14 +35,15 @@ class PlantFlowSpec extends Specification {
 
         when: 'the workflow engine is instantiated and executed'
         def engine = PlantFlow.from(puml, registry)
-        def finalMarking = engine.runUntilEnd(seedToken, context)
+        def finalEngine = engine.runUntilEnd(seedToken, context)
 
         then: 'the start place is empty and the end place contains the transformed token'
-        finalMarking.isEmpty(engine.petriNet.startPlace)
-        !finalMarking.isEmpty(engine.petriNet.endPlace)
+        finalEngine == engine
+        engine.petriNet.isEmpty(engine.petriNet.startPlace)
+        !engine.petriNet.isEmpty(engine.petriNet.endPlace)
 
         and: 'the token in P_end has the same ID and updated payload'
-        def endTokens = finalMarking.getTokens(engine.petriNet.endPlace)
+        def endTokens = engine.getEndTokens()
         endTokens.size() == 1
         def resultToken = endTokens[0]
         resultToken.id == 'order-tok-1'
@@ -78,16 +84,17 @@ class PlantFlowSpec extends Specification {
         def seedToken = RecordToken.of([customerId: 'CUST-1'])
 
         when:
-        def finalMarking = engine.runUntilEnd(seedToken)
+        def finalEngine = engine.runUntilEnd(seedToken)
 
         then:
+        finalEngine == engine
         executionLog == ['validated', 'charged']
-        finalMarking.isEmpty(engine.petriNet.startPlace)
-        finalMarking.isEmpty('P_1')
-        !finalMarking.isEmpty(engine.petriNet.endPlace)
+        engine.petriNet.isEmpty(engine.petriNet.startPlace)
+        engine.petriNet.isEmpty('P_1')
+        !engine.petriNet.isEmpty(engine.petriNet.endPlace)
 
         and:
-        def endToken = finalMarking.getTokens(engine.petriNet.endPlace)[0]
+        def endToken = engine.getEndToken()
         endToken.payload == [customerId: 'CUST-1', customerValid: true, chargedAmount: 200]
         engine.executionContext['customerValid'] == true
         engine.executionContext['charged'] == true
@@ -200,34 +207,34 @@ class PlantFlowSpec extends Specification {
         engine.seedToken(token)
 
         expect:
-        engine.marking.getTokenCount(engine.petriNet.startPlace) == 1
-        engine.marking.getTokenCount('P_1') == 0
-        engine.marking.getTokenCount(engine.petriNet.endPlace) == 0
+        engine.petriNet.getTokenCount(engine.petriNet.startPlace) == 1
+        engine.petriNet.getTokenCount('P_1') == 0
+        engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 0
 
         when:
         boolean stepped1 = engine.step()
 
         then:
         stepped1
-        engine.marking.getTokenCount(engine.petriNet.startPlace) == 0
-        engine.marking.getTokenCount('P_1') == 1
-        engine.marking.getTokenCount(engine.petriNet.endPlace) == 0
+        engine.petriNet.getTokenCount(engine.petriNet.startPlace) == 0
+        engine.petriNet.getTokenCount('P_1') == 1
+        engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 0
 
         when:
         boolean stepped2 = engine.step()
 
         then:
         stepped2
-        engine.marking.getTokenCount(engine.petriNet.startPlace) == 0
-        engine.marking.getTokenCount('P_1') == 0
-        engine.marking.getTokenCount(engine.petriNet.endPlace) == 1
+        engine.petriNet.getTokenCount(engine.petriNet.startPlace) == 0
+        engine.petriNet.getTokenCount('P_1') == 0
+        engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 1
 
         when:
         boolean stepped3 = engine.step()
 
         then:
         !stepped3
-        engine.marking.getTokenCount(engine.petriNet.endPlace) == 1
+        engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 1
         engine.isCompleted()
     }
 
@@ -246,7 +253,7 @@ class PlantFlowSpec extends Specification {
         engine.seedToken(token)
 
         then:
-        def startTokens = engine.marking.getTokens(engine.petriNet.startPlace)
+        def startTokens = engine.petriNet.getTokens(engine.petriNet.startPlace)
         startTokens.size() == 1
         if (token != null) {
             assert startTokens[0].id == token.id
@@ -356,11 +363,11 @@ class PlantFlowSpec extends Specification {
         def engine = new PlantFlow(net, registry)
 
         when: 'adding token to end place while start place also has a token enabling T_0'
-        engine.marking.addToken(pEnd, RecordToken.of())
-        engine.marking.addToken(pStart, RecordToken.of())
+        engine.petriNet.addToken(pEnd, RecordToken.of())
+        engine.petriNet.addToken(pStart, RecordToken.of())
 
         then: 'end place is not empty, but enabled transitions is not empty, so isCompleted is false'
-        !engine.marking.isEmpty(pEnd)
+        !engine.petriNet.isEmpty(pEnd)
         !engine.getEnabledTransitions().isEmpty()
         !engine.isCompleted()
         engine.getEndToken() != null

@@ -1,5 +1,8 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.ExecutionContext
+import eu.describeit.plantflow.HandlerRegistry
+import eu.describeit.plantflow.RecordToken
 import spock.lang.Specification
 
 class DefaultPetriNetSpec extends Specification {

@@ -1,5 +1,7 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
 import groovy.transform.NullCheck
 import groovy.util.logging.Slf4j
@@ -10,14 +12,12 @@ class PlantFlow {
 
     final PetriNet petriNet
     final HandlerRegistry handlerRegistry
-    final Marking marking
     ExecutionContext executionContext
 
     @NullCheck
     PlantFlow(PetriNet petriNet, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
         this.petriNet = petriNet
         this.handlerRegistry = handlerRegistry
-        this.marking = new Marking(petriNet.places)
         this.executionContext = executionContext
     }
 
@@ -42,21 +42,20 @@ class PlantFlow {
         return this
     }
 
-    void seedToken(RecordToken token) {
-        RecordToken tokenToSeed = token ?: RecordToken.of()
-        marking.addToken(petriNet.startPlace, tokenToSeed)
+    void seedToken(RecordToken token = null) {
+        petriNet.seedToken(token)
     }
 
     boolean isEnabled(Transition transition) {
-        return petriNet.isEnabled(transition, marking, handlerRegistry, executionContext)
+        return petriNet.isEnabled(transition, handlerRegistry, executionContext)
     }
 
     List<Transition> getEnabledTransitions() {
-        return petriNet.getEnabledTransitions(marking, handlerRegistry, executionContext)
+        return petriNet.getEnabledTransitions(handlerRegistry, executionContext)
     }
 
     boolean fire(Transition transition) {
-        return petriNet.fire(transition, marking, handlerRegistry, executionContext)
+        return petriNet.fire(transition, handlerRegistry, executionContext)
     }
 
     boolean step() {
@@ -69,15 +68,16 @@ class PlantFlow {
         return false
     }
 
-    Marking runUntilEnd(RecordToken token = null, ExecutionContext context = null) {
+    PlantFlow runUntilEnd(RecordToken token = null, ExecutionContext context = null) {
         if (context) {
             this.executionContext = context
         }
-        return petriNet.runUntilEnd(marking, handlerRegistry, executionContext, token)
+        petriNet.runUntilEnd(handlerRegistry, executionContext, token)
+        return this
     }
 
     List<RecordToken> getEndTokens() {
-        return marking.getTokens(petriNet.endPlace)
+        return petriNet.getTokens(petriNet.endPlace)
     }
 
     RecordToken getEndToken() {
@@ -86,6 +86,6 @@ class PlantFlow {
     }
 
     boolean isCompleted() {
-        return !marking.isEmpty(petriNet.endPlace) && getEnabledTransitions().isEmpty()
+        return !petriNet.isEmpty(petriNet.endPlace) && getEnabledTransitions().isEmpty()
     }
 }

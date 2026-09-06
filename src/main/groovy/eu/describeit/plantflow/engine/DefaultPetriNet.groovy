@@ -1,5 +1,10 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.ActionHandler
+import eu.describeit.plantflow.ExecutionContext
+import eu.describeit.plantflow.GuardPredicate
+import eu.describeit.plantflow.HandlerRegistry
+import eu.describeit.plantflow.RecordToken
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
@@ -11,6 +16,7 @@ class DefaultPetriNet implements PetriNet {
     final IncidenceMatrix incidenceMatrix
     final Place startPlace
     final Place endPlace
+    final Marking marking
 
     DefaultPetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix incidenceMatrix, Place startPlace, Place endPlace) {
         this.places = Collections.unmodifiableList(new ArrayList<>(places))
@@ -18,6 +24,12 @@ class DefaultPetriNet implements PetriNet {
         this.incidenceMatrix = incidenceMatrix
         this.startPlace = startPlace
         this.endPlace = endPlace
+        this.marking = new Marking(this.places)
+    }
+
+    @Override
+    Marking getMarking() {
+        return marking
     }
 
     @Override

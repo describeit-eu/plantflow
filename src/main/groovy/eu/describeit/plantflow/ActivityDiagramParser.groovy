@@ -1,5 +1,10 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.DefaultPetriNet
+import eu.describeit.plantflow.engine.IncidenceMatrix
+import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.Place
+import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 

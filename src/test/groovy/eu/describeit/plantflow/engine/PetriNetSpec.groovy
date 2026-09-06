@@ -1,5 +1,8 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
+import eu.describeit.plantflow.ExecutionContext
+import eu.describeit.plantflow.HandlerRegistry
+import eu.describeit.plantflow.RecordToken
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -287,8 +290,17 @@ class PetriNetSpec extends Specification {
         List<Transition> transitions = []
         Place startPlace
         Place endPlace
+        Marking marking
         List<Transition> remainingEnabled = []
         List<Transition> firedTransitions = []
+
+        @Override
+        Marking getMarking() {
+            if (marking == null) {
+                marking = new Marking(places)
+            }
+            return marking
+        }
 
         @Override
         List<Place> getPlaces() { return places }
