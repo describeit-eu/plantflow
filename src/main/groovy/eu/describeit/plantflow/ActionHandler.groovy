@@ -5,5 +5,5 @@ import groovy.transform.CompileStatic
 @FunctionalInterface
 @CompileStatic
 interface ActionHandler {
-    Object execute(ExecutionContext context, RecordToken token)
+    Object execute(ExecutionContext context, Token token)
 }

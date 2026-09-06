@@ -2,7 +2,7 @@ package eu.describeit.plantflow.engine
 
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.RecordToken
+import eu.describeit.plantflow.Token
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -47,7 +47,7 @@ class PetriNetSpec extends Specification {
         given:
         def marking = new Marking([pStart, pMid, pEnd])
         tokenPlaces.each { Place p ->
-            marking.addToken(p, RecordToken.of())
+            marking.addToken(p, Token.of())
         }
 
         PetriNet net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd)
@@ -68,7 +68,7 @@ class PetriNetSpec extends Specification {
         def marking = new Marking([pStart, pMid, pEnd])
         def registry = new HandlerRegistry()
         def context = new ExecutionContext()
-        def customToken = RecordToken.of([test: 123])
+        def customToken = Token.of([test: 123])
 
         def net = new TestPetriNet(
             places: [pStart, pMid, pEnd],
@@ -109,7 +109,7 @@ class PetriNetSpec extends Specification {
     def 'should not auto-seed token when runUntilEnd is called with null token on non-empty marking'() {
         given:
         def marking = new Marking([pStart, pMid, pEnd])
-        def existingToken = RecordToken.of([init: true])
+        def existingToken = Token.of([init: true])
         marking.addToken(pMid, existingToken)
 
         def registry = new HandlerRegistry()

@@ -1,13 +1,13 @@
 package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.RecordToken
+import eu.describeit.plantflow.Token
 import groovy.transform.CompileStatic
 
 @CompileStatic
 class Marking {
     final List<Place> places
     private final Map<String, Integer> placeIndexMap
-    private final List<RecordToken>[] tokenVector
+    private final List<Token>[] tokenVector
 
     @SuppressWarnings('unchecked')
     Marking(List<Place> places) {
@@ -21,34 +21,34 @@ class Marking {
         }
     }
 
-    void addToken(int placeIndex, RecordToken token) {
+    void addToken(int placeIndex, Token token) {
         if (token == null) return
         tokenVector[placeIndex].add(token)
     }
 
-    void addToken(Place place, RecordToken token) {
+    void addToken(Place place, Token token) {
         addToken(place.index, token)
     }
 
-    boolean removeToken(int placeIndex, RecordToken token) {
+    boolean removeToken(int placeIndex, Token token) {
         return tokenVector[placeIndex].remove(token)
     }
 
-    boolean removeToken(Place place, RecordToken token) {
+    boolean removeToken(Place place, Token token) {
         return removeToken(place.index, token)
     }
 
-    List<RecordToken> getTokens(int placeIndex) {
+    List<Token> getTokens(int placeIndex) {
         return Collections.unmodifiableList(new ArrayList<>(tokenVector[placeIndex]))
     }
 
-    List<RecordToken> getTokens(Place place) {
+    List<Token> getTokens(Place place) {
         return getTokens(place.index)
     }
 
-    List<RecordToken> getTokens(String placeId) {
+    List<Token> getTokens(String placeId) {
         Integer idx = placeIndexMap.get(placeId)
-        return idx != null ? getTokens(idx) : Collections.emptyList() as List<RecordToken>
+        return idx != null ? getTokens(idx) : Collections.emptyList() as List<Token>
     }
 
     int getTokenCount(int placeIndex) {

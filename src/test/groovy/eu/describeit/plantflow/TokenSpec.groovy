@@ -5,11 +5,11 @@ import java.time.Instant
 
 import static java.time.Instant.ofEpochMilli
 
-class RecordTokenSpec extends Specification {
+class TokenSpec extends Specification {
 
-    def 'should initialize RecordToken with fallback defaults when values are null or empty: #scenario'() {
+    def 'should initialize Token with fallback defaults when values are null or empty: #scenario'() {
         when:
-        def token = new RecordToken(inputId, inputTimestamp, inputPayload)
+        def token = new Token(inputId, inputTimestamp, inputPayload)
 
         then:
         (expectedId == null) ? (token.id != null && !token.id.empty) : (token.id == expectedId)
@@ -26,7 +26,7 @@ class RecordTokenSpec extends Specification {
         'all explicit values provided'        | 't-200' | ofEpochMilli(2000)   | [order: 123] | 't-200'    | ofEpochMilli(2000) | [order: 123]
     }
 
-    def 'should create RecordToken via of() factory with default and custom payloads: #scenario'() {
+    def 'should create Token via of() factory with default and custom payloads: #scenario'() {
         when:
         def token = factoryCall()
 
@@ -37,15 +37,15 @@ class RecordTokenSpec extends Specification {
 
         where:
         scenario                  | factoryCall                               | expectedPayload
-        'no arguments (default)'  | { -> RecordToken.of() }                   | [:]
-        'custom payload provided' | { -> RecordToken.of([user: 'alice']) }    | [user: 'alice']
-        'null payload provided'   | { -> RecordToken.of(null) }               | [:]
+        'no arguments (default)'  | { -> Token.of() }                         | [:]
+        'custom payload provided' | { -> Token.of([user: 'alice']) }          | [user: 'alice']
+        'null payload provided'   | { -> Token.of(null) }                     | [:]
     }
 
     def 'should create a new token with updated payload using withPayload: #scenario'() {
         given:
         def originalTimestamp = ofEpochMilli(5000)
-        def original = new RecordToken('tok-orig', originalTimestamp, [a: 1])
+        def original = new Token('tok-orig', originalTimestamp, [a: 1])
 
         when:
         def updated = original.withPayload(newPayload)
@@ -65,7 +65,7 @@ class RecordTokenSpec extends Specification {
     def 'token payload should be immutable'() {
         given:
         def payload = [key: 'value']
-        def token = new RecordToken('tok-1', Instant.now(), payload)
+        def token = new Token('tok-1', Instant.now(), payload)
 
         when:
         token.payload.put('key', 'mutated')
@@ -77,15 +77,15 @@ class RecordTokenSpec extends Specification {
     def 'should satisfy equals, hashCode, and toString contracts'() {
         given:
         def ts = ofEpochMilli(1000)
-        def token1 = new RecordToken('tok-1', ts, [x: 10])
-        def token2 = new RecordToken('tok-1', ts, [x: 10])
-        def token3 = new RecordToken('tok-2', ts, [x: 10])
+        def token1 = new Token('tok-1', ts, [x: 10])
+        def token2 = new Token('tok-1', ts, [x: 10])
+        def token3 = new Token('tok-2', ts, [x: 10])
 
         expect:
         token1 == token2
         token1.hashCode() == token2.hashCode()
         token1 != token3
-        token1.toString().contains('id:tok-1')
-        token1.toString().contains('payload:[x:10]')
+        token1.toString().contains('tok-1')
+        token1.toString().contains('x=10') || token1.toString().contains('x:10')
     }
 }

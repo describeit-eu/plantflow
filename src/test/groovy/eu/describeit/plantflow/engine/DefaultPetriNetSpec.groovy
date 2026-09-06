@@ -2,7 +2,7 @@ package eu.describeit.plantflow.engine
 
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.RecordToken
+import eu.describeit.plantflow.Token
 import spock.lang.Specification
 
 class DefaultPetriNetSpec extends Specification {
@@ -66,11 +66,11 @@ class DefaultPetriNetSpec extends Specification {
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [tGuard, tAction], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
-        registry.registerGuard('checkCondition') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerGuard('checkCondition') { ExecutionContext ctx, Token tok ->
             return tok.payload.valid == true
         }
-        registry.registerAction('action1') { ExecutionContext ctx, RecordToken tok -> tok }
-        registry.registerAction('action2') { ExecutionContext ctx, RecordToken tok -> tok }
+        registry.registerAction('action1') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action2') { ExecutionContext ctx, Token tok -> tok }
 
         def marking = new Marking(net.places)
         def context = new ExecutionContext()
@@ -81,7 +81,7 @@ class DefaultPetriNetSpec extends Specification {
         net.getEnabledTransitions(marking, registry, context).isEmpty()
 
         when: 'invalid token added to start place'
-        def invalidToken = RecordToken.of([valid: false])
+        def invalidToken = Token.of([valid: false])
         marking.addToken(pStart, invalidToken)
 
         then: 'guard rejects transition'
@@ -90,7 +90,7 @@ class DefaultPetriNetSpec extends Specification {
 
         when: 'valid token replaces invalid token'
         marking.removeToken(pStart, invalidToken)
-        def validToken = RecordToken.of([valid: true])
+        def validToken = Token.of([valid: true])
         marking.addToken(pStart, validToken)
 
         then: 'guarded transition is enabled'
@@ -118,7 +118,7 @@ class DefaultPetriNetSpec extends Specification {
         def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
-        registry.registerAction('transformAction') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('transformAction') { ExecutionContext ctx, Token tok ->
             return [result: 'success']
         }
 
@@ -134,7 +134,7 @@ class DefaultPetriNetSpec extends Specification {
         marking.isEmpty(pEnd)
 
         when: 'firing with token in place'
-        def token = RecordToken.of([init: true])
+        def token = Token.of([init: true])
         marking.addToken(pStart, token)
         def firedWithToken = net.fire(tAction, marking, registry, context)
 
@@ -168,16 +168,16 @@ class DefaultPetriNetSpec extends Specification {
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [t1, t2], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
-        registry.registerAction('action1') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('action1') { ExecutionContext ctx, Token tok ->
             return tok.withPayload(tok.payload + [s1: true])
         }
-        registry.registerAction('action2') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('action2') { ExecutionContext ctx, Token tok ->
             return tok.withPayload(tok.payload + [s2: true])
         }
 
         def marking = new Marking(net.places)
         def context = new ExecutionContext()
-        def seedToken = RecordToken.of([init: true])
+        def seedToken = Token.of([init: true])
         marking.addToken(pStart, seedToken)
 
         when:
@@ -202,13 +202,13 @@ class DefaultPetriNetSpec extends Specification {
 
         def registry = new HandlerRegistry()
         if (actionKey && handlerResultSupplier) {
-            registry.registerAction(actionKey) { ExecutionContext ctx, RecordToken tok ->
+            registry.registerAction(actionKey) { ExecutionContext ctx, Token tok ->
                 return handlerResultSupplier.call(tok)
             }
         }
 
         def marking = new Marking(net.places)
-        def initialToken = RecordToken.of([source: 'input'])
+        def initialToken = Token.of([source: 'input'])
         marking.addToken(pStart, initialToken)
 
         when:
@@ -222,12 +222,12 @@ class DefaultPetriNetSpec extends Specification {
         (produced.id == initialToken.id) == expectSameTokenId
 
         where:
-        scenario              | actionKey | handlerResultSupplier                              | expectedPayload   | expectSameTokenId
-        'returns RecordToken' | 'act1'    | { RecordToken t -> RecordToken.of([custom: true]) }| [custom: true]    | false
-        'returns Map'         | 'act2'    | { RecordToken t -> [merged: 'yes'] }               | [merged: 'yes']   | true
-        'returns null'        | 'act3'    | { RecordToken t -> null }                          | [source: 'input'] | true
-        'returns String'      | 'act4'    | { RecordToken t -> 'non-map result' }              | [source: 'input'] | true
-        'no action key'       | null      | null                                               | [source: 'input'] | true
+        scenario         | actionKey | handlerResultSupplier                     | expectedPayload   | expectSameTokenId
+        'returns Token'  | 'act1'    | { Token t -> Token.of([custom: true]) }   | [custom: true]    | false
+        'returns Map'    | 'act2'    | { Token t -> [merged: 'yes'] }            | [merged: 'yes']   | true
+        'returns null'   | 'act3'    | { Token t -> null }                       | [source: 'input'] | true
+        'returns String' | 'act4'    | { Token t -> 'non-map result' }           | [source: 'input'] | true
+        'no action key'  | null      | null                                      | [source: 'input'] | true
     }
 
     def 'should fire transition without input places generating fallback token'() {
@@ -240,7 +240,7 @@ class DefaultPetriNetSpec extends Specification {
         def net = new DefaultPetriNet([pEnd], [tSource], incidenceMatrix, pEnd, pEnd)
 
         def registry = new HandlerRegistry()
-        registry.registerAction('produceAction') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('produceAction') { ExecutionContext ctx, Token tok ->
             return [generated: true]
         }
 
@@ -267,7 +267,7 @@ class DefaultPetriNetSpec extends Specification {
         def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
-        registry.registerGuard('allowNullToken') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerGuard('allowNullToken') { ExecutionContext ctx, Token tok ->
             return allow && tok == null
         }
 
@@ -300,14 +300,14 @@ class DefaultPetriNetSpec extends Specification {
         def marking = new Marking(net.places)
 
         when: 'insufficient tokens in start place'
-        marking.addToken(pStart, RecordToken.of())
+        marking.addToken(pStart, Token.of())
 
         then: 'transition is not enabled and fire fails'
         !net.isEnabled(tAction, marking, registry, new ExecutionContext())
         !net.fire(tAction, marking, registry, new ExecutionContext())
 
         when: 'sufficient tokens (2) in start place'
-        marking.addToken(pStart, RecordToken.of())
+        marking.addToken(pStart, Token.of())
 
         then: 'transition is enabled and fires successfully consuming 2 and producing 2'
         net.isEnabled(tAction, marking, registry, new ExecutionContext())

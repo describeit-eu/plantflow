@@ -22,7 +22,7 @@ class PlantFlowSpec extends Specification {
 
         and: 'a handler registry with registered action'
         def registry = new HandlerRegistry()
-        registry.registerAction('process order') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('process order') { ExecutionContext ctx, Token tok ->
             ctx['status'] = 'PROCESSED'
             def currentTotal = (tok.payload['total'] as double)
             return tok.withPayload([orderId: tok.payload['orderId'], total: currentTotal, processed: true])
@@ -30,7 +30,7 @@ class PlantFlowSpec extends Specification {
 
         and: 'an initial seed token and context'
         def initialTimestamp = Instant.parse('2026-08-24T10:00:00Z')
-        def seedToken = new RecordToken('order-tok-1', initialTimestamp, [orderId: 'ORD-999', total: 150.0])
+        def seedToken = new Token('order-tok-1', initialTimestamp, [orderId: 'ORD-999', total: 150.0])
         def context = new ExecutionContext([initiator: 'tester'])
 
         when: 'the workflow engine is instantiated and executed'
@@ -69,19 +69,19 @@ class PlantFlowSpec extends Specification {
 
         def executionLog = []
         def registry = new HandlerRegistry()
-        registry.registerAction('validate customer') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('validate customer') { ExecutionContext ctx, Token tok ->
             executionLog.add('validated')
             ctx['customerValid'] = true
             return tok.withPayload(tok.payload + [customerValid: true])
         }
-        registry.registerAction('charge credit card') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('charge credit card') { ExecutionContext ctx, Token tok ->
             executionLog.add('charged')
             ctx['charged'] = true
             return tok.withPayload(tok.payload + [chargedAmount: 200])
         }
 
         def engine = PlantFlow.from(puml, registry)
-        def seedToken = RecordToken.of([customerId: 'CUST-1'])
+        def seedToken = Token.of([customerId: 'CUST-1'])
 
         when:
         def finalEngine = engine.runUntilEnd(seedToken)
@@ -106,11 +106,11 @@ class PlantFlowSpec extends Specification {
         def file = new File('src/test/data/puml/sequence.puml')
         def calls = []
         def engine = PlantFlow.from(file)
-            .registerAction('Hello world') { ExecutionContext ctx, RecordToken tok ->
+            .registerAction('Hello world') { ExecutionContext ctx, Token tok ->
                 calls.add('hello')
                 return [greeting: 'Hello, World!']
             }
-            .registerAction('groovy goodness') { ExecutionContext ctx, RecordToken tok ->
+            .registerAction('groovy goodness') { ExecutionContext ctx, Token tok ->
                 calls.add('groovy')
                 return tok.payload + [goodness: true]
             }
@@ -136,7 +136,7 @@ class PlantFlowSpec extends Specification {
         def engine = PlantFlow.from(puml, new HandlerRegistry())
 
         when:
-        engine.runUntilEnd(RecordToken.of([key: 'val']))
+        engine.runUntilEnd(Token.of([key: 'val']))
 
         then:
         def ex = thrown(UnregisteredHandlerException)
@@ -153,7 +153,7 @@ class PlantFlowSpec extends Specification {
             @enduml
         '''
         def engine = PlantFlow.from(puml, new HandlerRegistry())
-        engine.seedToken(RecordToken.of())
+        engine.seedToken(Token.of())
         def transition = engine.petriNet.transitions[0]
 
         when: 'checking if the transition is enabled'
@@ -174,7 +174,7 @@ class PlantFlowSpec extends Specification {
             @enduml
         '''
         def engine = PlantFlow.from(puml, new HandlerRegistry())
-        engine.seedToken(RecordToken.of())
+        engine.seedToken(Token.of())
 
         when: 'querying enabled transitions'
         engine.getEnabledTransitions()
@@ -195,15 +195,15 @@ class PlantFlowSpec extends Specification {
             @enduml
         '''
         def registry = new HandlerRegistry()
-        registry.registerAction('step one') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok ->
             return tok.withPayload([step1: true])
         }
-        registry.registerAction('step two') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('step two') { ExecutionContext ctx, Token tok ->
             return tok.withPayload(tok.payload + [step2: true])
         }
 
         def engine = PlantFlow.from(puml, registry)
-        def token = RecordToken.of([init: true])
+        def token = Token.of([init: true])
         engine.seedToken(token)
 
         expect:
@@ -264,7 +264,7 @@ class PlantFlowSpec extends Specification {
         where:
         scenario        | token
         'null token'    | null
-        'custom token'  | RecordToken.of([foo: 'bar'])
+        'custom token'  | Token.of([foo: 'bar'])
     }
 
     def 'should verify transition readiness and step execution on blocked workflow'() {
@@ -289,7 +289,7 @@ class PlantFlowSpec extends Specification {
         !engine.step()
 
         when: 'token is seeded'
-        engine.seedToken(RecordToken.of())
+        engine.seedToken(Token.of())
 
         then: 'transition becomes enabled'
         engine.isEnabled(transition)
@@ -328,7 +328,7 @@ class PlantFlowSpec extends Specification {
         engine.getEndToken() == null
 
         when: 'seeded but not started'
-        engine.seedToken(RecordToken.of())
+        engine.seedToken(Token.of())
 
         then: 'still incomplete with no end token'
         !engine.isCompleted()
@@ -363,8 +363,8 @@ class PlantFlowSpec extends Specification {
         def engine = new PlantFlow(net, registry)
 
         when: 'adding token to end place while start place also has a token enabling T_0'
-        engine.petriNet.addToken(pEnd, RecordToken.of())
-        engine.petriNet.addToken(pStart, RecordToken.of())
+        engine.petriNet.addToken(pEnd, Token.of())
+        engine.petriNet.addToken(pStart, Token.of())
 
         then: 'end place is not empty, but enabled transitions is not empty, so isCompleted is false'
         !engine.petriNet.isEmpty(pEnd)
@@ -429,7 +429,7 @@ class PlantFlowSpec extends Specification {
         !firedWithoutToken
 
         when: 'firing transition with token'
-        engine.seedToken(RecordToken.of())
+        engine.seedToken(Token.of())
         def firedWithToken = engine.fire(transition)
 
         then:

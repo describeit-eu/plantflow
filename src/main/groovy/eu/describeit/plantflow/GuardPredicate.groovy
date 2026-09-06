@@ -5,5 +5,5 @@ import groovy.transform.CompileStatic
 @FunctionalInterface
 @CompileStatic
 interface GuardPredicate {
-    boolean evaluate(ExecutionContext context, RecordToken token)
+    boolean evaluate(ExecutionContext context, Token token)
 }

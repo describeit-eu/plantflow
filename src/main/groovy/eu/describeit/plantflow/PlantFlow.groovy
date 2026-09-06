@@ -42,7 +42,7 @@ class PlantFlow {
         return this
     }
 
-    void seedToken(RecordToken token = null) {
+    void seedToken(Token token = null) {
         petriNet.seedToken(token)
     }
 
@@ -68,7 +68,7 @@ class PlantFlow {
         return false
     }
 
-    PlantFlow runUntilEnd(RecordToken token = null, ExecutionContext context = null) {
+    PlantFlow runUntilEnd(Token token = null, ExecutionContext context = null) {
         if (context) {
             this.executionContext = context
         }
@@ -76,12 +76,12 @@ class PlantFlow {
         return this
     }
 
-    List<RecordToken> getEndTokens() {
+    List<Token> getEndTokens() {
         return petriNet.getTokens(petriNet.endPlace)
     }
 
-    RecordToken getEndToken() {
-        List<RecordToken> tokens = getEndTokens()
+    Token getEndToken() {
+        List<Token> tokens = getEndTokens()
         return tokens.isEmpty() ? null : tokens[0]
     }
 

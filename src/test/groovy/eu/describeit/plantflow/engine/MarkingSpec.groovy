@@ -1,6 +1,6 @@
 package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.RecordToken
+import eu.describeit.plantflow.Token
 import spock.lang.Specification
 
 class MarkingSpec extends Specification {
@@ -10,7 +10,7 @@ class MarkingSpec extends Specification {
         def pStart = new Place('P_start', 0, 'start')
         def pEnd = new Place('P_end', 1, 'end')
         def marking = new Marking([pStart, pEnd])
-        def token = RecordToken.of([data: 'initial'])
+        def token = Token.of([data: 'initial'])
 
         when:
         marking.addToken(pStart, token)
@@ -41,8 +41,8 @@ class MarkingSpec extends Specification {
         def pStart = new Place('P_start', 0, 'start')
         def pEnd = new Place('P_end', 1, 'end')
         def marking = new Marking([pStart, pEnd])
-        def token1 = RecordToken.of([k: 'v1'])
-        def token2 = RecordToken.of([k: 'v2'])
+        def token1 = Token.of([k: 'v1'])
+        def token2 = Token.of([k: 'v2'])
         marking.addToken(pStart, token1)
 
         when:

@@ -8,9 +8,9 @@ class HandlerRegistrySpec extends Specification {
         given:
         def registry = new HandlerRegistry()
         def context = new ExecutionContext([count: 0])
-        def token = RecordToken.of([item: 'book'])
+        def token = Token.of([item: 'book'])
 
-        registry.registerAction('increment count') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerAction('increment count') { ExecutionContext ctx, Token tok ->
             ctx['count'] = (ctx['count'] as int) + 1
             return tok.withPayload([item: 'book', processed: true])
         }
@@ -28,10 +28,10 @@ class HandlerRegistrySpec extends Specification {
         given:
         def registry = new HandlerRegistry()
         def context = new ExecutionContext([count: 5])
-        def token = RecordToken.of([item: 'pen'])
+        def token = Token.of([item: 'pen'])
         ActionHandler actionHandler = new ActionHandler() {
             @Override
-            Object execute(ExecutionContext ctx, RecordToken tok) {
+            Object execute(ExecutionContext ctx, Token tok) {
                 ctx['count'] = (ctx['count'] as int) * 2
                 return tok.withPayload([item: 'pen', doubled: true])
             }
@@ -52,9 +52,9 @@ class HandlerRegistrySpec extends Specification {
         given:
         def registry = new HandlerRegistry()
         def context = new ExecutionContext([approved: true])
-        def token = RecordToken.of([amount: 50])
+        def token = Token.of([amount: 50])
 
-        registry.registerGuard('isApproved') { ExecutionContext ctx, RecordToken tok ->
+        registry.registerGuard('isApproved') { ExecutionContext ctx, Token tok ->
             return ctx['approved'] == true && (tok.payload.amount as int) < 100
         }
 
@@ -70,10 +70,10 @@ class HandlerRegistrySpec extends Specification {
         given:
         def registry = new HandlerRegistry()
         def context = new ExecutionContext([threshold: 10])
-        def token = RecordToken.of([value: 20])
+        def token = Token.of([value: 20])
         GuardPredicate guardPredicate = new GuardPredicate() {
             @Override
-            boolean evaluate(ExecutionContext ctx, RecordToken tok) {
+            boolean evaluate(ExecutionContext ctx, Token tok) {
                 return (tok.payload.value as int) >= (ctx['threshold'] as int)
             }
         }
@@ -85,7 +85,7 @@ class HandlerRegistrySpec extends Specification {
         then:
         result.is(registry)
         guard.evaluate(context, token)
-        !guard.evaluate(context, RecordToken.of([value: 5]))
+        !guard.evaluate(context, Token.of([value: 5]))
     }
 
     def 'should reject registration with invalid arguments: #scenario'() {

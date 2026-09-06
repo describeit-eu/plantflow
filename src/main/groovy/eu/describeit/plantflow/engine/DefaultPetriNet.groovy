@@ -4,7 +4,7 @@ import eu.describeit.plantflow.ActionHandler
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.GuardPredicate
 import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.RecordToken
+import eu.describeit.plantflow.Token
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
@@ -92,21 +92,21 @@ class DefaultPetriNet implements PetriNet {
         log.info('fire() - {}', transition)
 
         List<Place> inputPlaces = incidenceMatrix.getInputPlaces(transition.index)
-        List<RecordToken> consumedTokens = []
+        List<Token> consumedTokens = []
 
         for (Place p : inputPlaces) {
             int requiredWeight = incidenceMatrix.getInputWeight(p.index, transition.index)
             for (int w = 0; w < requiredWeight; w++) {
-                List<RecordToken> available = marking.getTokens(p)
+                List<Token> available = marking.getTokens(p)
                 if (!available.isEmpty()) {
-                    RecordToken tokenToConsume = available.get(0)
+                    Token tokenToConsume = available.get(0)
                     marking.removeToken(p, tokenToConsume)
                     consumedTokens.add(tokenToConsume)
                 }
             }
         }
 
-        RecordToken outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
+        Token outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
 
         List<Place> outputPlaces = incidenceMatrix.getOutputPlaces(transition.index)
         for (Place p : outputPlaces) {
@@ -132,15 +132,15 @@ class DefaultPetriNet implements PetriNet {
     private boolean isGuardSatisfied(Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext, List<Place> inputPlaces) {
         if (transition.guardKey) {
             GuardPredicate guard = handlerRegistry.getGuard(transition.guardKey)
-            RecordToken tokenForGuard = getGuardToken(marking, inputPlaces)
+            Token tokenForGuard = getGuardToken(marking, inputPlaces)
             return guard.evaluate(executionContext, tokenForGuard)
         }
         return true
     }
 
-    private RecordToken getGuardToken(Marking marking, List<Place> inputPlaces) {
+    private Token getGuardToken(Marking marking, List<Place> inputPlaces) {
         if (!inputPlaces.isEmpty()) {
-            List<RecordToken> tokens = marking.getTokens(inputPlaces.get(0))
+            List<Token> tokens = marking.getTokens(inputPlaces.get(0))
             if (!tokens.isEmpty()) {
                 return tokens.get(0)
             }
@@ -154,15 +154,15 @@ class DefaultPetriNet implements PetriNet {
         }
     }
 
-    private RecordToken getActionOutputToken(List<RecordToken> consumedTokens, Transition transition, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
-        RecordToken emptyToken = consumedTokens.isEmpty() ? RecordToken.of() : consumedTokens.get(0)
+    private Token getActionOutputToken(List<Token> consumedTokens, Transition transition, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
+        Token emptyToken = consumedTokens.isEmpty() ? Token.of() : consumedTokens.get(0)
 
         if (transition.actionKey) {
             ActionHandler actionHandler = handlerRegistry.getAction(transition.actionKey)
             Object result = actionHandler.execute(executionContext, emptyToken)
 
-            if (result instanceof RecordToken recordToken) {
-                return recordToken
+            if (result instanceof Token tokenResult) {
+                return tokenResult
             } else if (result instanceof Map mapResult) {
                 return emptyToken.withPayload(mapResult)
             }

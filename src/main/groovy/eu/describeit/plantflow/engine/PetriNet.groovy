@@ -2,7 +2,7 @@ package eu.describeit.plantflow.engine
 
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.RecordToken
+import eu.describeit.plantflow.Token
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -21,24 +21,24 @@ interface PetriNet {
         return getTransitions().find { Transition transition -> transition.id == id }
     }
 
-    default void addToken(Place place, RecordToken token) {
+    default void addToken(Place place, Token token) {
         getMarking().addToken(place, token)
     }
 
-    default void removeToken(Place place, RecordToken token) {
+    default void removeToken(Place place, Token token) {
         getMarking().removeToken(place, token)
     }
 
-    default void seedToken(RecordToken token) {
-        RecordToken tokenToSeed = token ?: RecordToken.of()
+    default void seedToken(Token token) {
+        Token tokenToSeed = token ?: Token.of()
         addToken(getStartPlace(), tokenToSeed)
     }
 
-    default List<RecordToken> getTokens(Place place) {
+    default List<Token> getTokens(Place place) {
         return getMarking().getTokens(place)
     }
 
-    default List<RecordToken> getTokens(String placeId) {
+    default List<Token> getTokens(String placeId) {
         return getMarking().getTokens(placeId)
     }
 
@@ -80,11 +80,11 @@ interface PetriNet {
         return fire(transition, getMarking(), handlerRegistry, executionContext)
     }
 
-    default Marking runUntilEnd(Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext, RecordToken token) {
+    default Marking runUntilEnd(Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext, Token token) {
         if (token != null) {
             marking.addToken(getStartPlace(), token)
         } else if (isNetEmpty(marking)) {
-            marking.addToken(getStartPlace(), RecordToken.of())
+            marking.addToken(getStartPlace(), Token.of())
         }
 
         while (true) {
@@ -106,7 +106,7 @@ interface PetriNet {
         return runUntilEnd(marking, new HandlerRegistry(), new ExecutionContext(), null)
     }
 
-    default Marking runUntilEnd(HandlerRegistry handlerRegistry, ExecutionContext executionContext, RecordToken token) {
+    default Marking runUntilEnd(HandlerRegistry handlerRegistry, ExecutionContext executionContext, Token token) {
         return runUntilEnd(getMarking(), handlerRegistry, executionContext, token)
     }
 

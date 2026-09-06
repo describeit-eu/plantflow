@@ -24,7 +24,7 @@ class HandlerRegistry {
         if (handler == null) throw new IllegalArgumentException(ACTION_HANDLER_NULL_MSG)
         actions.put(label, new ActionHandler() {
             @Override
-            Object execute(ExecutionContext context, RecordToken token) {
+            Object execute(ExecutionContext context, Token token) {
                 return handler.call(context, token)
             }
         })
@@ -43,7 +43,7 @@ class HandlerRegistry {
         if (predicate == null) throw new IllegalArgumentException(GUARD_PREDICATE_NULL_MSG)
         guards.put(label, new GuardPredicate() {
             @Override
-            boolean evaluate(ExecutionContext context, RecordToken token) {
+            boolean evaluate(ExecutionContext context, Token token) {
                 return predicate(context, token) as Boolean
             }
         })
