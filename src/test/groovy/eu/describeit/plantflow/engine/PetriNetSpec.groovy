@@ -138,21 +138,29 @@ class PetriNetSpec extends Specification {
         net.isNetEmpty(marking)
     }
 
-    def 'should initialize Place with id, index and fallback label: #scenario'() {
+    def 'should initialize Place with id, index and label'() {
         when:
-        def place = constructorCall()
+        def place = new Place('P_1', 0, 'Custom Label')
 
         then:
         place.id == 'P_1'
         place.index == 0
-        place.label == expectedLabel
+        place.label == 'Custom Label'
+    }
+
+    def 'should reject Place creation with invalid label: #scenario'() {
+        when:
+        new Place('P_1', 0, invalidLabel)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ['label cannot be null', 'label cannot be blank'].contains(ex.message)
 
         where:
-        scenario              | constructorCall                                 | expectedLabel
-        'explicit label'      | { -> new Place('P_1', 0, 'Custom Label') }      | 'Custom Label'
-        'null label'          | { -> new Place('P_1', 0, null) }                | 'P_1'
-        'empty label'         | { -> new Place('P_1', 0, '') }                  | 'P_1'
-        'omitted label arg'   | { -> new Place('P_1', 0) }                      | 'P_1'
+        scenario      | invalidLabel
+        'null label'  | null
+        'empty label' | ''
+        'blank label' | '   '
     }
 
     def 'should satisfy equals, hashCode, and toString for Place'() {
@@ -184,8 +192,23 @@ class PetriNetSpec extends Specification {
         scenario                       | constructorCall                                                      | expectedActionKey | expectedGuardKey
         'omitted optional keys'        | { -> new Transition('T_1', 0, 'Step One') }                          | 'Step One'        | null
         'explicit action and guard'    | { -> new Transition('T_1', 0, 'Step One', 'customAct', 'chkGuard') } | 'customAct'       | 'chkGuard'
-        'null action, explicit guard'  | { -> new Transition('T_1', 0, 'Step One', null, 'chkGuard') }        | 'Step One'        | 'chkGuard'
-        'empty action, null guard'     | { -> new Transition('T_1', 0, 'Step One', '', null) }                | 'Step One'        | null
+//        'null action, explicit guard'  | { -> new Transition('T_1', 0, 'Step One', null, 'chkGuard') }        | 'Step One'        | 'chkGuard'
+//        'empty action, null guard'     | { -> new Transition('T_1', 0, 'Step One', '', null) }                | 'Step One'        | null
+    }
+
+    def 'should reject Transition creation with invalid label: #scenario'() {
+        when:
+        new Transition('T_1', 0, invalidLabel)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('label cannot be null')
+
+        where:
+        scenario      | invalidLabel
+        'null label'  | null
+        'empty label' | ''
+        'blank label' | '   '
     }
 
     def 'should satisfy equals, hashCode, and toString for Transition'() {

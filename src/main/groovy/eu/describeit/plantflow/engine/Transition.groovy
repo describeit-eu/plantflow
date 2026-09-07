@@ -14,11 +14,27 @@ class Transition {
     final String actionKey
     final String guardKey
 
-    Transition(String id, int index, String label, String actionKey = null, String guardKey = null) {
+    Transition(String id, int index, String label) {
+        this.id = id
+        this.index = index
+        this.label = label
+        this.actionKey = label
+        this.guardKey = null
+
+        if (!label || !label.trim()) {
+            throw new IllegalArgumentException('label cannot be null or blank')
+        }
+    }
+
+    Transition(String id, int index, String label, String actionKey, String guardKey) {
         this.id = id
         this.index = index
         this.label = label
         this.actionKey = actionKey ?: label
         this.guardKey = guardKey
+
+        if (!label || !label.trim()) {
+            throw new IllegalArgumentException('label cannot be null or blank')
+        }
     }
 }

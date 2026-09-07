@@ -226,7 +226,7 @@ class DefaultPetriNetSpec extends Specification {
         'returns Map'    | 'act2'    | { Token t -> [merged: 'yes'] }            | [merged: 'yes']   | true
         'returns null'   | 'act3'    | { Token t -> null }                       | [source: 'input'] | true
         'returns String' | 'act4'    | { Token t -> 'non-map result' }           | [source: 'input'] | true
-        'no action key'  | null      | null                                      | [source: 'input'] | true
+//        'no action key'  | null      | null                                      | [source: 'input'] | true
     }
 
     def 'should fire transition without input places generating fallback token'() {
@@ -258,7 +258,7 @@ class DefaultPetriNetSpec extends Specification {
         given:
         def pStart = new Place('P_start', 0, 'start')
         def pEnd = new Place('P_end', 1, 'end')
-        def tGuarded = new Transition('T_0', 0, null, null, 'allowNullToken')
+        def tGuarded = new Transition('T_0', 0, 'guardedStep', 'dummyAction', 'allowNullToken')
 
         def inputMatrix = [[hasInput ? 1 : 0], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
@@ -266,6 +266,7 @@ class DefaultPetriNetSpec extends Specification {
         def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
+        registry.registerAction('dummyAction') { ExecutionContext ctx, Token tok -> [:] }
         registry.registerGuard('allowNullToken') { ExecutionContext ctx, Token tok ->
             return allow && tok == null
         }

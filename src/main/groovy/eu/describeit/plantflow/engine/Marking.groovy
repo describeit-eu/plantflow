@@ -7,23 +7,23 @@ import groovy.transform.CompileStatic
 class Marking {
     final List<Place> places
     private final Map<String, Integer> placeIndexMap
-    private final List<Token>[] tokenVector
+    private final List<Token>[] tokens
 
     @SuppressWarnings('unchecked')
     Marking(List<Place> places) {
         this.places = Collections.unmodifiableList(new ArrayList<>(places))
         this.placeIndexMap = new HashMap<>(places.size())
-        this.tokenVector = new List[places.size()]
+        this.tokens = new List[places.size()]
         for (int i = 0; i < places.size(); i++) {
             Place p = places[i]
             placeIndexMap.put(p.id, p.index)
-            tokenVector[i] = []
+            tokens[i] = []
         }
     }
 
     void addToken(int placeIndex, Token token) {
         if (token == null) return
-        tokenVector[placeIndex].add(token)
+        tokens[placeIndex].add(token)
     }
 
     void addToken(Place place, Token token) {
@@ -31,7 +31,7 @@ class Marking {
     }
 
     boolean removeToken(int placeIndex, Token token) {
-        return tokenVector[placeIndex].remove(token)
+        return tokens[placeIndex].remove(token)
     }
 
     boolean removeToken(Place place, Token token) {
@@ -39,7 +39,7 @@ class Marking {
     }
 
     List<Token> getTokens(int placeIndex) {
-        return Collections.unmodifiableList(new ArrayList<>(tokenVector[placeIndex]))
+        return Collections.unmodifiableList(new ArrayList<>(tokens[placeIndex]))
     }
 
     List<Token> getTokens(Place place) {
@@ -52,7 +52,7 @@ class Marking {
     }
 
     int getTokenCount(int placeIndex) {
-        return tokenVector[placeIndex].size()
+        return tokens[placeIndex].size()
     }
 
     int getTokenCount(Place place) {
@@ -65,7 +65,7 @@ class Marking {
     }
 
     boolean isEmpty(int placeIndex) {
-        return tokenVector[placeIndex].isEmpty()
+        return tokens[placeIndex].isEmpty()
     }
 
     boolean isEmpty(Place place) {
@@ -78,17 +78,17 @@ class Marking {
     }
 
     int[] getMarkingVector() {
-        int[] vec = new int[tokenVector.length]
-        for (int i = 0; i < tokenVector.length; i++) {
-            vec[i] = tokenVector[i].size()
+        int[] vec = new int[tokens.length]
+        for (int i = 0; i < tokens.length; i++) {
+            vec[i] = tokens[i].size()
         }
         return vec
     }
 
     Marking copy() {
         Marking copy = new Marking(this.places)
-        for (int i = 0; i < tokenVector.length; i++) {
-            copy.tokenVector[i].addAll(this.tokenVector[i])
+        for (int i = 0; i < tokens.length; i++) {
+            copy.tokens[i].addAll(this.tokens[i])
         }
         return copy
     }
