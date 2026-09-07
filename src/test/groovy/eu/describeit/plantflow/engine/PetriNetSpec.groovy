@@ -10,8 +10,8 @@ class PetriNetSpec extends Specification {
     @Shared def pStart = new Place('P_start', 0, 'start')
     @Shared def pMid = new Place('P_mid', 1, 'mid')
     @Shared def pEnd = new Place('P_end', 2, 'end')
-    @Shared def t1 = new Transition('T_0', 0, 'step1')
-    @Shared def t2 = new Transition('T_1', 1, 'step2')
+    @Shared def t1 = new Transition('T_0', 0, 'step1', 'step1')
+    @Shared def t2 = new Transition('T_1', 1, 'step2', 'step2')
 
     def 'should lookup place by id: #lookupId'() {
         given:
@@ -189,16 +189,14 @@ class PetriNetSpec extends Specification {
         transition.guardKey == expectedGuardKey
 
         where:
-        scenario                       | constructorCall                                                      | expectedActionKey | expectedGuardKey
-        'omitted optional keys'        | { -> new Transition('T_1', 0, 'Step One') }                          | 'Step One'        | null
-        'explicit action and guard'    | { -> new Transition('T_1', 0, 'Step One', 'customAct', 'chkGuard') } | 'customAct'       | 'chkGuard'
-//        'null action, explicit guard'  | { -> new Transition('T_1', 0, 'Step One', null, 'chkGuard') }        | 'Step One'        | 'chkGuard'
-//        'empty action, null guard'     | { -> new Transition('T_1', 0, 'Step One', '', null) }                | 'Step One'        | null
+        scenario                    | constructorCall                                                      | expectedActionKey | expectedGuardKey
+        'omitted guard key'         | { -> new Transition('T_1', 0, 'Step One', 'customAct') }             | 'customAct'       | null
+        'explicit action and guard' | { -> new Transition('T_1', 0, 'Step One', 'customAct', 'chkGuard') } | 'customAct'       | 'chkGuard'
     }
 
     def 'should reject Transition creation with invalid label: #scenario'() {
         when:
-        new Transition('T_1', 0, invalidLabel)
+        new Transition('T_1', 0, invalidLabel, 'actionKey')
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -209,6 +207,21 @@ class PetriNetSpec extends Specification {
         'null label'  | null
         'empty label' | ''
         'blank label' | '   '
+    }
+
+    def 'should reject Transition creation with invalid actionKey: #scenario'() {
+        when:
+        new Transition('T_1', 0, 'Step One', invalidActionKey)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('actionKey cannot be null')
+
+        where:
+        scenario          | invalidActionKey
+        'null actionKey'  | null
+        'empty actionKey' | ''
+        'blank actionKey' | '   '
     }
 
     def 'should satisfy equals, hashCode, and toString for Transition'() {

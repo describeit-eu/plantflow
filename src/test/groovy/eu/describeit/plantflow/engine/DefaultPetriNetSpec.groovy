@@ -10,7 +10,7 @@ class DefaultPetriNetSpec extends Specification {
         given:
         def pStart = new Place('P_start', 0, 'start')
         def pEnd = new Place('P_end', 1, 'end')
-        def tAction = new Transition('T_0', 0, 'process order')
+        def tAction = new Transition('T_0', 0, 'process order', 'process order')
 
         def inputMatrix = [
             [1], // P_start

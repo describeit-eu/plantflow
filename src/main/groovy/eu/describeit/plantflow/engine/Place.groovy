@@ -19,7 +19,7 @@ class Place {
         this.index = index
         this.label = label
 
-        if (!label || !label.trim()) {
+        if (!label?.trim()) {
             throw new IllegalArgumentException('label cannot be blank')
         }
     }

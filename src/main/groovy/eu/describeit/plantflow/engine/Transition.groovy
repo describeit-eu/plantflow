@@ -2,6 +2,7 @@ package eu.describeit.plantflow.engine
 
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.NullCheck
 import groovy.transform.ToString
 
 @CompileStatic
@@ -12,29 +13,26 @@ class Transition {
     final int index
     final String label
     final String actionKey
-    final String guardKey
+    final String guardKey = null
 
-    Transition(String id, int index, String label) {
+    @NullCheck(includeGenerated=true)
+    Transition(String id, Integer index, String label, String actionKey) {
         this.id = id
         this.index = index
         this.label = label
-        this.actionKey = label
-        this.guardKey = null
+        this.actionKey = actionKey
 
-        if (!label || !label.trim()) {
+        if (!label?.trim()) {
             throw new IllegalArgumentException('label cannot be null or blank')
+        }
+
+        if (!actionKey?.trim()) {
+            throw new IllegalArgumentException('actionKey cannot be null or blank')
         }
     }
 
-    Transition(String id, int index, String label, String actionKey, String guardKey) {
-        this.id = id
-        this.index = index
-        this.label = label
-        this.actionKey = actionKey ?: label
+    Transition(String id, Integer index, String label, String actionKey, String guardKey) {
+        this(id, index, label, actionKey)
         this.guardKey = guardKey
-
-        if (!label || !label.trim()) {
-            throw new IllegalArgumentException('label cannot be null or blank')
-        }
     }
 }

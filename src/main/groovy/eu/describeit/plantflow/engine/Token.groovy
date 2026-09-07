@@ -8,17 +8,25 @@ import java.time.Instant
 record Token(String id, Instant timestamp, Map<String, Object> payload) {
 
     Token(String id, Instant timestamp, Map<String, Object> payload) {
-        this.id = (id != null && !id.isEmpty()) ? id : UUID.randomUUID().toString()
+        this.id = id ?: UUID.randomUUID().toString()
         this.timestamp = timestamp ?: Instant.now()
-        this.payload = payload != null ? payload.asUnmodifiable() : [:]
+        this.payload = payload != null ? payload.asUnmodifiable() : Collections.unmodifiableMap([:]) as Map<String, Object>
+    }
+
+    Token(Instant timestamp, Map<String, Object> payload) {
+        this(null, timestamp, payload)
+    }
+
+    Token(Map<String, Object> payload) {
+        this(null, null, payload)
     }
 
     static Token of() {
-        return of(Collections.emptyMap())
+        return of([:])
     }
 
     static Token of(Map<String, Object> payload) {
-        return new Token(UUID.randomUUID().toString(), Instant.now(), payload)
+        return new Token(payload)
     }
 
     Token withPayload(Map<String, Object> newPayload) {
