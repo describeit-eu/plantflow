@@ -24,10 +24,6 @@ interface PetriNet {
         getMarking().addToken(place, token)
     }
 
-    default void removeToken(Place place, Token token) {
-        getMarking().removeToken(place, token)
-    }
-
     default void seedToken(Token token) {
         Token tokenToSeed = token ?: Token.of()
         addToken(getStartPlace(), tokenToSeed)
@@ -35,10 +31,6 @@ interface PetriNet {
 
     default List<Token> getTokens(Place place) {
         return getMarking().getTokens(place)
-    }
-
-    default List<Token> getTokens(int placeIndex) {
-        return getMarking().getTokens(placeIndex)
     }
 
     default int getTokenCount(Place place) {
@@ -55,10 +47,6 @@ interface PetriNet {
 
     default boolean isEmpty(int placeIndex) {
         return getMarking().isEmpty(placeIndex)
-    }
-
-    default boolean isNetEmpty() {
-        return isNetEmpty(getMarking())
     }
 
     boolean isEnabled(Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext)
@@ -95,14 +83,6 @@ interface PetriNet {
         }
 
         return marking
-    }
-
-    default Marking runUntilEnd(Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
-        return runUntilEnd(marking, handlerRegistry, executionContext, null)
-    }
-
-    default Marking runUntilEnd(Marking marking) {
-        return runUntilEnd(marking, new HandlerRegistry(), new ExecutionContext(), null)
     }
 
     default Marking runUntilEnd(HandlerRegistry handlerRegistry, ExecutionContext executionContext, Token token) {

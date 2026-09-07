@@ -180,7 +180,7 @@ class DefaultPetriNetSpec extends Specification {
         marking.addToken(pStart, seedToken)
 
         when:
-        def finalMarking = net.runUntilEnd(marking, registry, context)
+        def finalMarking = net.runUntilEnd(marking, registry, context, null)
 
         then:
         finalMarking.isEmpty(pStart)

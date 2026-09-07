@@ -90,6 +90,8 @@ class PetriNetSpec extends Specification {
     def 'should auto-seed token when runUntilEnd is called on empty marking'() {
         given:
         def marking = new Marking([pStart, pMid, pEnd])
+        def registry = new HandlerRegistry()
+        def context = new ExecutionContext()
         def net = new TestPetriNet(
             places: [pStart, pMid, pEnd],
             transitions: [],
@@ -98,7 +100,7 @@ class PetriNetSpec extends Specification {
         )
 
         when:
-        net.runUntilEnd(marking)
+        net.runUntilEnd(marking, registry, context, null)
 
         then:
         marking.getTokenCount(pStart) == 1
@@ -121,7 +123,7 @@ class PetriNetSpec extends Specification {
         )
 
         when:
-        net.runUntilEnd(marking, registry, context)
+        net.runUntilEnd(marking, registry, context, null)
 
         then:
         marking.getTokenCount(pStart) == 0

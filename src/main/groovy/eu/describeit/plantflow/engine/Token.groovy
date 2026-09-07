@@ -13,10 +13,6 @@ record Token(String id, Instant timestamp, Map<String, Object> payload) {
         this.payload = payload != null ? payload.asUnmodifiable() : Collections.unmodifiableMap([:]) as Map<String, Object>
     }
 
-    Token(Instant timestamp, Map<String, Object> payload) {
-        this(null, timestamp, payload)
-    }
-
     Token(Map<String, Object> payload) {
         this(null, null, payload)
     }

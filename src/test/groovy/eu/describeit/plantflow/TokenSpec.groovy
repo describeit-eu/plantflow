@@ -41,6 +41,7 @@ class TokenSpec extends Specification {
         'no arguments (default)'  | { -> Token.of() }                         | [:]
         'custom payload provided' | { -> Token.of([user: 'alice']) }          | [user: 'alice']
         'null payload provided'   | { -> Token.of(null) }                     | [:]
+        'map constructor'         | { -> new Token([user: 'bob']) }           | [user: 'bob']
     }
 
     def 'should create a new token with updated payload using withPayload: #scenario'() {

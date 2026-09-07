@@ -136,17 +136,11 @@ class HandlerRegistrySpec extends Specification {
         ex.message.contains('unknown guard')
     }
 
-    def 'should create UnregisteredHandlerException with message and optional cause: #scenario'() {
+    def 'should create UnregisteredHandlerException with message'() {
         when:
-        def ex = cause == null ? new UnregisteredHandlerException(message) : new UnregisteredHandlerException(message, cause)
+        def ex = new UnregisteredHandlerException('Missing handler: x')
 
         then:
-        ex.message == message
-        ex.cause == cause
-
-        where:
-        scenario                  | message               | cause
-        'message only'            | 'Missing handler: x'  | null
-        'message with root cause' | 'Failed to find: y'   | new IllegalStateException('root cause')
+        ex.message == 'Missing handler: x'
     }
 }

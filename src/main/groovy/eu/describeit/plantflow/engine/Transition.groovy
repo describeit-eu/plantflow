@@ -12,7 +12,7 @@ class Transition {
     final int index
     final String label
     final String actionKey
-    final String guardKey = null
+    final String guardKey
 
     @NullCheck(includeGenerated=true)
     Transition(Integer index, String label, String actionKey) {
