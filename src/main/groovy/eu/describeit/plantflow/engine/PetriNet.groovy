@@ -12,12 +12,12 @@ interface PetriNet {
     Place getEndPlace()
     Marking getMarking()
 
-    default Place getPlaceById(String id) {
-        return getPlaces().find { Place place -> place.id == id }
+    default Place getPlaceByIndex(int index) {
+        return getPlaces().find { Place place -> place.index == index }
     }
 
-    default Transition getTransitionById(String id) {
-        return getTransitions().find { Transition transition -> transition.id == id }
+    default Transition getTransitionByIndex(int index) {
+        return getTransitions().find { Transition transition -> transition.index == index }
     }
 
     default void addToken(Place place, Token token) {
@@ -37,24 +37,24 @@ interface PetriNet {
         return getMarking().getTokens(place)
     }
 
-    default List<Token> getTokens(String placeId) {
-        return getMarking().getTokens(placeId)
+    default List<Token> getTokens(int placeIndex) {
+        return getMarking().getTokens(placeIndex)
     }
 
     default int getTokenCount(Place place) {
         return getMarking().getTokenCount(place)
     }
 
-    default int getTokenCount(String placeId) {
-        return getMarking().getTokenCount(placeId)
+    default int getTokenCount(int placeIndex) {
+        return getMarking().getTokenCount(placeIndex)
     }
 
     default boolean isEmpty(Place place) {
         return getMarking().isEmpty(place)
     }
 
-    default boolean isEmpty(String placeId) {
-        return getMarking().isEmpty(placeId)
+    default boolean isEmpty(int placeIndex) {
+        return getMarking().isEmpty(placeIndex)
     }
 
     default boolean isNetEmpty() {

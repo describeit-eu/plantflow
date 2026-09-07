@@ -10,12 +10,10 @@ import groovy.transform.ToString
 @EqualsAndHashCode
 @NullCheck
 class Place {
-    final String id
     final int index
     final String label
 
-    Place(String id, int index, String label) {
-        this.id = id
+    Place(int index, String label) {
         this.index = index
         this.label = label
 

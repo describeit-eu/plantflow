@@ -88,18 +88,18 @@ class ActivityDiagramParser {
 
     private PetriNet constructPetriNet(List<String> actions) {
         int n = actions.size()
-        Place startPlace = new Place('P_start', 0, START)
-        Place endPlace = new Place('P_end', n, END)
+        Place startPlace = new Place(0, START)
+        Place endPlace = new Place(n, END)
 
         List<Place> places = [startPlace]
         for (int i = 1; i < n; i++) {
-            places.add(new Place("P_${i}", i, "P_${i}"))
+            places.add(new Place(i, "P_${i}"))
         }
         places.add(endPlace)
 
         List<Transition> transitions = []
         for (int i = 0; i < n; i++) {
-            transitions.add(new Transition("T_${i}", i, actions[i], actions[i]))
+            transitions.add(new Transition(i, actions[i], actions[i]))
         }
 
         IncidenceMatrix incidenceMatrix = constructIncidenceMatrix(places, transitions, n)

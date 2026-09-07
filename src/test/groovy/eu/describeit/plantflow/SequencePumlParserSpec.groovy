@@ -27,14 +27,13 @@ class SequencePumlParserSpec extends Specification {
         net.transitions.size() == 1
 
         and:
-        net.startPlace.id == 'P_start'
         net.startPlace.index == 0
-        net.endPlace.id == 'P_end'
+        net.startPlace.label == 'start'
         net.endPlace.index == 1
+        net.endPlace.label == 'end'
 
         and:
         def transition = net.transitions[0]
-        transition.id == 'T_0'
         transition.index == 0
         transition.label == 'process order'
         transition.actionKey == 'process order'
@@ -68,9 +67,9 @@ class SequencePumlParserSpec extends Specification {
         net.transitions.size() == 2
 
         and:
-        net.places[0].id == 'P_start'
-        net.places[1].id == 'P_1'
-        net.places[2].id == 'P_end'
+        net.places[0].label == 'start'
+        net.places[1].label == 'P_1'
+        net.places[2].label == 'end'
 
         and:
         net.transitions[0].label == 'Hello world'
@@ -121,8 +120,8 @@ class SequencePumlParserSpec extends Specification {
         net != null
         net.places.size() == 3
         net.transitions.size() == 2
-        net.startPlace.id == 'P_start'
-        net.endPlace.id == 'P_end'
+        net.startPlace.label == 'start'
+        net.endPlace.label == 'end'
         net.transitions[0].label == 'step one'
         net.transitions[1].label == 'step two'
     }

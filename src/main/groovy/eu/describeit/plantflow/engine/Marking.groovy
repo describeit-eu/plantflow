@@ -1,29 +1,26 @@
 package eu.describeit.plantflow.engine
 
-
 import groovy.transform.CompileStatic
 
 @CompileStatic
 class Marking {
     final List<Place> places
-    private final Map<String, Integer> placeIndexMap
     private final List<Token>[] tokens
 
     @SuppressWarnings('unchecked')
     Marking(List<Place> places) {
-        this.places = Collections.unmodifiableList(new ArrayList<>(places))
-        this.placeIndexMap = new HashMap<>(places.size())
+        this.places = places.asUnmodifiable()
         this.tokens = new List[places.size()]
         for (int i = 0; i < places.size(); i++) {
-            Place p = places[i]
-            placeIndexMap.put(p.id, p.index)
             tokens[i] = []
         }
     }
 
     void addToken(int placeIndex, Token token) {
         if (token == null) return
-        tokens[placeIndex].add(token)
+        if (placeIndex >= 0 && placeIndex < tokens.length) {
+            tokens[placeIndex].add(token)
+        }
     }
 
     void addToken(Place place, Token token) {
@@ -31,6 +28,9 @@ class Marking {
     }
 
     boolean removeToken(int placeIndex, Token token) {
+        if (placeIndex < 0 || placeIndex >= tokens.length) {
+            return false
+        }
         return tokens[placeIndex].remove(token)
     }
 
@@ -39,6 +39,9 @@ class Marking {
     }
 
     List<Token> getTokens(int placeIndex) {
+        if (placeIndex < 0 || placeIndex >= tokens.length) {
+            return Collections.emptyList() as List<Token>
+        }
         return Collections.unmodifiableList(new ArrayList<>(tokens[placeIndex]))
     }
 
@@ -46,12 +49,10 @@ class Marking {
         return getTokens(place.index)
     }
 
-    List<Token> getTokens(String placeId) {
-        Integer idx = placeIndexMap.get(placeId)
-        return idx != null ? getTokens(idx) : Collections.emptyList() as List<Token>
-    }
-
     int getTokenCount(int placeIndex) {
+        if (placeIndex < 0 || placeIndex >= tokens.length) {
+            return 0
+        }
         return tokens[placeIndex].size()
     }
 
@@ -59,22 +60,15 @@ class Marking {
         return getTokenCount(place.index)
     }
 
-    int getTokenCount(String placeId) {
-        Integer idx = placeIndexMap.get(placeId)
-        return idx != null ? getTokenCount(idx) : 0
-    }
-
     boolean isEmpty(int placeIndex) {
+        if (placeIndex < 0 || placeIndex >= tokens.length) {
+            return true
+        }
         return tokens[placeIndex].isEmpty()
     }
 
     boolean isEmpty(Place place) {
         return isEmpty(place.index)
-    }
-
-    boolean isEmpty(String placeId) {
-        Integer idx = placeIndexMap.get(placeId)
-        return idx != null ? isEmpty(idx) : true
     }
 
     int[] getMarkingVector() {

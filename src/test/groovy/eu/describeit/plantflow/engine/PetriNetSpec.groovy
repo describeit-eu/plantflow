@@ -7,39 +7,39 @@ import spock.lang.Specification
 
 class PetriNetSpec extends Specification {
 
-    @Shared def pStart = new Place('P_start', 0, 'start')
-    @Shared def pMid = new Place('P_mid', 1, 'mid')
-    @Shared def pEnd = new Place('P_end', 2, 'end')
-    @Shared def t1 = new Transition('T_0', 0, 'step1', 'step1')
-    @Shared def t2 = new Transition('T_1', 1, 'step2', 'step2')
+    @Shared def pStart = new Place(0, 'start')
+    @Shared def pMid = new Place(1, 'mid')
+    @Shared def pEnd = new Place(2, 'end')
+    @Shared def t1 = new Transition(0, 'step1', 'step1')
+    @Shared def t2 = new Transition(1, 'step2', 'step2')
 
-    def 'should lookup place by id: #lookupId'() {
+    def 'should lookup place by index: #lookupIndex'() {
         given:
         PetriNet net = new TestPetriNet(places: [pStart, pMid, pEnd])
 
         expect:
-        net.getPlaceById(lookupId) == expectedPlace
+        net.getPlaceByIndex(lookupIndex) == expectedPlace
 
         where:
-        lookupId    | expectedPlace
-        'P_start'   | pStart
-        'P_mid'     | pMid
-        'P_end'     | pEnd
-        'P_unknown' | null
+        lookupIndex | expectedPlace
+        0           | pStart
+        1           | pMid
+        2           | pEnd
+        99          | null
     }
 
-    def 'should lookup transition by id: #lookupId'() {
+    def 'should lookup transition by index: #lookupIndex'() {
         given:
         PetriNet net = new TestPetriNet(transitions: [t1, t2])
 
         expect:
-        net.getTransitionById(lookupId) == expectedTransition
+        net.getTransitionByIndex(lookupIndex) == expectedTransition
 
         where:
-        lookupId    | expectedTransition
-        'T_0'       | t1
-        'T_1'       | t2
-        'T_unknown' | null
+        lookupIndex | expectedTransition
+        0           | t1
+        1           | t2
+        99          | null
     }
 
     def 'should determine if marking is empty across all net places: #description'() {
@@ -138,19 +138,18 @@ class PetriNetSpec extends Specification {
         net.isNetEmpty(marking)
     }
 
-    def 'should initialize Place with id, index and label'() {
+    def 'should initialize Place with index and label'() {
         when:
-        def place = new Place('P_1', 0, 'Custom Label')
+        def place = new Place(0, 'Custom Label')
 
         then:
-        place.id == 'P_1'
         place.index == 0
         place.label == 'Custom Label'
     }
 
     def 'should reject Place creation with invalid label: #scenario'() {
         when:
-        new Place('P_1', 0, invalidLabel)
+        new Place(0, invalidLabel)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -165,38 +164,37 @@ class PetriNetSpec extends Specification {
 
     def 'should satisfy equals, hashCode, and toString for Place'() {
         given:
-        def place1 = new Place('P_1', 0, 'Label A')
-        def place2 = new Place('P_1', 0, 'Label A')
-        def place3 = new Place('P_2', 1, 'Label B')
+        def place1 = new Place(0, 'Label A')
+        def place2 = new Place(0, 'Label A')
+        def place3 = new Place(1, 'Label B')
 
         expect:
         place1 == place2
         place1.hashCode() == place2.hashCode()
         place1 != place3
-        place1.toString().contains('id:P_1')
         place1.toString().contains('index:0')
+        place1.toString().contains('label:Label A')
     }
 
-    def 'should initialize Transition with id, index, label and optional keys: #scenario'() {
+    def 'should initialize Transition with index, label and optional keys: #scenario'() {
         when:
         def transition = constructorCall()
 
         then:
-        transition.id == 'T_1'
         transition.index == 0
         transition.label == 'Step One'
         transition.actionKey == expectedActionKey
         transition.guardKey == expectedGuardKey
 
         where:
-        scenario                    | constructorCall                                                      | expectedActionKey | expectedGuardKey
-        'omitted guard key'         | { -> new Transition('T_1', 0, 'Step One', 'customAct') }             | 'customAct'       | null
-        'explicit action and guard' | { -> new Transition('T_1', 0, 'Step One', 'customAct', 'chkGuard') } | 'customAct'       | 'chkGuard'
+        scenario                    | constructorCall                                                | expectedActionKey | expectedGuardKey
+        'omitted guard key'         | { -> new Transition(0, 'Step One', 'customAct') }             | 'customAct'       | null
+        'explicit action and guard' | { -> new Transition(0, 'Step One', 'customAct', 'chkGuard') } | 'customAct'       | 'chkGuard'
     }
 
     def 'should reject Transition creation with invalid label: #scenario'() {
         when:
-        new Transition('T_1', 0, invalidLabel, 'actionKey')
+        new Transition(0, invalidLabel, 'actionKey')
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -211,7 +209,7 @@ class PetriNetSpec extends Specification {
 
     def 'should reject Transition creation with invalid actionKey: #scenario'() {
         when:
-        new Transition('T_1', 0, 'Step One', invalidActionKey)
+        new Transition(0, 'Step One', invalidActionKey)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -226,15 +224,15 @@ class PetriNetSpec extends Specification {
 
     def 'should satisfy equals, hashCode, and toString for Transition'() {
         given:
-        def trans1 = new Transition('T_1', 0, 'Step 1', 'act1', 'grd1')
-        def trans2 = new Transition('T_1', 0, 'Step 1', 'act1', 'grd1')
-        def trans3 = new Transition('T_2', 1, 'Step 2', 'act2', 'grd2')
+        def trans1 = new Transition(0, 'Step 1', 'act1', 'grd1')
+        def trans2 = new Transition(0, 'Step 1', 'act1', 'grd1')
+        def trans3 = new Transition(1, 'Step 2', 'act2', 'grd2')
 
         expect:
         trans1 == trans2
         trans1.hashCode() == trans2.hashCode()
         trans1 != trans3
-        trans1.toString().contains('id:T_1')
+        trans1.toString().contains('index:0')
         trans1.toString().contains('label:Step 1')
     }
 

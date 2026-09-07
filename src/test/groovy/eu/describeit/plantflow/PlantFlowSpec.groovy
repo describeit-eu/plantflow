@@ -91,7 +91,7 @@ class PlantFlowSpec extends Specification {
         finalEngine == engine
         executionLog == ['validated', 'charged']
         engine.petriNet.isEmpty(engine.petriNet.startPlace)
-        engine.petriNet.isEmpty('P_1')
+        engine.petriNet.isEmpty(1)
         !engine.petriNet.isEmpty(engine.petriNet.endPlace)
 
         and:
@@ -209,7 +209,7 @@ class PlantFlowSpec extends Specification {
 
         expect:
         engine.petriNet.getTokenCount(engine.petriNet.startPlace) == 1
-        engine.petriNet.getTokenCount('P_1') == 0
+        engine.petriNet.getTokenCount(1) == 0
         engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 0
 
         when:
@@ -218,7 +218,7 @@ class PlantFlowSpec extends Specification {
         then:
         stepped1
         engine.petriNet.getTokenCount(engine.petriNet.startPlace) == 0
-        engine.petriNet.getTokenCount('P_1') == 1
+        engine.petriNet.getTokenCount(1) == 1
         engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 0
 
         when:
@@ -227,7 +227,7 @@ class PlantFlowSpec extends Specification {
         then:
         stepped2
         engine.petriNet.getTokenCount(engine.petriNet.startPlace) == 0
-        engine.petriNet.getTokenCount('P_1') == 0
+        engine.petriNet.getTokenCount(1) == 0
         engine.petriNet.getTokenCount(engine.petriNet.endPlace) == 1
 
         when:
@@ -352,9 +352,9 @@ class PlantFlowSpec extends Specification {
 
     def 'should evaluate isCompleted as false when end place has tokens but transitions remain enabled'() {
         given: 'a petri net where end place has a token but another transition is still enabled'
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
-        def t1 = new Transition('T_0', 0, 'step', 'act', null)
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def t1 = new Transition(0, 'step', 'act', null)
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
         def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [t1], inputMatrix, outputMatrix)

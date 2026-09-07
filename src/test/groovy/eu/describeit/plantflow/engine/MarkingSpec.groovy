@@ -7,8 +7,8 @@ class MarkingSpec extends Specification {
 
     def 'should manage tokens in vector indexed places'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
         def marking = new Marking([pStart, pEnd])
         def token = Token.of([data: 'initial'])
 
@@ -21,7 +21,6 @@ class MarkingSpec extends Specification {
         marking.getTokenCount(pEnd) == 0
         marking.getTokens(pStart) == [token]
         marking.getTokens(0) == [token]
-        marking.getTokens('P_start') == [token]
         marking.getMarkingVector() == [1, 0] as int[]
 
         when:
@@ -38,8 +37,8 @@ class MarkingSpec extends Specification {
 
     def 'should create independent deep copy of marking'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
         def marking = new Marking([pStart, pEnd])
         def token1 = Token.of([k: 'v1'])
         def token2 = Token.of([k: 'v2'])
@@ -75,25 +74,25 @@ class MarkingSpec extends Specification {
 
     def 'should handle place queries safely for #scenario'() {
         given:
-        def place = new Place('P_0', 0, 'start')
+        def place = new Place(0, 'start')
         def marking = new Marking([place])
 
         expect:
-        marking.getTokens((String) placeId) == expectedTokens
-        marking.getTokenCount((String) placeId) == expectedCount
-        marking.isEmpty((String) placeId) == expectedEmpty
+        marking.getTokens(placeIndex) == expectedTokens
+        marking.getTokenCount(placeIndex) == expectedCount
+        marking.isEmpty(placeIndex) == expectedEmpty
 
         where:
-        scenario            | placeId       | expectedTokens | expectedCount | expectedEmpty
-        'existing place'    | 'P_0'         | []             | 0             | true
-        'nonexistent place' | 'nonexistent' | []             | 0             | true
-        'empty place id'    | ''            | []             | 0             | true
-        'null place id'     | null          | []             | 0             | true
+        scenario                 | placeIndex | expectedTokens | expectedCount | expectedEmpty
+        'existing place'         | 0          | []             | 0             | true
+        'out of bound index'     | 1          | []             | 0             | true
+        'negative place index'   | -1         | []             | 0             | true
+        'large place index'      | 99         | []             | 0             | true
     }
 
     def 'should ignore null token when adding tokens by index or place'() {
         given:
-        def place = new Place('P_0', 0, 'start')
+        def place = new Place(0, 'start')
         def marking = new Marking([place])
 
         when:

@@ -8,9 +8,9 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should create DefaultPetriNetSpec with places, transitions and incidence matrix'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
-        def tAction = new Transition('T_0', 0, 'process order', 'process order')
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'process order', 'process order')
 
         def inputMatrix = [
             [1], // P_start
@@ -34,21 +34,21 @@ class DefaultPetriNetSpec extends Specification {
         net.incidenceMatrix == incidenceMatrix
 
         and:
-        net.getPlaceById('P_start') == pStart
-        net.getPlaceById('P_end') == pEnd
-        net.getPlaceById('P_unknown') == null
-        net.getTransitionById('T_0') == tAction
-        net.getTransitionById('T_unknown') == null
+        net.getPlaceByIndex(0) == pStart
+        net.getPlaceByIndex(1) == pEnd
+        net.getPlaceByIndex(99) == null
+        net.getTransitionByIndex(0) == tAction
+        net.getTransitionByIndex(99) == null
     }
 
     def 'should evaluate isEnabled and getEnabledTransitions based on token marking, guards, and actions'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pMid = new Place('P_mid', 1, 'mid')
-        def pEnd = new Place('P_end', 2, 'end')
+        def pStart = new Place(0, 'start')
+        def pMid = new Place(1, 'mid')
+        def pEnd = new Place(2, 'end')
 
-        def tGuard = new Transition('T_0', 0, 'guarded', 'action1', 'checkCondition')
-        def tAction = new Transition('T_1', 1, 'actionOnly', 'action2', null)
+        def tGuard = new Transition(0, 'guarded', 'action1', 'checkCondition')
+        def tAction = new Transition(1, 'actionOnly', 'action2', null)
 
         def inputMatrix = [
             [1, 0], // P_start
@@ -100,9 +100,9 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should fire transition: consume tokens, execute action handler, and produce tokens'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
-        def tAction = new Transition('T_0', 0, 'transform', 'transformAction', null)
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'transform', 'transformAction', null)
 
         def inputMatrix = [
             [1], // P_start
@@ -146,11 +146,11 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should execute workflow to end using runUntilEnd'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pMid = new Place('P_mid', 1, 'mid')
-        def pEnd = new Place('P_end', 2, 'end')
-        def t1 = new Transition('T_0', 0, 'step1', 'action1', null)
-        def t2 = new Transition('T_1', 1, 'step2', 'action2', null)
+        def pStart = new Place(0, 'start')
+        def pMid = new Place(1, 'mid')
+        def pEnd = new Place(2, 'end')
+        def t1 = new Transition(0, 'step1', 'action1', null)
+        def t2 = new Transition(1, 'step2', 'action2', null)
 
         def inputMatrix = [
             [1, 0], // P_start
@@ -191,9 +191,9 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should handle action output tokens with various return types: #scenario'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
-        def tAction = new Transition('T_0', 0, actionKey, actionKey, null)
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, actionKey, actionKey, null)
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
         def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
@@ -231,8 +231,8 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should fire transition without input places generating fallback token'() {
         given: 'a transition with 0 input places and 1 output place'
-        def pEnd = new Place('P_end', 0, 'end')
-        def tSource = new Transition('T_0', 0, 'produceAction', 'produceAction', null)
+        def pEnd = new Place(0, 'end')
+        def tSource = new Transition(0, 'produceAction', 'produceAction', null)
         def inputMatrix = [[0]] as int[][]
         def outputMatrix = [[1]] as int[][]
         def incidenceMatrix = new IncidenceMatrix([pEnd], [tSource], inputMatrix, outputMatrix)
@@ -256,9 +256,9 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should evaluate guard with null token when input places are empty: #scenario'() {
         given:
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
-        def tGuarded = new Transition('T_0', 0, 'guardedStep', 'dummyAction', 'allowNullToken')
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tGuarded = new Transition(0, 'guardedStep', 'dummyAction', 'allowNullToken')
 
         def inputMatrix = [[hasInput ? 1 : 0], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
@@ -285,9 +285,9 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should fire transition with weighted arcs consuming and producing multiple tokens'() {
         given: 'places and transition with arc weight 2'
-        def pStart = new Place('P_start', 0, 'start')
-        def pEnd = new Place('P_end', 1, 'end')
-        def tAction = new Transition('T_0', 0, 'consumeTwo', 'consumeTwo', null)
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'consumeTwo', 'consumeTwo', null)
 
         def inputMatrix = [[2], [0]] as int[][]
         def outputMatrix = [[0], [2]] as int[][]

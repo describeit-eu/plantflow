@@ -9,15 +9,13 @@ import groovy.transform.ToString
 @ToString(includeNames = true, includePackage = false)
 @EqualsAndHashCode
 class Transition {
-    final String id
     final int index
     final String label
     final String actionKey
     final String guardKey = null
 
     @NullCheck(includeGenerated=true)
-    Transition(String id, Integer index, String label, String actionKey) {
-        this.id = id
+    Transition(Integer index, String label, String actionKey) {
         this.index = index
         this.label = label
         this.actionKey = actionKey
@@ -31,8 +29,8 @@ class Transition {
         }
     }
 
-    Transition(String id, Integer index, String label, String actionKey, String guardKey) {
-        this(id, index, label, actionKey)
+    Transition(Integer index, String label, String actionKey, String guardKey) {
+        this(index, label, actionKey)
         this.guardKey = guardKey
     }
 }
