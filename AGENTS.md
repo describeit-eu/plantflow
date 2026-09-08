@@ -2,7 +2,7 @@
 
 ## Agent skills
 
-Project uses Groovy 5 (JDK 25)  and Spock for BDD style testing. This is a library project implementing a workflow engine.
+Project uses Groovy 5 (JDK 25)  and Spock for BDD style testing. This is a library project implementing a workflow engine based on petri-net.
 
 ### Issue tracker
 

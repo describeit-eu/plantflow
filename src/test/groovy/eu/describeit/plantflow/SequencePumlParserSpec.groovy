@@ -150,6 +150,39 @@ class SequencePumlParserSpec extends Specification {
         net.transitions[1].label == 'step two'
     }
 
+    def 'should skip comments, blank lines, and whitespace lines throughout diagram'() {
+        given:
+        def puml = """
+            ' Leading header comment
+            @startuml
+            ' Pre-start comment
+            
+                \t
+            start
+            ' Mid-diagram comment
+            :step one;
+            
+            ' Another comment
+            :step two;
+            
+            end
+            ' Trailing comment
+            @enduml
+            ' Post enduml comment
+        """
+        def parser = new ActivityDiagramParser()
+
+        when:
+        def net = parser.parse(puml)
+
+        then:
+        net != null
+        net.places.size() == 3
+        net.transitions.size() == 2
+        net.transitions[0].label == 'step one'
+        net.transitions[1].label == 'step two'
+    }
+
     def 'should throw IllegalArgumentException when parsing null file'() {
         given:
         def parser = new ActivityDiagramParser()

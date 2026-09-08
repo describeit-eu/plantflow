@@ -14,17 +14,17 @@ class Transition {
     final String actionKey
     final String guardKey
 
-    @NullCheck(includeGenerated=true)
+    @NullCheck
     Transition(Integer index, String label, String actionKey) {
         this.index = index
-        this.label = label
-        this.actionKey = actionKey
+        this.label = label.trim()
+        this.actionKey = actionKey.trim()
 
-        if (!label?.trim()) {
+        if (!this.label) {
             throw new IllegalArgumentException('label cannot be null or blank')
         }
 
-        if (!actionKey?.trim()) {
+        if (!this.actionKey) {
             throw new IllegalArgumentException('actionKey cannot be null or blank')
         }
     }

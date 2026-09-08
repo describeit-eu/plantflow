@@ -104,4 +104,41 @@ class MarkingSpec extends Specification {
         marking.getTokenCount(place) == 0
         marking.getTokens(place).isEmpty()
     }
+
+    def 'should handle addToken with out of bounds or negative indices gracefully'() {
+        given:
+        def place = new Place(0, 'start')
+        def marking = new Marking([place])
+        def token = Token.of([k: 'v'])
+
+        when:
+        marking.addToken(invalidIndex, token)
+
+        then:
+        marking.isEmpty(place)
+        marking.getTokenCount(place) == 0
+
+        where:
+        invalidIndex << [-1, 1, 100]
+    }
+
+    def 'should return false when removing token with invalid index or non-existent token: #scenario'() {
+        given:
+        def place = new Place(0, 'start')
+        def marking = new Marking([place])
+        def token1 = Token.of([id: 1])
+        def token2 = Token.of([id: 2])
+        marking.addToken(place, token1)
+
+        expect:
+        removeCall(marking, place, token2, invalidIndex) == false
+        marking.getTokenCount(place) == 1
+
+        where:
+        scenario                    | invalidIndex | removeCall
+        'negative index'            | -1           | { Marking m, Place p, Token t, int idx -> m.removeToken(idx, t) }
+        'out of bounds index'       | 5            | { Marking m, Place p, Token t, int idx -> m.removeToken(idx, t) }
+        'non-existent token index'  | 0            | { Marking m, Place p, Token t, int idx -> m.removeToken(idx, t) }
+        'non-existent token place'  | 0            | { Marking m, Place p, Token t, int idx -> m.removeToken(p, t) }
+    }
 }

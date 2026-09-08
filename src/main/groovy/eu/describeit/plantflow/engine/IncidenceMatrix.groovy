@@ -6,25 +6,29 @@ import groovy.transform.CompileStatic
 class IncidenceMatrix {
     final List<Place> places
     final List<Transition> transitions
-    final int[][] inputMatrix
-    final int[][] outputMatrix
-    final int[][] incidenceMatrix
+    final int[][] inputMatrix     // [numPlaces][numTransitions]
+    final int[][] outputMatrix    // [numPlaces][numTransitions]
+    final int[][] incidenceMatrix // [numPlaces][numTransitions]
 
-    IncidenceMatrix(List<Place> places, List<Transition> transitions, int[][] inputMatrix, int[][] outputMatrix) {
+    IncidenceMatrix(List<Place> places, List<Transition> transitions, int[][] inMatrix, int[][] outMatrix) {
+        Closure<Integer> getWeight = { int[][] matrix, int p, int t ->
+            return (matrix != null && p < matrix.length && t < matrix[p].length) ? matrix[p][t] : 0
+        }
+
         this.places = places.asUnmodifiable()
         this.transitions = transitions.asUnmodifiable()
 
         int numPlaces = places.size()
         int numTransitions = transitions.size()
 
-        this.inputMatrix = new int[numPlaces][numTransitions]
-        this.outputMatrix = new int[numPlaces][numTransitions]
+        this.inputMatrix     = new int[numPlaces][numTransitions]
+        this.outputMatrix    = new int[numPlaces][numTransitions]
         this.incidenceMatrix = new int[numPlaces][numTransitions]
 
         for (int p = 0; p < numPlaces; p++) {
             for (int t = 0; t < numTransitions; t++) {
-                int inWeight  = (inputMatrix  != null && p < inputMatrix.length  && t < inputMatrix[p].length)  ? inputMatrix[p][t]  : 0
-                int outWeight = (outputMatrix != null && p < outputMatrix.length && t < outputMatrix[p].length) ? outputMatrix[p][t] : 0
+                int inWeight  = getWeight(inMatrix, p, t)
+                int outWeight = getWeight(outMatrix, p, t)
 
                 this.inputMatrix[p][t] = inWeight
                 this.outputMatrix[p][t] = outWeight

@@ -5,21 +5,17 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class Marking {
     final List<Place> places
-    private final List<Token>[] tokens
+    private final Token[][] tokens
 
-    @SuppressWarnings('unchecked')
     Marking(List<Place> places) {
         this.places = places.asUnmodifiable()
-        this.tokens = new List[places.size()]
-        for (int i = 0; i < places.size(); i++) {
-            tokens[i] = []
-        }
+        this.tokens = new Token[places.size()][0]
     }
 
     void addToken(int placeIndex, Token token) {
         if (token == null) return
         if (placeIndex >= 0 && placeIndex < tokens.length) {
-            tokens[placeIndex].add(token)
+            tokens[placeIndex] = tokens[placeIndex] + token
         }
     }
 
@@ -31,7 +27,9 @@ class Marking {
         if (placeIndex < 0 || placeIndex >= tokens.length) {
             return false
         }
-        return tokens[placeIndex].remove(token)
+        int origSize = tokens[placeIndex].length
+        tokens[placeIndex] = tokens[placeIndex] - (token)
+        return tokens[placeIndex].length < origSize
     }
 
     boolean removeToken(Place place, Token token) {
@@ -42,7 +40,7 @@ class Marking {
         if (placeIndex < 0 || placeIndex >= tokens.length) {
             return Collections.emptyList() as List<Token>
         }
-        return Collections.unmodifiableList(new ArrayList<>(tokens[placeIndex]))
+        return Collections.unmodifiableList(Arrays.asList(tokens[placeIndex]))
     }
 
     List<Token> getTokens(Place place) {
@@ -53,7 +51,7 @@ class Marking {
         if (placeIndex < 0 || placeIndex >= tokens.length) {
             return 0
         }
-        return tokens[placeIndex].size()
+        return tokens[placeIndex].length
     }
 
     int getTokenCount(Place place) {
@@ -64,7 +62,7 @@ class Marking {
         if (placeIndex < 0 || placeIndex >= tokens.length) {
             return true
         }
-        return tokens[placeIndex].isEmpty()
+        return tokens[placeIndex].length == 0
     }
 
     boolean isEmpty(Place place) {
@@ -74,7 +72,7 @@ class Marking {
     int[] getMarkingVector() {
         int[] vec = new int[tokens.length]
         for (int i = 0; i < tokens.length; i++) {
-            vec[i] = tokens[i].size()
+            vec[i] = tokens[i].length
         }
         return vec
     }
@@ -82,7 +80,7 @@ class Marking {
     Marking copy() {
         Marking copy = new Marking(this.places)
         for (int i = 0; i < tokens.length; i++) {
-            copy.tokens[i].addAll(this.tokens[i])
+            copy.tokens[i] = Arrays.copyOf(this.tokens[i], this.tokens[i].length)
         }
         return copy
     }

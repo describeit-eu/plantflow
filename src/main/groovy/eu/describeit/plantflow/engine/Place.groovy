@@ -8,16 +8,16 @@ import groovy.transform.ToString
 @CompileStatic
 @ToString(includeNames = true, includePackage = false)
 @EqualsAndHashCode
-@NullCheck
+@NullCheck(includeGenerated=true)
 class Place {
     final int index
     final String label
 
     Place(int index, String label) {
         this.index = index
-        this.label = label
+        this.label = label.trim()
 
-        if (!label?.trim()) {
+        if (!this.label) {
             throw new IllegalArgumentException('label cannot be blank')
         }
     }

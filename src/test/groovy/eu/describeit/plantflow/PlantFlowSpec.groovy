@@ -2,6 +2,7 @@ package eu.describeit.plantflow
 
 import eu.describeit.plantflow.engine.DefaultPetriNet
 import eu.describeit.plantflow.engine.IncidenceMatrix
+import eu.describeit.plantflow.engine.Marking
 import eu.describeit.plantflow.engine.PetriNet
 import eu.describeit.plantflow.engine.Place
 import eu.describeit.plantflow.engine.Token
@@ -436,5 +437,47 @@ class PlantFlowSpec extends Specification {
         then:
         firedWithToken
         engine.isCompleted()
+    }
+
+    def 'should return false when step is invoked with no enabled transitions'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :step;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry().registerAction('step') { ctx, tok -> tok }
+        def engine = PlantFlow.from(puml, registry)
+
+        expect: 'no tokens in start place means no enabled transitions'
+        !engine.step()
+    }
+
+    def 'should return false when step is invoked and fire fails'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def t1 = new Transition(0, 'step', 'act', null)
+        def matrix = new IncidenceMatrix([pStart, pEnd], [t1], [[1], [0]] as int[][], [[0], [1]] as int[][])
+        def net = new FailingFirePetriNet([pStart, pEnd], [t1], matrix, pStart, pEnd)
+        def registry = new HandlerRegistry().registerAction('act') { ctx, tok -> tok }
+        def engine = new PlantFlow(net, registry)
+        engine.seedToken()
+
+        expect:
+        !engine.step()
+    }
+
+    static class FailingFirePetriNet extends DefaultPetriNet {
+        FailingFirePetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end) {
+            super(places, transitions, matrix, start, end)
+        }
+
+        @Override
+        boolean fire(Transition t, Marking m, HandlerRegistry r, ExecutionContext c) {
+            return false
+        }
     }
 }

@@ -226,7 +226,153 @@ class DefaultPetriNetSpec extends Specification {
         'returns Map'    | 'act2'    | { Token t -> [merged: 'yes'] }            | [merged: 'yes']   | true
         'returns null'   | 'act3'    | { Token t -> null }                       | [source: 'input'] | true
         'returns String' | 'act4'    | { Token t -> 'non-map result' }           | [source: 'input'] | true
-//        'no action key'  | null      | null                                      | [source: 'input'] | true
+    }
+
+    def 'should handle actionless transition without action handler'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tNoAction = new ActionlessTestTransition(0, 'noAction')
+        def inputMatrix = [[1], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tNoAction], inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tNoAction], incidenceMatrix, pStart, pEnd)
+        def registry = new HandlerRegistry()
+        def marking = new Marking(net.places)
+        def token = Token.of([pass: 'through'])
+        marking.addToken(pStart, token)
+
+        when:
+        def enabled = net.isEnabled(tNoAction, marking, registry, new ExecutionContext())
+        def fired = net.fire(tNoAction, marking, registry, new ExecutionContext())
+
+        then:
+        enabled
+        fired
+        marking.getTokenCount(pEnd) == 1
+        marking.getTokens(pEnd)[0] == token
+    }
+
+    def 'should fire sink transition with 0 output places'() {
+        given: 'a transition with 1 input place and 0 output places'
+        def pStart = new Place(0, 'start')
+        def tSink = new Transition(0, 'sinkAction', 'sinkAction', null)
+        def inputMatrix = [[1]] as int[][]
+        def outputMatrix = [[0]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pStart], [tSink], inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart], [tSink], incidenceMatrix, pStart, pStart)
+        def registry = new HandlerRegistry().registerAction('sinkAction') { ctx, tok -> tok }
+        def marking = new Marking(net.places)
+        marking.addToken(pStart, Token.of())
+
+        when:
+        def fired = net.fire(tSink, marking, registry, new ExecutionContext())
+
+        then:
+        fired
+        marking.isEmpty(pStart)
+    }
+
+    def 'should return empty list when PetriNet has zero transitions'() {
+        given:
+        def p = new Place(0, 'p')
+        def matrix = new IncidenceMatrix([p], [], null, null)
+        def net = new DefaultPetriNet([p], [], matrix, p, p)
+        def registry = new HandlerRegistry()
+        def marking = new Marking([p])
+
+        expect:
+        net.getEnabledTransitions(marking, registry, new ExecutionContext()).isEmpty()
+    }
+
+    def 'should evaluate guard with empty token when input place is connected but empty'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tGuarded = new Transition(0, 'guardedStep', 'dummyAction', 'checkNull')
+
+        def customMatrix = new EmptyConnectedIncidenceMatrix([pStart, pEnd], [tGuarded], pStart, pEnd)
+        def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], customMatrix, pStart, pEnd)
+        def registry = new HandlerRegistry()
+        registry.registerAction('dummyAction') { ctx, tok -> tok }
+        registry.registerGuard('checkNull') { ctx, tok -> tok == null }
+        def marking = new Marking(net.places)
+
+        expect:
+        net.isEnabled(tGuarded, marking, registry, new ExecutionContext())
+    }
+
+    static class ActionlessTestTransition extends Transition {
+        ActionlessTestTransition(int index, String label) {
+            super(index, label, 'dummyAction')
+        }
+
+        @Override
+        String getActionKey() {
+            return null
+        }
+    }
+
+    static class EmptyConnectedIncidenceMatrix extends IncidenceMatrix {
+        private final Place inputPlace
+        private final Place outputPlace
+
+        EmptyConnectedIncidenceMatrix(List<Place> places, List<Transition> transitions, Place inputPlace, Place outputPlace) {
+            super(places, transitions, null, null)
+            this.inputPlace = inputPlace
+            this.outputPlace = outputPlace
+        }
+
+        @Override
+        List<Place> getInputPlaces(int transitionIndex) {
+            return [inputPlace]
+        }
+
+        @Override
+        List<Place> getOutputPlaces(int transitionIndex) {
+            return [outputPlace]
+        }
+
+        @Override
+        int getInputWeight(int placeIndex, int transitionIndex) {
+            return 0
+        }
+
+        @Override
+        int getOutputWeight(int placeIndex, int transitionIndex) {
+            return 1
+        }
+    }
+
+    def 'should handle firing when token availability check is bypassed and place is empty'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'action', 'action', null)
+        def inputMatrix = [[1], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def net = new UncheckedPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+        def registry = new HandlerRegistry().registerAction('action') { ctx, tok -> tok }
+        def marking = new Marking(net.places)
+
+        when: 'firing without any tokens present in start place'
+        def fired = net.fire(tAction, marking, registry, new ExecutionContext())
+
+        then:
+        fired
+        marking.getTokenCount(pEnd) == 1
+    }
+
+    static class UncheckedPetriNet extends DefaultPetriNet {
+        UncheckedPetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end) {
+            super(places, transitions, matrix, start, end)
+        }
+
+        @Override
+        boolean isEnabled(Transition t, Marking m, HandlerRegistry r, ExecutionContext c) {
+            return true
+        }
     }
 
     def 'should fire transition without input places generating fallback token'() {

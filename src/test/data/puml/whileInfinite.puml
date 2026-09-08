@@ -5,5 +5,4 @@ while (true)
 endwhile
 -[hidden]->
 detach
-end
 @enduml

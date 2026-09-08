@@ -140,6 +140,83 @@ class PetriNetSpec extends Specification {
         net.isNetEmpty(marking)
     }
 
+    def 'should delegate token management and query default methods to marking'() {
+        given:
+        def marking = new Marking([pStart, pMid, pEnd])
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd, marking: marking)
+        def token1 = Token.of([key: 'val1'])
+        def token2 = Token.of([key: 'val2'])
+
+        expect: 'initially empty'
+        net.isEmpty(pStart)
+        net.isEmpty(0)
+        net.getTokenCount(pStart) == 0
+        net.getTokenCount(0) == 0
+        net.getTokens(pStart).isEmpty()
+
+        when: 'addToken is invoked via PetriNet interface default method'
+        net.addToken(pStart, token1)
+
+        then:
+        !net.isEmpty(pStart)
+        !net.isEmpty(0)
+        net.getTokenCount(pStart) == 1
+        net.getTokenCount(0) == 1
+        net.getTokens(pStart) == [token1]
+
+        when: 'seedToken is invoked with explicit token'
+        net.seedToken(token2)
+
+        then:
+        net.getTokenCount(pStart) == 2
+        net.getTokens(pStart) == [token1, token2]
+
+        when: 'seedToken is invoked with null token'
+        def freshMarking = new Marking([pStart, pMid, pEnd])
+        def freshNet = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd, marking: freshMarking)
+        freshNet.seedToken(null)
+
+        then:
+        freshNet.getTokenCount(pStart) == 1
+        freshNet.getTokens(pStart)[0].payload == [:]
+    }
+
+    def 'should delegate execution convenience methods to current marking'() {
+        given:
+        def marking = new Marking([pStart, pMid, pEnd])
+        def registry = new HandlerRegistry()
+        def context = new ExecutionContext()
+        def net = new TestPetriNet(
+            places: [pStart, pMid, pEnd],
+            transitions: [t1, t2],
+            startPlace: pStart,
+            endPlace: pEnd,
+            marking: marking,
+            remainingEnabled: [t1]
+        )
+
+        expect:
+        net.isEnabled(t1, registry, context)
+        !net.isEnabled(t2, registry, context)
+        net.getEnabledTransitions(registry, context) == [t1]
+
+        when:
+        def fired = net.fire(t1, registry, context)
+
+        then:
+        fired
+        net.firedTransitions == [t1]
+        !net.fire(t2, registry, context)
+
+        when:
+        net.remainingEnabled = [t2]
+        def finalMarking = net.runUntilEnd(registry, context, Token.of([run: true]))
+
+        then:
+        net.firedTransitions == [t1, t2]
+        finalMarking == marking
+    }
+
     def 'should initialize Place with index and label'() {
         when:
         def place = new Place(0, 'Custom Label')
