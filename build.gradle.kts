@@ -11,11 +11,12 @@ java {
   }
 }
 
-val groovyVersion  = "5.1.0"
-val slf4jVersion   = "2.0.18"
+val groovyVersion  = "5.1.2"
+val slf4jVersion   = "2.0.19"
 val logbackVersion = "1.6.3"
 val junitVersion   = "6.1.3"
 val spockVersion   = "2.4-groovy-5.0"
+val jacksonVersion = "2.22.2"
 
 group = "eu.describeit"
 version = "1.0-SNAPSHOT"
@@ -39,6 +40,7 @@ tasks.codenarcTest {
 
 dependencies {
   implementation("org.apache.groovy:groovy:$groovyVersion")
+  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
 
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")

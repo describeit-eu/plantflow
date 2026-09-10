@@ -27,31 +27,6 @@ class DefaultPetriNet implements PetriNet {
     }
 
     @Override
-    Marking getMarking() {
-        return marking
-    }
-
-    @Override
-    List<Place> getPlaces() {
-        return places
-    }
-
-    @Override
-    List<Transition> getTransitions() {
-        return transitions
-    }
-
-    @Override
-    Place getStartPlace() {
-        return startPlace
-    }
-
-    @Override
-    Place getEndPlace() {
-        return endPlace
-    }
-
-    @Override
     boolean isEnabled(Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
         if (transition == null) {
             return false

@@ -1,5 +1,7 @@
 package eu.describeit.plantflow.engine
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -10,7 +12,13 @@ class IncidenceMatrix {
     final int[][] outputMatrix    // [numPlaces][numTransitions]
     final int[][] incidenceMatrix // [numPlaces][numTransitions]
 
-    IncidenceMatrix(List<Place> places, List<Transition> transitions, int[][] inMatrix, int[][] outMatrix) {
+    @JsonCreator
+    IncidenceMatrix(
+        @JsonProperty('places') List<Place> places,
+        @JsonProperty('transitions') List<Transition> transitions,
+        @JsonProperty('inputMatrix') int[][] inMatrix,
+        @JsonProperty('outputMatrix') int[][] outMatrix
+    ) {
         Closure<Integer> getWeight = { int[][] matrix, int p, int t ->
             return (matrix != null && p < matrix.length && t < matrix[p].length) ? matrix[p][t] : 0
         }
