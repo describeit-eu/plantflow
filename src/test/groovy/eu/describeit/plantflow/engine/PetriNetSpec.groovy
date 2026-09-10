@@ -44,7 +44,7 @@ class PetriNetSpec extends Specification {
 
     def 'should determine if marking is empty across all net places: #description'() {
         given:
-        def marking = new Marking([pStart, pMid, pEnd])
+        def marking = new Marking(3)
         tokenPlaces.each { Place p ->
             marking.addToken(p, Token.of())
         }
@@ -64,7 +64,7 @@ class PetriNetSpec extends Specification {
 
     def 'should execute default runUntilEnd workflow loop'() {
         given:
-        def marking = new Marking([pStart, pMid, pEnd])
+        def marking = new Marking(3)
         def registry = new HandlerRegistry()
         def context = new ExecutionContext()
         def customToken = Token.of([test: 123])
@@ -89,7 +89,7 @@ class PetriNetSpec extends Specification {
 
     def 'should auto-seed token when runUntilEnd is called on empty marking'() {
         given:
-        def marking = new Marking([pStart, pMid, pEnd])
+        def marking = new Marking(3)
         def registry = new HandlerRegistry()
         def context = new ExecutionContext()
         def net = new TestPetriNet(
@@ -109,7 +109,7 @@ class PetriNetSpec extends Specification {
 
     def 'should not auto-seed token when runUntilEnd is called with null token on non-empty marking'() {
         given:
-        def marking = new Marking([pStart, pMid, pEnd])
+        def marking = new Marking(3)
         def existingToken = Token.of([init: true])
         marking.addToken(pMid, existingToken)
 
@@ -133,7 +133,7 @@ class PetriNetSpec extends Specification {
 
     def 'should return true for isNetEmpty when PetriNet has no places'() {
         given:
-        def marking = new Marking([])
+        def marking = new Marking(0)
         def net = new TestPetriNet(places: [])
 
         expect:
@@ -142,7 +142,7 @@ class PetriNetSpec extends Specification {
 
     def 'should delegate token management and query default methods to marking'() {
         given:
-        def marking = new Marking([pStart, pMid, pEnd])
+        def marking = new Marking(3)
         def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd, marking: marking)
         def token1 = Token.of([key: 'val1'])
         def token2 = Token.of([key: 'val2'])
@@ -172,7 +172,7 @@ class PetriNetSpec extends Specification {
         net.getTokens(pStart) == [token1, token2]
 
         when: 'seedToken is invoked with null token'
-        def freshMarking = new Marking([pStart, pMid, pEnd])
+        def freshMarking = new Marking(3)
         def freshNet = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd, marking: freshMarking)
         freshNet.seedToken(null)
 
@@ -183,7 +183,7 @@ class PetriNetSpec extends Specification {
 
     def 'should delegate execution convenience methods to current marking'() {
         given:
-        def marking = new Marking([pStart, pMid, pEnd])
+        def marking = new Marking(3)
         def registry = new HandlerRegistry()
         def context = new ExecutionContext()
         def net = new TestPetriNet(

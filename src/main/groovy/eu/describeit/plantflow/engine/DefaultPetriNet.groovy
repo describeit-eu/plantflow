@@ -23,7 +23,7 @@ class DefaultPetriNet implements PetriNet {
         this.incidenceMatrix = incidenceMatrix
         this.startPlace = startPlace
         this.endPlace = endPlace
-        this.marking = new Marking(this.places)
+        this.marking = new Marking(this.places.size())
     }
 
     @Override

@@ -14,18 +14,16 @@ class MarkingMarshallerSpec extends Specification {
         given:
         def p1 = new Place(0, 'P1')
         def p2 = new Place(1, 'P2')
-        def marking = new Marking([p1, p2])
+        def marking = new Marking(2)
 
         when:
         def json = Marshaller.toJson(marking)
+        log.info('Marking JSON: {}', json)
         def deserialized = Marshaller.fromJson(json, Marking)
 
-        log.info('Marking JSON: {}', json)
-
         then:
-        json.contains('"places"')
         json.contains('"tokens"')
-        deserialized.places.size() == 2
+        deserialized.getTokens().length == 2
         deserialized.getTokenCount(p1) == 0
         deserialized.getTokenCount(p2) == 0
     }
@@ -34,7 +32,7 @@ class MarkingMarshallerSpec extends Specification {
         given:
         def p1 = new Place(0, 'P1')
         def p2 = new Place(1, 'P2')
-        def marking = new Marking([p1, p2])
+        def marking = new Marking(2)
         def token1 = new Token('token-1', null, [key1: 'value1'])
         def token2 = new Token('token-2', null, [key2: 'value2'])
         marking.addToken(p1, token1)
@@ -42,14 +40,12 @@ class MarkingMarshallerSpec extends Specification {
 
         when:
         def json = Marshaller.toJson(marking, true)
+        log.info('Marking with tokens JSON(pretty): {}', json)
         def deserialized = Marshaller.fromJson(json, Marking)
 
-        log.info('Marking with tokens JSON(pretty): {}', json)
-
         then:
-        json.contains('"places"')
         json.contains('"tokens"')
-        deserialized.places.size() == 2
+        deserialized.getTokens().length == 2
         deserialized.getTokenCount(p1) == 1
         deserialized.getTokenCount(p2) == 1
     }

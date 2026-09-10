@@ -9,20 +9,15 @@ import groovy.transform.CompileStatic
 @CompileStatic
 @JsonIgnoreProperties(['metaClass'])
 class Marking {
-    final List<Place> places
+
     final Token[][] tokens
 
-    Marking(List<Place> places) {
-        this.places = places.asUnmodifiable()
-        this.tokens = new Token[places.size()][0]
+    Marking(int numberOfPlaces) {
+        this.tokens = new Token[numberOfPlaces][0]
     }
 
     @JsonCreator
-    Marking(
-        @JsonProperty('places') List<Place> places,
-        @JsonProperty('tokens') Token[][] tokens
-    ) {
-        this.places = places.asUnmodifiable()
+    Marking(@JsonProperty('tokens') Token[][] tokens) {
         this.tokens = tokens
     }
 
@@ -98,7 +93,7 @@ class Marking {
     }
 
     Marking copy() {
-        Marking copy = new Marking(this.places)
+        Marking copy = new Marking(this.tokens.length)
         for (int i = 0; i < tokens.length; i++) {
             copy.tokens[i] = Arrays.copyOf(this.tokens[i], this.tokens[i].length)
         }

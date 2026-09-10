@@ -9,7 +9,7 @@ class MarkingSpec extends Specification {
         given:
         def pStart = new Place(0, 'start')
         def pEnd = new Place(1, 'end')
-        def marking = new Marking([pStart, pEnd])
+        def marking = new Marking(2)
         def token = Token.of([data: 'initial'])
 
         when:
@@ -39,7 +39,7 @@ class MarkingSpec extends Specification {
         given:
         def pStart = new Place(0, 'start')
         def pEnd = new Place(1, 'end')
-        def marking = new Marking([pStart, pEnd])
+        def marking = new Marking(2)
         def token1 = Token.of([k: 'v1'])
         def token2 = Token.of([k: 'v2'])
         marking.addToken(pStart, token1)
@@ -48,7 +48,6 @@ class MarkingSpec extends Specification {
         def copy = marking.copy()
 
         then: 'copy has identical initial state'
-        copy.places == marking.places
         copy.getTokens(pStart) == [token1]
         copy.getTokens(pEnd).isEmpty()
         copy.markingVector == marking.markingVector
@@ -74,8 +73,7 @@ class MarkingSpec extends Specification {
 
     def 'should handle place queries safely for #scenario'() {
         given:
-        def place = new Place(0, 'start')
-        def marking = new Marking([place])
+        def marking = new Marking(1)
 
         expect:
         marking.getTokens(placeIndex) == expectedTokens
@@ -93,7 +91,7 @@ class MarkingSpec extends Specification {
     def 'should ignore null token when adding tokens by index or place'() {
         given:
         def place = new Place(0, 'start')
-        def marking = new Marking([place])
+        def marking = new Marking(1)
 
         when:
         marking.addToken(0, null)
@@ -108,7 +106,7 @@ class MarkingSpec extends Specification {
     def 'should handle addToken with out of bounds or negative indices gracefully'() {
         given:
         def place = new Place(0, 'start')
-        def marking = new Marking([place])
+        def marking = new Marking(1)
         def token = Token.of([k: 'v'])
 
         when:
@@ -125,7 +123,7 @@ class MarkingSpec extends Specification {
     def 'should return false when removing token with invalid index or non-existent token: #scenario'() {
         given:
         def place = new Place(0, 'start')
-        def marking = new Marking([place])
+        def marking = new Marking(1)
         def token1 = Token.of([id: 1])
         def token2 = Token.of([id: 2])
         marking.addToken(place, token1)
