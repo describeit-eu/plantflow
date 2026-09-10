@@ -8,8 +8,7 @@ import groovy.util.logging.Slf4j
 import spock.lang.Specification
 
 @Slf4j
-class MarshallerSpec extends Specification {
-
+class IncidenceMatrixMarshallerSpec extends Specification {
     def 'Marshaller should serialize and deserialize Place'() {
         given:
         def place = new Place(0, 'Start')
@@ -57,12 +56,26 @@ class MarshallerSpec extends Specification {
         when:
         def json = Marshaller.toJson(transition)
         def deserialized = Marshaller.fromJson(json, Transition)
-        
+
         log.info('Transition JSON: {}', json)
 
         then:
         json.contains('"guardKey"')
         deserialized.guardKey == 'guardKey'
+    }
+
+    def 'Marshaller should produce pretty JSON'() {
+        given:
+        def place = new Place(0, 'Start')
+
+        when:
+        def json = Marshaller.toJson(place, true)
+
+        log.info('Place JSON(pretty): {}', json)
+
+        then:
+        json.contains('\n')
+        json.contains('  ')
     }
 
     def 'Marshaller should serialize and deserialize IncidenceMatrix'() {
@@ -95,20 +108,6 @@ class MarshallerSpec extends Specification {
         deserialized.getInputWeight(1, 0) == 0
         deserialized.getOutputWeight(0, 0) == 0
         deserialized.getOutputWeight(1, 0) == 1
-    }
-
-    def 'Marshaller should produce pretty JSON'() {
-        given:
-        def place = new Place(0, 'Start')
-
-        when:
-        def json = Marshaller.toJson(place, true)
-
-        log.info('Place JSON(pretty): {}', json)
-
-        then:
-        json.contains('\n')
-        json.contains('  ')
     }
 
     def 'Marshaller should serialize and deserialize complex IncidenceMatrix'() {

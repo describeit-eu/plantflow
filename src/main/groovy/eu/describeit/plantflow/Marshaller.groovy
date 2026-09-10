@@ -3,6 +3,7 @@ package eu.describeit.plantflow
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import groovy.transform.CompileStatic
 
 /**
@@ -44,6 +45,7 @@ class Marshaller {
 
     private static ObjectMapper initObjectMapper() {
         ObjectMapper mapper = new ObjectMapper()
+        mapper.registerModule(new JavaTimeModule())
 //        mapper.enable(SerializationFeature.INDENT_OUTPUT)
         return mapper
     }

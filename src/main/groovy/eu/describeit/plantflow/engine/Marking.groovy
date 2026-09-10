@@ -1,15 +1,29 @@
 package eu.describeit.plantflow.engine
 
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import groovy.transform.CompileStatic
 
 @CompileStatic
+@JsonIgnoreProperties(['metaClass'])
 class Marking {
     final List<Place> places
-    private final Token[][] tokens
+    final Token[][] tokens
 
     Marking(List<Place> places) {
         this.places = places.asUnmodifiable()
         this.tokens = new Token[places.size()][0]
+    }
+
+    @JsonCreator
+    Marking(
+        @JsonProperty('places') List<Place> places,
+        @JsonProperty('tokens') Token[][] tokens
+    ) {
+        this.places = places.asUnmodifiable()
+        this.tokens = tokens
     }
 
     void addToken(int placeIndex, Token token) {
@@ -69,6 +83,12 @@ class Marking {
         return isEmpty(place.index)
     }
 
+    @JsonProperty('tokens')
+    Token[][] getTokens() {
+        return tokens
+    }
+
+    @JsonIgnore
     int[] getMarkingVector() {
         int[] vec = new int[tokens.length]
         for (int i = 0; i < tokens.length; i++) {
