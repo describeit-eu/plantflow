@@ -32,7 +32,7 @@ class DefaultPetriNet implements PetriNet {
             return false
         }
 
-        List<Place> inputPlaces = incidenceMatrix.getInputPlaces(transition.index)
+        List<Place> inputPlaces = getInputPlaces(transition.index)
         if (!hasSufficientTokens(transition, marking, inputPlaces)) {
             return false
         }
@@ -65,7 +65,7 @@ class DefaultPetriNet implements PetriNet {
 
         log.info('fire() - {}', transition)
 
-        List<Place> inputPlaces = incidenceMatrix.getInputPlaces(transition.index)
+        List<Place> inputPlaces = getInputPlaces(transition.index)
         List<Token> consumedTokens = []
 
         for (Place p : inputPlaces) {
@@ -82,7 +82,7 @@ class DefaultPetriNet implements PetriNet {
 
         Token outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
 
-        List<Place> outputPlaces = incidenceMatrix.getOutputPlaces(transition.index)
+        List<Place> outputPlaces = getOutputPlaces(transition.index)
         for (Place p : outputPlaces) {
             int produceWeight = incidenceMatrix.getOutputWeight(p.index, transition.index)
             for (int w = 0; w < produceWeight; w++) {
@@ -91,6 +91,26 @@ class DefaultPetriNet implements PetriNet {
         }
 
         return true
+    }
+
+    protected List<Place> getInputPlaces(int transitionIndex) {
+        List<Place> result = []
+        for (Place p : places) {
+            if (incidenceMatrix.getInputWeight(p.index, transitionIndex) > 0) {
+                result.add(p)
+            }
+        }
+        return Collections.unmodifiableList(result)
+    }
+
+    protected List<Place> getOutputPlaces(int transitionIndex) {
+        List<Place> result = []
+        for (Place p : places) {
+            if (incidenceMatrix.getOutputWeight(p.index, transitionIndex) > 0) {
+                result.add(p)
+            }
+        }
+        return Collections.unmodifiableList(result)
     }
 
     private boolean hasSufficientTokens(Transition transition, Marking marking, List<Place> inputPlaces) {

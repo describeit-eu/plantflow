@@ -340,61 +340,25 @@ class PetriNetSpec extends Specification {
     }
 
     def 'should initialize IncidenceMatrix and handle boundary/null matrices correctly: #scenario'() {
-        given:
-        def places = [pStart, pMid, pEnd]
-        def transitions = [t1, t2]
-
         when:
-        def matrix = new IncidenceMatrix(places, transitions, inMatrix, outMatrix)
+        def matrix = new IncidenceMatrix(inMatrix as int[][], outMatrix as int[][])
 
         then:
-        matrix.getInputWeight(0, 0) == expectedIn00
+        matrix.getInputWeight( 0, 0) == expectedIn00
         matrix.getOutputWeight(0, 0) == expectedOut00
-        matrix.getIncidence(0, 0) == (expectedOut00 - expectedIn00)
-        matrix.getInputWeight(2, 1) == expectedIn21
+        matrix.getIncidence(   0, 0) == (expectedOut00 - expectedIn00)
+        matrix.getInputWeight( 2, 1) == expectedIn21
         matrix.getOutputWeight(2, 1) == expectedOut21
-        matrix.getIncidence(2, 1) == (expectedOut21 - expectedIn21)
+        matrix.getIncidence(   2, 1) == (expectedOut21 - expectedIn21)
 
         where:
-        scenario                     | inMatrix                                       | outMatrix                                      | expectedIn00 | expectedOut00 | expectedIn21 | expectedOut21
-        'fully populated matrices'   | ([[1, 0], [0, 1], [0, 0]] as int[][])          | ([[0, 0], [1, 0], [0, 1]] as int[][])          | 1            | 0             | 0            | 1
-        'null input and output'      | (int[][]) null                                 | (int[][]) null                                 | 0            | 0             | 0            | 0
-        'null input only'            | (int[][]) null                                 | ([[2, 0], [0, 0], [0, 3]] as int[][])          | 0            | 2             | 0            | 3
-        'null output only'           | ([[3, 0], [0, 0], [0, 4]] as int[][])          | (int[][]) null                                 | 3            | 0             | 4            | 0
-        'truncated rows (fewer p)'   | ([[1, 0]] as int[][])                          | ([[0, 1]] as int[][])                          | 1            | 0             | 0            | 0
-        'jagged columns (fewer t)'   | ([[1], [0], [0]] as int[][])                  | ([[0], [1], [0]] as int[][])                  | 1            | 0             | 0            | 0
-    }
-
-    def 'should query input and output connected places from IncidenceMatrix'() {
-        given:
-        def places = [pStart, pMid, pEnd]
-        def transitions = [t1, t2]
-        int[][] inMatrix = [[1, 0], [0, 2], [0, 0]]
-        int[][] outMatrix = [[0, 0], [1, 0], [0, 1]]
-        def matrix = new IncidenceMatrix(places, transitions, inMatrix, outMatrix)
-
-        expect:
-        matrix.getInputPlaces(0) == [pStart]
-        matrix.getOutputPlaces(0) == [pMid]
-        matrix.getInputPlaces(1) == [pMid]
-        matrix.getOutputPlaces(1) == [pEnd]
-    }
-
-    def 'IncidenceMatrix places and transitions lists should be unmodifiable'() {
-        given:
-        def matrix = new IncidenceMatrix([pStart], [t1], null, null)
-
-        when:
-        matrix.places.add(pMid)
-
-        then:
-        thrown(UnsupportedOperationException)
-
-        when:
-        matrix.transitions.add(t2)
-
-        then:
-        thrown(UnsupportedOperationException)
+        scenario                   | inMatrix                 | outMatrix                | expectedIn00 | expectedOut00 | expectedIn21 | expectedOut21
+        'fully populated matrices' | [[1, 0], [0, 1], [0, 0]] | [[0, 0], [1, 0], [0, 1]] | 1            | 0             | 0            | 1
+        'null input and output'    | null                     | null                     | 0            | 0             | 0            | 0
+        'null input only'          | null                     | [[2, 0], [0, 0], [0, 3]] | 0            | 2             | 0            | 3
+        'null output only'         | [[3, 0], [0, 0], [0, 4]] | null                     | 3            | 0             | 4            | 0
+        'truncated rows (fewer p)' | [[1, 0]]                 | [[0, 1]]                 | 1            | 0             | 0            | 0
+        'jagged columns (fewer t)' | [[1], [0], [0]]          | [[0], [1], [0]]          | 1            | 0             | 0            | 0
     }
 
     static class TestPetriNet implements PetriNet {

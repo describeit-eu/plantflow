@@ -80,16 +80,10 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize IncidenceMatrix'() {
         given:
-        def pStart = new Place(0, 'Start')
-        def pEnd = new Place(1, 'End')
-        def tAction = new Transition(0, 'Action', 'actionKey')
-
-        def places = [pStart, pEnd]
-        def transitions = [tAction]
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
 
-        def matrix = new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
+        def matrix = new IncidenceMatrix(inputMatrix, outputMatrix)
 
         when:
         def json = Marshaller.toJson(matrix)
@@ -98,12 +92,10 @@ class IncidenceMatrixMarshallerSpec extends Specification {
         log.info('IncidenceMatrix JSON: {}', json)
 
         then:
-        json.contains('"places"')
-        json.contains('"transitions"')
+        !json.contains('"places"')
+        !json.contains('"transitions"')
         json.contains('"inputMatrix"')
         json.contains('"outputMatrix"')
-        deserialized.places.size() == 2
-        deserialized.transitions.size() == 1
         deserialized.getInputWeight(0, 0) == 1
         deserialized.getInputWeight(1, 0) == 0
         deserialized.getOutputWeight(0, 0) == 0
@@ -112,21 +104,12 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize complex IncidenceMatrix'() {
         given:
-        def p1 = new Place(0, 'P1')
-        def p2 = new Place(1, 'P2')
-        def p3 = new Place(2, 'P3')
-        
-        def t1 = new Transition(0, 'T1', 't1')
-        def t2 = new Transition(1, 'T2', 't2')
-
-        def places = [p1, p2, p3]
-        def transitions = [t1, t2]
         // Input matrix: P1 -> T1 (1), P2 -> T2 (1)
         def inputMatrix = [[1, 0], [0, 1], [0, 0]] as int[][]
         // Output matrix: T1 -> P2 (1), T2 -> P3 (1)
         def outputMatrix = [[0, 0], [1, 0], [0, 1]] as int[][]
 
-        def matrix = new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
+        def matrix = new IncidenceMatrix(inputMatrix, outputMatrix)
 
         when:
         def json = Marshaller.toJson(matrix, true)
@@ -162,18 +145,13 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should handle null input and output matrices'() {
         given:
-        def p1 = new Place(0, 'P1')
-        def t1 = new Transition(0, 'T1', 't1')
-
-        def matrix = new IncidenceMatrix([p1], [t1], null, null)
+        def matrix = new IncidenceMatrix(null, null)
 
         when:
         def json = Marshaller.toJson(matrix)
         def deserialized = Marshaller.fromJson(json, IncidenceMatrix)
 
         then:
-        deserialized.places.size() == 1
-        deserialized.transitions.size() == 1
         deserialized.getInputWeight(0, 0) == 0
         deserialized.getOutputWeight(0, 0) == 0
         deserialized.getIncidence(0, 0) == 0

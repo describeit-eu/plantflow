@@ -21,7 +21,7 @@ class DefaultPetriNetSpec extends Specification {
             [1],  // P_end
         ] as int[][]
 
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
 
         when:
         def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
@@ -61,7 +61,7 @@ class DefaultPetriNetSpec extends Specification {
             [0, 1],  // P_end
         ] as int[][]
 
-        def incidenceMatrix = new IncidenceMatrix([pStart, pMid, pEnd], [tGuard, tAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [tGuard, tAction], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
@@ -113,7 +113,7 @@ class DefaultPetriNetSpec extends Specification {
             [1]  // P_end
         ] as int[][]
 
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
@@ -163,7 +163,7 @@ class DefaultPetriNetSpec extends Specification {
             [0, 1]  // P_end
         ] as int[][]
 
-        def incidenceMatrix = new IncidenceMatrix([pStart, pMid, pEnd], [t1, t2], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [t1, t2], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
@@ -196,7 +196,7 @@ class DefaultPetriNetSpec extends Specification {
         def tAction = new Transition(0, actionKey, actionKey, null)
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
@@ -235,7 +235,7 @@ class DefaultPetriNetSpec extends Specification {
         def tNoAction = new ActionlessTestTransition(0, 'noAction')
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tNoAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pEnd], [tNoAction], incidenceMatrix, pStart, pEnd)
         def registry = new HandlerRegistry()
         def marking = new Marking(net.places.size())
@@ -259,7 +259,7 @@ class DefaultPetriNetSpec extends Specification {
         def tSink = new Transition(0, 'sinkAction', 'sinkAction', null)
         def inputMatrix = [[1]] as int[][]
         def outputMatrix = [[0]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart], [tSink], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart], [tSink], incidenceMatrix, pStart, pStart)
         def registry = new HandlerRegistry().registerAction('sinkAction') { ctx, tok -> tok }
         def marking = new Marking(net.places.size())
@@ -276,7 +276,7 @@ class DefaultPetriNetSpec extends Specification {
     def 'should return empty list when PetriNet has zero transitions'() {
         given:
         def p = new Place(0, 'p')
-        def matrix = new IncidenceMatrix([p], [], null, null)
+        def matrix = new IncidenceMatrix(null, null)
         def net = new DefaultPetriNet([p], [], matrix, p, p)
         def registry = new HandlerRegistry()
         def marking = new Marking(1)
@@ -291,8 +291,8 @@ class DefaultPetriNetSpec extends Specification {
         def pEnd = new Place(1, 'end')
         def tGuarded = new Transition(0, 'guardedStep', 'dummyAction', 'checkNull')
 
-        def customMatrix = new EmptyConnectedIncidenceMatrix([pStart, pEnd], [tGuarded], pStart, pEnd)
-        def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], customMatrix, pStart, pEnd)
+        def matrix = new IncidenceMatrix(null, null)
+        def net = new EmptyConnectedPetriNet([pStart, pEnd], [tGuarded], matrix, pStart, pEnd, pStart)
         def registry = new HandlerRegistry()
         registry.registerAction('dummyAction') { ctx, tok -> tok }
         registry.registerGuard('checkNull') { ctx, tok -> tok == null }
@@ -313,34 +313,17 @@ class DefaultPetriNetSpec extends Specification {
         }
     }
 
-    static class EmptyConnectedIncidenceMatrix extends IncidenceMatrix {
+    static class EmptyConnectedPetriNet extends DefaultPetriNet {
         private final Place inputPlace
-        private final Place outputPlace
 
-        EmptyConnectedIncidenceMatrix(List<Place> places, List<Transition> transitions, Place inputPlace, Place outputPlace) {
-            super(places, transitions, null, null)
+        EmptyConnectedPetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end, Place inputPlace) {
+            super(places, transitions, matrix, start, end)
             this.inputPlace = inputPlace
-            this.outputPlace = outputPlace
         }
 
         @Override
-        List<Place> getInputPlaces(int transitionIndex) {
+        protected List<Place> getInputPlaces(int transitionIndex) {
             return [inputPlace]
-        }
-
-        @Override
-        List<Place> getOutputPlaces(int transitionIndex) {
-            return [outputPlace]
-        }
-
-        @Override
-        int getInputWeight(int placeIndex, int transitionIndex) {
-            return 0
-        }
-
-        @Override
-        int getOutputWeight(int placeIndex, int transitionIndex) {
-            return 1
         }
     }
 
@@ -351,7 +334,7 @@ class DefaultPetriNetSpec extends Specification {
         def tAction = new Transition(0, 'action', 'action', null)
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new UncheckedPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
         def registry = new HandlerRegistry().registerAction('action') { ctx, tok -> tok }
         def marking = new Marking(net.places.size())
@@ -381,7 +364,7 @@ class DefaultPetriNetSpec extends Specification {
         def tSource = new Transition(0, 'produceAction', 'produceAction', null)
         def inputMatrix = [[0]] as int[][]
         def outputMatrix = [[1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pEnd], [tSource], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pEnd], [tSource], incidenceMatrix, pEnd, pEnd)
 
         def registry = new HandlerRegistry()
@@ -408,7 +391,7 @@ class DefaultPetriNetSpec extends Specification {
 
         def inputMatrix = [[hasInput ? 1 : 0], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tGuarded], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry()
@@ -437,7 +420,7 @@ class DefaultPetriNetSpec extends Specification {
 
         def inputMatrix = [[2], [0]] as int[][]
         def outputMatrix = [[0], [2]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [tAction], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry().registerAction('consumeTwo') { ctx, tok ->

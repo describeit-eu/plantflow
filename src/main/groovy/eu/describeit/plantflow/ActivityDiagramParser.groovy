@@ -102,13 +102,11 @@ class ActivityDiagramParser {
             transitions.add(new Transition(i, actions[i], actions[i]))
         }
 
-        IncidenceMatrix incidenceMatrix = constructIncidenceMatrix(places, transitions, n)
+        IncidenceMatrix incidenceMatrix = constructIncidenceMatrix(places.size(), transitions.size(), n)
         return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
     }
 
-    private IncidenceMatrix constructIncidenceMatrix(List<Place> places, List<Transition> transitions, int n) {
-        int numPlaces = places.size()
-        int numTransitions = transitions.size()
+    private IncidenceMatrix constructIncidenceMatrix(int numPlaces, int numTransitions, int n) {
         int[][] inputMatrix = new int[numPlaces][numTransitions]
         int[][] outputMatrix = new int[numPlaces][numTransitions]
 
@@ -117,6 +115,6 @@ class ActivityDiagramParser {
             outputMatrix[i + 1][i] = 1
         }
 
-        return new IncidenceMatrix(places, transitions, inputMatrix, outputMatrix)
+        return new IncidenceMatrix(inputMatrix, outputMatrix)
     }
 }

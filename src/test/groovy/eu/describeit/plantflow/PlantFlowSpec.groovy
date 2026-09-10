@@ -358,7 +358,7 @@ class PlantFlowSpec extends Specification {
         def t1 = new Transition(0, 'step', 'act', null)
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix([pStart, pEnd], [t1], inputMatrix, outputMatrix)
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pEnd], [t1], incidenceMatrix, pStart, pEnd)
 
         def registry = new HandlerRegistry().registerAction('act') { ctx, tok -> tok }
@@ -460,7 +460,7 @@ class PlantFlowSpec extends Specification {
         def pStart = new Place(0, 'start')
         def pEnd = new Place(1, 'end')
         def t1 = new Transition(0, 'step', 'act', null)
-        def matrix = new IncidenceMatrix([pStart, pEnd], [t1], [[1], [0]] as int[][], [[0], [1]] as int[][])
+        def matrix = new IncidenceMatrix([[1], [0]] as int[][], [[0], [1]] as int[][])
         def net = new FailingFirePetriNet([pStart, pEnd], [t1], matrix, pStart, pEnd)
         def registry = new HandlerRegistry().registerAction('act') { ctx, tok -> tok }
         def engine = new PlantFlow(net, registry)

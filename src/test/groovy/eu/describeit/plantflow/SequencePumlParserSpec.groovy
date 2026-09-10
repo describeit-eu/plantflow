@@ -77,12 +77,12 @@ class SequencePumlParserSpec extends Specification {
 
         and:
         // T_0: consumes from P_start (0), produces to P_1 (1)
-        net.incidenceMatrix.getInputPlaces(0) == [net.places[0]]
-        net.incidenceMatrix.getOutputPlaces(0) == [net.places[1]]
+        net.incidenceMatrix.getInputWeight(0, 0) == 1
+        net.incidenceMatrix.getOutputWeight(1, 0) == 1
 
         // T_1: consumes from P_1 (1), produces to P_end (2)
-        net.incidenceMatrix.getInputPlaces(1) == [net.places[1]]
-        net.incidenceMatrix.getOutputPlaces(1) == [net.places[2]]
+        net.incidenceMatrix.getInputWeight(1, 1) == 1
+        net.incidenceMatrix.getOutputWeight(2, 1) == 1
     }
 
     def 'should parse sequence.puml from file'() {

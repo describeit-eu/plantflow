@@ -3,75 +3,71 @@ package eu.describeit.plantflow.engine
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 
 @CompileStatic
+@Slf4j
 class IncidenceMatrix {
-    final List<Place> places
-    final List<Transition> transitions
     final int[][] inputMatrix     // [numPlaces][numTransitions]
     final int[][] outputMatrix    // [numPlaces][numTransitions]
     final int[][] incidenceMatrix // [numPlaces][numTransitions]
 
     @JsonCreator
     IncidenceMatrix(
-        @JsonProperty('places') List<Place> places,
-        @JsonProperty('transitions') List<Transition> transitions,
         @JsonProperty('inputMatrix') int[][] inMatrix,
         @JsonProperty('outputMatrix') int[][] outMatrix
     ) {
-        Closure<Integer> getWeight = { int[][] matrix, int p, int t ->
-            return (matrix != null && p < matrix.length && t < matrix[p].length) ? matrix[p][t] : 0
-        }
+        int numPlaces = Math.max(inMatrix ? inMatrix.length : 0, outMatrix ? outMatrix.length : 0)
 
-        this.places = places.asUnmodifiable()
-        this.transitions = transitions.asUnmodifiable()
-
-        int numPlaces = places.size()
-        int numTransitions = transitions.size()
+        int numTransitions = Math.max(
+            getNumberOfTransitions(inMatrix), 
+            getNumberOfTransitions(outMatrix)
+        )
 
         this.inputMatrix     = new int[numPlaces][numTransitions]
         this.outputMatrix    = new int[numPlaces][numTransitions]
         this.incidenceMatrix = new int[numPlaces][numTransitions]
 
-        for (int p = 0; p < numPlaces; p++) {
-            for (int t = 0; t < numTransitions; t++) {
-                int inWeight  = getWeight(inMatrix, p, t)
-                int outWeight = getWeight(outMatrix, p, t)
+        for (int pIdx = 0; pIdx < numPlaces; pIdx++) {
+            for (int tIdx = 0; tIdx < numTransitions; tIdx++) {
+                int inWeight  = getMatrixValue(inMatrix, pIdx, tIdx)
+                int outWeight = getMatrixValue(outMatrix, pIdx, tIdx)
 
-                this.inputMatrix[p][t] = inWeight
-                this.outputMatrix[p][t] = outWeight
-                this.incidenceMatrix[p][t] = outWeight - inWeight
+                this.inputMatrix[pIdx][tIdx] = inWeight
+                this.outputMatrix[pIdx][tIdx] = outWeight
+                this.incidenceMatrix[pIdx][tIdx] = outWeight - inWeight
             }
         }
     }
 
-    int getInputWeight(int placeIndex, int transitionIndex) {
-        return inputMatrix[placeIndex][transitionIndex]
+    int getInputWeight(int pIdx, int tIdx) {
+        return getMatrixValue(inputMatrix, pIdx, tIdx)
     }
 
-    int getOutputWeight(int placeIndex, int transitionIndex) {
-        return outputMatrix[placeIndex][transitionIndex]
+    int getOutputWeight(int pIdx, int tIdx) {
+        return getMatrixValue(outputMatrix, pIdx, tIdx)
     }
 
-    int getIncidence(int placeIndex, int transitionIndex) {
-        return incidenceMatrix[placeIndex][transitionIndex]
+    int getIncidence(int pIdx, int tIdx) {
+        return getMatrixValue(incidenceMatrix, pIdx, tIdx)
     }
 
-    List<Place> getInputPlaces(int transitionIndex) {
-        return getPlaces(inputMatrix, transitionIndex)
-    }
-
-    List<Place> getOutputPlaces(int transitionIndex) {
-        return getPlaces(outputMatrix, transitionIndex)
-    }
-    
-    private List<Place> getPlaces(int[][] inputMatrix, int transitionIndex) {
-        List<Place> result = []
-        for (int p = 0; p < places.size(); p++) {
-            if (inputMatrix[p][transitionIndex] > 0) {
-                result.add(places[p])
+    private int getNumberOfTransitions(int[][] matrix) {
+        int numTransitions = 0
+        if (matrix) {
+            for (int[] row : matrix) {
+                if (row?.length > numTransitions) {
+                    numTransitions = row.length
+                }
             }
         }
-        return Collections.unmodifiableList(result)
+        return numTransitions
+    }
+
+    private int getMatrixValue(int[][] matrix, int pIdx, int tIdx) {
+        assert pIdx >= 0 && tIdx >= 0
+
+        log.debug('getMatrixValue() - matrix:{} pIdx:{} tIdx:{}', matrix, pIdx, tIdx)
+        return (matrix && pIdx < matrix.length && tIdx < matrix[pIdx].length) ? matrix[pIdx][tIdx] : 0
     }
 }
