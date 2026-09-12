@@ -1,5 +1,8 @@
 plugins {
-  id("groovy")
+  groovy
+  jacoco
+  codenarc
+  id("name.remal.jacoco-to-cobertura") version "2.0.4"
 }
 
 java {
@@ -8,15 +11,12 @@ java {
   }
 }
 
-val groovyVersion    = "5.1.0"
-val slf4jVersion     = "2.0.18"
-val logbackVersion   = "1.6.3"
-
-val junitVersion     = "6.1.3"
-val spockVersion     = "2.4-groovy-5.0"
-//val bytebuddyVersion = "1.18.12"
-//val mockitoVersion   = "5.23.0"
-val jsonUnitVersion  = "6.2.0"
+val groovyVersion  = "5.1.2"
+val slf4jVersion   = "2.0.19"
+val logbackVersion = "1.6.3"
+val junitVersion   = "6.1.3"
+val spockVersion   = "2.4-groovy-5.0"
+val jacksonVersion = "2.22.2"
 
 group = "eu.describeit"
 version = "1.0-SNAPSHOT"
@@ -25,32 +25,46 @@ repositories {
   mavenCentral()
 }
 
+codenarc {
+  toolVersion = "4.0.0"
+  configFile = file("${rootProject.projectDir}/config/codenarc/rules.groovy")
+  reportFormat = "console"
+  isIgnoreFailures = false
+  maxPriority1Violations = 0
+  sourceSets = listOf()
+}
+
+tasks.codenarcTest {
+  configFile = file("${rootProject.projectDir}/config/codenarc/test-rules.groovy")
+}
+
 dependencies {
   implementation("org.apache.groovy:groovy:$groovyVersion")
-  implementation("org.apache.groovy:groovy-json:$groovyVersion")
-  implementation("org.apache.groovy:groovy-templates:$groovyVersion")
-  implementation("com.fasterxml.jackson.core:jackson-databind:2.22.2")
+  implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+  implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
 
   // Logging dependencies
   implementation("org.slf4j:slf4j-api:${slf4jVersion}")
   implementation("ch.qos.logback:logback-classic:${logbackVersion}")
 
-  // Commons dependencies
-  implementation("org.apache.commons:commons-lang3:3.20.0")
-  implementation("org.apache.commons:commons-text:1.15.0")
-    
   // Test dependencies
   testImplementation(platform("org.junit:junit-bom:$junitVersion"))
   testImplementation("org.junit.jupiter:junit-jupiter")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
   testImplementation(platform("org.spockframework:spock-bom:$spockVersion"))
   testImplementation("org.spockframework:spock-core")
-//  testImplementation("net.bytebuddy:byte-buddy:$bytebuddyVersion")
-//  testImplementation("org.mockito:mockito-core:$mockitoVersion")
-  testImplementation("net.javacrumbs.json-unit:json-unit:$jsonUnitVersion")
-  testImplementation("net.javacrumbs.json-unit:json-unit-assertj:$jsonUnitVersion")
 }
 
 tasks.test {
   useJUnitPlatform()
+  // Ensure tests run before generating the report, and conversion runs after
+  finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+  reports {
+    xml.required.set(true) // Required for the conversion
+    html.required.set(true)
+  }
+  finalizedBy(tasks.jacocoTestReportToCobertura)
 }

@@ -1,0 +1,200 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="CodeNarc.BlankLineBeforePackage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BlockEndsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BlockStartsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BracesForClass" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BracesForForLoop" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BracesForIfElse" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BracesForMethod" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.BracesForTryCatchFinally" enabled="false" level="WARNING" enabled_by_default="false">
+      <option name="catchOnSameLineAsClosingBrace" value="true" />
+      <option name="catchOnSameLineAsOpeningBrace" value="true" />
+      <option name="finallyOnSameLineAsClosingBrace" value="true" />
+      <option name="finallyOnSameLineAsOpeningBrace" value="true" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.BusyWait" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ChainedTest" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ClassEndsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ClassJavadoc" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ClassName" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".md" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.ClassSize" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+      <option name="maxLines" value="300" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.ClassStartsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ClosureInGString" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.CompileStatic" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFileNames" value="rules.groovy, test-rules.groovy, *.md" />
+      <option name="doNotApplyToFilesMatching" value=".*Spec\.groovy" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.ConsecutiveBlankLines" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.CoupledTestCase" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.CyclomaticComplexity" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="maxClassAverageMethodComplexity" value="10" />
+      <option name="maxMethodComplexity" value="10" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.DirectConnectionManagement" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.DoubleCheckedLocking" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.DuplicateNumberLiteral" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFileNames" value="*.md,rules.groovy" />
+      <option name="ignoreNumbers" value="0,1,-1" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.DuplicateStringLiteral" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFileNames" value="*.md,rules.groovy" />
+      <option name="ignoreStrings" value="false,true" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.ElseBlockBraces" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ExplicitCallToAndMethod" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.ExplicitCallToCompareToMethod" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.ExplicitCallToOrMethod" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.FieldTypeRequired" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.FileEndsWithoutNewline" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ForStatementBraces" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsDomainReservedSqlKeywordName" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsDomainStringPropertyMaxSize" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsDomainWithServiceReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsDuplicateConstraint" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsDuplicateMapping" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsMassAssignment" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsPublicControllerMethod" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsServletContextReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.GrailsStatelessService" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IfStatementBraces" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IllegalClassMember" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IllegalClassReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IllegalPackageReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IllegalRegex" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IllegalString" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.IllegalSubclass" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ImplicitReturnStatement" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.InconsistentPropertyLocking" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.InconsistentPropertySynchronization" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.Indentation" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitAssertAlwaysFails" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitAssertAlwaysSucceeds" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitFailWithoutMessage" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitLostTest" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitPublicField" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitPublicNonTestMethod" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitPublicProperty" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitSetUpCallsSuper" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitStyleAssertions" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitTearDownCallsSuper" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitTestMethodWithoutAssert" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitUnnecessarySetUp" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitUnnecessaryTearDown" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JUnitUnnecessaryThrowsException" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavaIoPackageAccess" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.JavadocConsecutiveEmptyLines" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyAuthorTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyExceptionTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyLastLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyParamTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyReturnTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptySeeTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptySinceTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyThrowsTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocEmptyVersionTag" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocMissingExceptionDescription" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocMissingParamDescription" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JavadocMissingThrowsDescription" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JdbcConnectionReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JdbcResultSetReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.JdbcStatementReference" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.LineLength" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.MethodName" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToClassNames" value="*Spec" />
+      <option name="doNotApplyToFileNames" value="*.md" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.MethodReturnTypeRequired" enabled="true" level="WEAK WARNING" enabled_by_default="true" editorAttributes="INFO_ATTRIBUTES">
+      <option name="doNotApplyToFileNames" value="*.md" />
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.MethodSize" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+      <option name="maxLines" value="40" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.MissingBlankLineAfterImports" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.MissingBlankLineAfterPackage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.MissingBlankLineBeforeAnnotatedField" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.NestedForLoop" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.NestedSynchronization" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.NoDef" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.NoScriptBindings" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.RequiredRegex" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.RequiredString" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterCatch" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterClosingBrace" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterComma" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterCommentDelimiter" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterFor" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterIf" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterMethodDeclarationName" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterNotOperator" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterOpeningBrace" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterSemicolon" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterSwitch" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAfterWhile" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAroundClosureArrow" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceAroundOperator" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceBeforeClosingBrace" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceBeforeCommentDelimiter" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceBeforeOpeningBrace" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpaceInsideParentheses" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpockIgnoreRestUsed" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SpockMissingAssert" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.StatelessClass" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.StaticCalendarField" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.StaticConnection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.StaticDateFormatField" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.StaticMatcherField" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.StaticSimpleDateFormatField" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedMethod" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedOnBoxedPrimitive" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedOnGetClass" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedOnReentrantLock" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedOnString" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedOnThis" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SynchronizedReadObjectMethod" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SystemExit" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.SystemRunFinalizersOnExit" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ThisReferenceEscapesConstructor" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ThreadGroup" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ThreadLocalNotStaticFinal" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ThreadYield" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.TrailingWhitespace" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UnnecessaryBigDecimalInstantiation" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFileNames" value="*.md" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.UnnecessaryFail" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UnnecessaryGetter" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UnnecessarySemicolon" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedArray" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedMethodParameter" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedObject" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedPrivateField" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedPrivateMethod" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedPrivateMethodParameter" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UnusedVariable" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.UseAssertEqualsInsteadOfAssertTrue" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UseAssertFalseInsteadOfNegation" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UseAssertNullInsteadOfAssertEquals" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UseAssertSameInsteadOfAssertTrue" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UseAssertTrueInsteadOfAssertEquals" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UseAssertTrueInsteadOfNegation" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.UseOfNotifyMethod" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.VariableTypeRequired" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFileNames" value="*.md" />
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+    </inspection_tool>
+    <inspection_tool class="CodeNarc.VolatileArrayField" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.VolatileLongOrDoubleField" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.WaitOutsideOfWhileLoop" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.WhileStatementBraces" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="GrMethodMayBeStatic" enabled="false" level="WARNING" enabled_by_default="false" />
+  </profile>
+</component>

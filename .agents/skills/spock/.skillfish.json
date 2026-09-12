@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "spock",
+  "owner": "mbarbieri",
+  "repo": "my-claude",
+  "path": "skills/spock",
+  "branch": "main",
+  "sha": "f73019f00221c86138c05676bc6e91a54d12f89b",
+  "source": "manual"
+}
