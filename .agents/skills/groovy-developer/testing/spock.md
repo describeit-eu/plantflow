@@ -1,29 +1,12 @@
----
-name: spock
-description: Use when writing or refactoring Spock tests in Java or Groovy projects - enforces data-driven testing with where blocks, proper mock/stub placement, and descriptive test names following Spock best practices
----
+# Spock Testing Rules
 
-# Spock Testing
+**Core principle:** Data-driven testing isn't optional. Use `where:` blocks for similar tests with different inputs. Similar tests with different inputs = one parameterized test with `where:` block.
 
-## Overview
+## The Iron Rule
 
-Write maintainable Spock tests using data-driven testing, proper block structure, and clear naming. **Core principle:** Similar tests with different inputs = one parameterized test with `where:` block.
+Writing 3+ similar tests = **YOU MUST use where: block**
 
-## When to Use
-
-- Writing new Spock tests
-- Refactoring existing Spock tests
-- Reviewing Spock test code
-- About to write your 3rd similar test method
-
-## The Iron Rule: Data-Driven Testing
-
-```
-Writing 3+ similar tests = You MUST use where: block
-```
-
-**No exceptions:**
-
+No exceptions:
 - Not "I'll refactor later"
 - Not "Copy-paste is faster"
 - Not "These are slightly different"
@@ -34,7 +17,6 @@ Writing 3+ similar tests = You MUST use where: block
 ## Red Flags - STOP and Use where: Block
 
 You're about to violate the Iron Rule if:
-
 - "I'm writing my 3rd test with same structure"
 - "Just need to change the input value"
 - "Copy-paste-modify is fastest"
@@ -43,63 +25,7 @@ You're about to violate the Iron Rule if:
 
 **All of these mean: Use where: block NOW.**
 
-## Before/After Pattern
-
-### ❌ BAD: Separate Tests
-
-```groovy
-def 'should calculate 20% discount for premium'() {
-    when:
-    def result = calculator.calculateDiscount(new BigDecimal('100'), CustomerType.PREMIUM)
-    then:
-    result == new BigDecimal('20.00')
-}
-
-def 'should calculate 10% discount for regular'() {
-    when:
-    def result = calculator.calculateDiscount(new BigDecimal('100'), CustomerType.REGULAR)
-    then:
-    result == new BigDecimal('10.00')
-}
-
-def 'should calculate 5% discount for new'() {
-    when:
-    def result = calculator.calculateDiscount(new BigDecimal('100'), CustomerType.NEW)
-    then:
-    result == new BigDecimal('5.00')
-}
-
-def 'should calculate no discount for guest'() {
-    when:
-    def result = calculator.calculateDiscount(new BigDecimal('100'), CustomerType.GUEST)
-    then:
-    result == BigDecimal.ZERO
-}
-```
-
-**Problems:** 4 test methods, 20+ lines, duplicated structure, hard to see pattern
-
-### ✅ GOOD: Data-Driven Test
-
-```groovy
-def 'should calculate #expectedDiscount discount for #customerType customer'() {
-    expect:
-    calculator.calculateDiscount(orderAmount, customerType) == expectedDiscount
-
-    where:
-    customerType         | orderAmount         | expectedDiscount
-    CustomerType.PREMIUM | new BigDecimal(100) | new BigDecimal('20.00')
-    CustomerType.REGULAR | new BigDecimal(100) | new BigDecimal('10.00')
-    CustomerType.NEW     | new BigDecimal(100) | new BigDecimal('5.00')
-    CustomerType.GUEST   | new BigDecimal(100) | BigDecimal.ZERO
-}
-```
-
-**Benefits:** 1 test method, 10 lines, pattern obvious, easy to add cases
-
-## Quick Reference
-
-### Spock Block Structure
+## Spock Block Structure
 
 | Block     | Purpose                       | Example                                       |
 |-----------|-------------------------------|-----------------------------------------------|
@@ -109,7 +35,7 @@ def 'should calculate #expectedDiscount discount for #customerType customer'() {
 | `expect:` | Single-line assertion         | `calculator.add(2, 3) == 5`                   |
 | `where:`  | Data table for parameters     | `a \| b \| sum`                               |
 
-### Mock vs Stub
+## Mock vs Stub
 
 - **Stub** → Return fake data → Goes in `given:` → Use `>>`
 
@@ -125,7 +51,7 @@ def 'should calculate #expectedDiscount discount for #customerType customer'() {
   1 * emailService.sendWelcome(user)  // Mock verification
   ```
 
-### where: Block Syntax
+## where: Block Syntax
 
 ```groovy
 where:
@@ -162,18 +88,16 @@ def 'should validate #email as #validity'() {
 ## Testing Strategy
 
 ### Integration Tests
-
 - Test **only happy path** with typical example
 - Focus on external interfaces
 - Keep mocking minimal
 
 ### Unit Tests
-
 - Cover **edge cases, errors, boundaries**
 - Use `where:` blocks for variations
 - One behavior per test
 
-### Validation Example
+## Validation Example
 
 ```groovy
 def 'should reject invalid email: #reason'() {
@@ -211,7 +135,6 @@ def 'should accept valid email: #email'() {
 ## Red Flags Checklist
 
 Before writing a test, check:
-
 - [ ] Am I testing similar behavior with different inputs?
 - [ ] Does this look like my previous 2 tests?
 - [ ] Am I about to copy-paste-modify?
@@ -219,18 +142,36 @@ Before writing a test, check:
 
 **If ANY are true → Use where: block**
 
-## Real-World Impact
+## Additional Spock Rules
 
-**Before data-driven testing:**
+- Structure tests with `given:`, `when:`, `then:` blocks — use `expect:` for pure assertions with no state changes.
+- Parameterise with `where:` data tables: `where: a | b | expected; 1 | 2 | 3; 4 | 5 | 9` — each column row is a separate test case.
+- Create mocks with `Mock(ServiceClass)` — stub returns with `service.method() >> returnValue` and verify calls with `1 * service.save(_)`.
+- Use `Spy(RealClass)` for partial mocking — calls through to real methods unless explicitly stubbed with `>>` or `>>>` chained closures.
+- Assert exceptions with `thrown(IllegalArgumentException)` in `then:` — use `notThrown(Exception)` for the absence of exceptions.
+- Add `@Unroll` to expand parameterised test names: `@Unroll "adding #a to #b gives #expected"` — uses `#variable` interpolation in the method name.
+- Use `with(object) { name == "Alice"; age == 30 }` for grouped property assertions — cleaner than multiple bare assertions.
+- Extend `Specification` in every test — add `@Subject SomeClass subject = new SomeClass()` to make the class under test explicit.
+- Use `@Shared` for expensive fixtures: `@Shared DatabaseHelper db = new DatabaseHelper()` — initialise in `setupSpec()`, clean up in `cleanupSpec()`.
+- Write argument matchers in interaction constraints: `1 * repo.save({ User u -> u.name == "Alice" })` — closure is evaluated per invocation.
+- Use `GroovyMock()` when mocking Groovy classes with dynamic dispatch or final methods that Java mocking cannot handle.
+- Combine `where:` tables with `@Unroll` and `@FailsWith` to document and test known-failing edge cases explicitly.
+- Integrate Spock with JaCoCo via Gradle (`jacocoTestReport` task) to generate coverage reports for Spock-based test suites.
+- Use `DetachedMockFactory` to create Spock mocks inside Spring `@Configuration` classes for integration tests that use the Spring context.
 
-- 47 test methods for validation logic
-- 800+ lines of test code
-- 3 hours to add new validation rule
+## General Testing Rules
 
-**After data-driven testing:**
-
-- 8 test methods (6x consolidation)
-- 200 lines of test code
-- 15 minutes to add new validation rule
-
-Data-driven testing isn't optional. It's the difference between maintainable and unmaintainable test suites.
+- Write unit tests for every new function or method immediately after implementation.
+- Run the full unit test suite before committing — never push code with failing tests.
+- Test one behavior per test case. Keep tests fast, isolated, and deterministic.
+- Follow the Arrange-Act-Assert pattern: set up inputs, call the function, verify the output.
+- Mock external dependencies (APIs, databases, file system) — unit tests validate your logic in isolation.
+- Name tests descriptively: `should return empty array when no items match filter`.
+- Test edge cases: empty inputs, nulls, boundary values, error conditions — not just the happy path.
+- Run unit tests after every code change during development for fast feedback.
+- Aim for high coverage on business logic (80%+), but don't chase 100% — test behavior, not implementation details.
+- Use test factories or builders to create consistent test data — avoid hardcoded inline objects.
+- Keep tests independent — no test should depend on another test's state or execution order.
+- When a bug is found, write a failing test first that reproduces it, then fix the code.
+- Organize tests to mirror source structure: `src/utils/parse.groovy` → `test/utils/parseSpec.groovy`.
+- Use parameterized/table-driven tests for functions with many input/output combinations.

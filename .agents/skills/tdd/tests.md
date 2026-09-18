@@ -4,14 +4,15 @@
 
 **Integration-style**: Test through real interfaces, not mocks of internal parts.
 
-```typescript
+```java
 // GOOD: Tests observable behavior
-test("user can checkout with valid cart", async () => {
-  const cart = createCart();
-  cart.add(product);
-  const result = await checkout(cart, paymentMethod);
-  expect(result.status).toBe("confirmed");
-});
+@Test
+void userCanCheckoutWithValidCart() {
+    Cart cart = new Cart();
+    cart.add(product);
+    CheckoutResult result = checkoutService.checkout(cart, paymentMethod);
+    assertThat(result.getStatus()).isEqualTo(CheckoutStatus.CONFIRMED);
+}
 ```
 
 Characteristics:
@@ -26,13 +27,15 @@ Characteristics:
 
 **Implementation-detail tests**: Coupled to internal structure.
 
-```typescript
+```java
 // BAD: Tests implementation details
-test("checkout calls paymentService.process", async () => {
-  const mockPayment = jest.mock(paymentService);
-  await checkout(cart, payment);
-  expect(mockPayment.process).toHaveBeenCalledWith(cart.total);
-});
+@Test
+void checkoutCallsPaymentServiceProcess() {
+    PaymentService mockPayment = mock(PaymentService.class);
+    CheckoutService service = new CheckoutService(mockPayment);
+    service.checkout(cart, paymentMethod);
+    verify(mockPayment).process(cart.getTotal());
+}
 ```
 
 Red flags:
@@ -44,34 +47,39 @@ Red flags:
 - Test name describes HOW not WHAT
 - Verifying through external means instead of interface
 
-```typescript
+```java
 // BAD: Bypasses interface to verify
-test("createUser saves to database", async () => {
-  await createUser({ name: "Alice" });
-  const row = await db.query("SELECT * FROM users WHERE name = ?", ["Alice"]);
-  expect(row).toBeDefined();
-});
+@Test
+void createUserSavesToDatabase() {
+    userService.createUser(new CreateUserRequest("Alice"));
+    Map<String, Object> row = jdbcTemplate.queryForMap("SELECT * FROM users WHERE name = ?", "Alice");
+    assertThat(row).isNotNull();
+}
 
 // GOOD: Verifies through interface
-test("createUser makes user retrievable", async () => {
-  const user = await createUser({ name: "Alice" });
-  const retrieved = await getUser(user.id);
-  expect(retrieved.name).toBe("Alice");
-});
+@Test
+void createUserMakesUserRetrievable() {
+    User user = userService.createUser(new CreateUserRequest("Alice"));
+    User retrieved = userService.getUser(user.getId());
+    assertThat(retrieved.getName()).isEqualTo("Alice");
+}
 ```
 
 **Tautological tests**: Expected value restates the implementation, so the test passes by construction.
 
-```typescript
+```java
 // BAD: Expected value is recomputed the way the code computes it
-test("calculateTotal sums line items", () => {
-  const items = [{ price: 10 }, { price: 5 }];
-  const expected = items.reduce((sum, i) => sum + i.price, 0);
-  expect(calculateTotal(items)).toBe(expected);
-});
+@Test
+void calculateTotalSumsLineItems() {
+    List<Item> items = List.of(new Item(10), new Item(5));
+    int expected = items.stream().mapToInt(Item::getPrice).sum();
+    assertThat(calculator.calculateTotal(items)).isEqualTo(expected);
+}
 
 // GOOD: Expected value is an independent, known literal
-test("calculateTotal sums line items", () => {
-  expect(calculateTotal([{ price: 10 }, { price: 5 }])).toBe(15);
-});
+@Test
+void calculateTotalSumsLineItems() {
+    List<Item> items = List.of(new Item(10), new Item(5));
+    assertThat(calculator.calculateTotal(items)).isEqualTo(15);
+}
 ```
