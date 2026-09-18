@@ -37,10 +37,30 @@ class TransitionSpec extends Specification {
         scenario          | index | label  | actionKey
         'null index'      | null  | 't1'   | 'action1'
         'null label'      | 0     | null   | 'action1'
-        'null actionKey'  | 0     | 't1'   | null
     }
 
-    def 'should throw IllegalArgumentException when label or actionKey is blank or whitespace: #scenario'() {
+    def 'should allow null actionKey for structural transitions'() {
+        when:
+        def transition = new Transition(0, 't1', null)
+
+        then:
+        transition.index == 0
+        transition.label == 't1'
+        transition.actionKey == null
+        transition.guardKey == null
+    }
+
+    def 'should allow empty or whitespace actionKey for structural transitions'() {
+        when:
+        def transition1 = new Transition(0, 't1', '')
+        def transition2 = new Transition(0, 't2', '   ')
+
+        then:
+        transition1.actionKey == ''
+        transition2.actionKey == ''
+    }
+
+    def 'should throw IllegalArgumentException when label is blank or whitespace: #scenario'() {
         when:
         new Transition(0, label, actionKey)
 
@@ -48,11 +68,9 @@ class TransitionSpec extends Specification {
         thrown(IllegalArgumentException)
 
         where:
-        scenario               | label   | actionKey
-        'empty label'          | ''      | 'action1'
-        'whitespace label'     | '   '   | 'action1'
-        'empty actionKey'      | 't1'    | ''
-        'whitespace actionKey' | 't1'    | '   '
+        scenario           | label   | actionKey
+        'empty label'     | ''      | 'action1'
+        'whitespace label'| '   '   | 'action1'
     }
 
     def 'should satisfy equals, hashCode, and toString contracts'() {

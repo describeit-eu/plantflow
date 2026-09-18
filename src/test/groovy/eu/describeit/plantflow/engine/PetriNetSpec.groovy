@@ -286,19 +286,22 @@ class PetriNetSpec extends Specification {
         'blank label' | '   '
     }
 
-    def 'should reject Transition creation with invalid actionKey: #scenario'() {
+    def 'should allow null actionKey for structural transitions'() {
         when:
-        new Transition(0, 'Step One', invalidActionKey)
+        def transition = new Transition(0, 'Step One', null)
 
         then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message.contains('actionKey cannot be null')
+        transition.actionKey == null
+    }
 
-        where:
-        scenario          | invalidActionKey
-        'null actionKey'  | null
-        'empty actionKey' | ''
-        'blank actionKey' | '   '
+    def 'should allow empty or blank actionKey for structural transitions'() {
+        when:
+        def transition1 = new Transition(0, 'Step One', '')
+        def transition2 = new Transition(0, 'Step Two', '   ')
+
+        then:
+        transition1.actionKey == ''
+        transition2.actionKey == ''
     }
 
     def 'should satisfy equals, hashCode, and toString for Transition'() {

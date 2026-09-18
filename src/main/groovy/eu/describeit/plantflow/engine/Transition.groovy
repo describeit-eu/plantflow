@@ -17,18 +17,19 @@ class Transition {
     final String guardKey
 
     @JsonCreator
-    @NullCheck
     Transition(@JsonProperty('index') Integer index, @JsonProperty('label') String label, @JsonProperty('actionKey') String actionKey) {
+        if (index == null) {
+            throw new IllegalArgumentException('index cannot be null')
+        }
+        if (label == null) {
+            throw new IllegalArgumentException('label cannot be null')
+        }
         this.index = index
         this.label = label.trim()
-        this.actionKey = actionKey.trim()
+        this.actionKey = actionKey?.trim()
 
         if (!this.label) {
             throw new IllegalArgumentException('label cannot be null or blank')
-        }
-
-        if (!this.actionKey) {
-            throw new IllegalArgumentException('actionKey cannot be null or blank')
         }
     }
 

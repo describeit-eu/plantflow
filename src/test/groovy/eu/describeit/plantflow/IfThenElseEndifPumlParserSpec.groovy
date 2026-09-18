@@ -72,6 +72,12 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         actionThenTransition.actionKey == 'process all'
         actionElseTransition.actionKey == 'process none'
 
+        // Verify structural transitions have null actionKey
+        startToDecision.actionKey == null
+        branchYesTransition.actionKey == null
+        branchNoTransition.actionKey == null
+        endifToEnd.actionKey == null
+
         and:
         // Verify incidence matrix connections
         // T_start_to_decision: consumes from P_start (0), produces to P_if_decision (1)

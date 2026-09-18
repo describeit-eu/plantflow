@@ -49,11 +49,11 @@ class ActivityDiagramParser {
     }
 
     private PetriNet parseConditionalDiagram(List<String> lines) {
-        List<String> tokens = []
         String guardCondition = null
         String thenLabel = null
         String elseLabel = null
-        List<String> actions = []
+        String thenAction = null
+        String elseAction = null
         Boolean hasStart = false
         Boolean hasEnd = false
         Boolean inIfBlock = false
@@ -109,12 +109,9 @@ class ActivityDiagramParser {
             if (actionMatcher.matches()) {
                 String action = actionMatcher.group(1).trim()
                 if (inThenBlock) {
-                    actions.add(action)
+                    thenAction = action
                 } else if (inElseBlock) {
-                    actions.add(action)
-                } else if (!inIfBlock) {
-                    // This is a regular action outside if-then-else
-                    actions.add(action)
+                    elseAction = action
                 }
             }
         }
@@ -123,7 +120,7 @@ class ActivityDiagramParser {
         validateIfThenElseStructure(hasIf, hasElse, hasEndif, hasStart, hasEnd)
 
         // Build the Petri net with branching
-        return constructConditionalPetriNet(guardCondition, thenLabel, elseLabel, actions, hasStart, hasEnd)
+        return constructConditionalPetriNet(guardCondition, thenLabel, elseLabel, thenAction, elseAction, hasStart, hasEnd)
     }
 
     private void validateIfThenElseStructure(Boolean hasIf, Boolean hasElse, Boolean hasEndif, Boolean hasStart, Boolean hasEnd) {
@@ -144,21 +141,13 @@ class ActivityDiagramParser {
         }
     }
 
-    private PetriNet constructConditionalPetriNet(String guardCondition, String thenLabel, String elseLabel, List<String> actions, Boolean hasStart, Boolean hasEnd) {
-        // For ifThenElseEndif.puml, we expect exactly 2 actions (one in then, one in else)
-        // Places: P_start (0), P_if_decision (1), P_then (2), P_else (3), P_endif (4), P_end (5)
-        // Transitions: 
-        //   T_0: move from start to if_decision (no guard, no action)
-        //   T_1: branch yes (T_branch_yes) - guard: guardCondition
-        //   T_2: branch no (T_branch_no) - guard: negation of guardCondition
-        //   T_3: action then (process all)
-        //   T_4: action else (process none)
-        //   T_5: move from endif to end (no guard, no action)
-        
-        // Actually, we need 6 transitions, not 4
-        // Let me reconsider: we need a transition to get from start to decision place
-        // And a transition to get from endif to end
-        
+    private PetriNet constructConditionalPetriNet(String guardCondition, String thenLabel, String elseLabel, String thenAction, String elseAction, Boolean hasStart, Boolean hasEnd) {
+        if (thenAction == null) {
+            throw new IllegalArgumentException("thenAction cannot be null. Make sure there is an action in the then block.")
+        }
+        if (elseAction == null) {
+            throw new IllegalArgumentException("elseAction cannot be null. Make sure there is an action in the else block.")
+        }
         Place startPlace = new Place(0, START)
         Place ifDecisionPlace = new Place(1, 'P_if_decision')
         Place thenPlace = new Place(2, 'P_then')
@@ -168,20 +157,17 @@ class ActivityDiagramParser {
 
         List<Place> places = [startPlace, ifDecisionPlace, thenPlace, elsePlace, endifPlace, endPlace]
 
-        // Transitions:
-        // T_0: start -> if_decision (initial transition, no guard needed since it's automatic)
-        // T_1: branch yes - guarded transition from if_decision to P_then
-        // T_2: branch no - guarded transition from if_decision to P_else  
-        // T_3: action then - from P_then to P_endif
-        // T_4: action else - from P_else to P_endif
-        // T_5: endif -> end - from P_endif to end
+        // Structural transitions (no action handlers required)
+        Transition startToDecision = new Transition(0, 'T_start_to_decision', null, null)
+        Transition branchYesTransition = new Transition(1, 'T_branch_yes', null, guardCondition)
+        Transition branchNoTransition = new Transition(2, 'T_branch_no', null, '!(' + guardCondition + ')')
         
-        Transition startToDecision = new Transition(0, 'T_start_to_decision', 'T_start_to_decision')
-        Transition branchYesTransition = new Transition(1, 'T_branch_yes', 'T_branch_yes', guardCondition)
-        Transition branchNoTransition = new Transition(2, 'T_branch_no', 'T_branch_no', '!(' + guardCondition + ')')
-        Transition thenActionTransition = new Transition(3, actions[0], actions[0])
-        Transition elseActionTransition = new Transition(4, actions[1], actions[1])
-        Transition endifToEnd = new Transition(5, 'T_endif_to_end', 'T_endif_to_end')
+        // Action transitions (require action handlers)
+        Transition thenActionTransition = new Transition(3, thenAction, thenAction, null)
+        Transition elseActionTransition = new Transition(4, elseAction, elseAction, null)
+        
+        // Structural transition (no action handler required)
+        Transition endifToEnd = new Transition(5, 'T_endif_to_end', null, null)
 
         List<Transition> transitions = [startToDecision, branchYesTransition, branchNoTransition, thenActionTransition, elseActionTransition, endifToEnd]
 
@@ -281,7 +267,7 @@ class ActivityDiagramParser {
 
         List<Transition> transitions = []
         for (int i = 0; i < n; i++) {
-            transitions.add(new Transition(i, actions[i], actions[i]))
+            transitions.add(new Transition(i, actions[i], actions[i], null))
         }
 
         IncidenceMatrix incidenceMatrix = constructIncidenceMatrix(places.size(), transitions.size(), n)
