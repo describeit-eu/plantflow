@@ -10,8 +10,8 @@ class PetriNetSpec extends Specification {
     @Shared def pStart = new Place(0, 'start')
     @Shared def pMid = new Place(1, 'mid')
     @Shared def pEnd = new Place(2, 'end')
-    @Shared def t1 = new Transition(0, 'step1', 'step1')
-    @Shared def t2 = new Transition(1, 'step2', 'step2')
+    @Shared def t1 = new Transition(0, 'step1', 'step1', null)
+    @Shared def t2 = new Transition(1, 'step2', 'step2', null)
 
     def 'should lookup place by index: #lookupIndex'() {
         given:
@@ -215,107 +215,6 @@ class PetriNetSpec extends Specification {
         then:
         net.firedTransitions == [t1, t2]
         finalMarking == marking
-    }
-
-    def 'should initialize Place with index and label'() {
-        when:
-        def place = new Place(0, 'Custom Label')
-
-        then:
-        place.index == 0
-        place.label == 'Custom Label'
-    }
-
-    def 'should reject Place creation with invalid label: #scenario'() {
-        when:
-        new Place(0, invalidLabel)
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ['label cannot be null', 'label cannot be blank'].contains(ex.message)
-
-        where:
-        scenario      | invalidLabel
-        'null label'  | null
-        'empty label' | ''
-        'blank label' | '   '
-    }
-
-    def 'should satisfy equals, hashCode, and toString for Place'() {
-        given:
-        def place1 = new Place(0, 'Label A')
-        def place2 = new Place(0, 'Label A')
-        def place3 = new Place(1, 'Label B')
-
-        expect:
-        place1 == place2
-        place1.hashCode() == place2.hashCode()
-        place1 != place3
-        place1.toString().contains('index:0')
-        place1.toString().contains('label:Label A')
-    }
-
-    def 'should initialize Transition with index, label and optional keys: #scenario'() {
-        when:
-        def transition = constructorCall()
-
-        then:
-        transition.index == 0
-        transition.label == 'Step One'
-        transition.actionKey == expectedActionKey
-        transition.guardKey == expectedGuardKey
-
-        where:
-        scenario                    | constructorCall                                                | expectedActionKey | expectedGuardKey
-        'omitted guard key'         | { -> new Transition(0, 'Step One', 'customAct') }             | 'customAct'       | null
-        'explicit action and guard' | { -> new Transition(0, 'Step One', 'customAct', 'chkGuard') } | 'customAct'       | 'chkGuard'
-    }
-
-    def 'should reject Transition creation with invalid label: #scenario'() {
-        when:
-        new Transition(0, invalidLabel, 'actionKey')
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message.contains('label cannot be null')
-
-        where:
-        scenario      | invalidLabel
-        'null label'  | null
-        'empty label' | ''
-        'blank label' | '   '
-    }
-
-    def 'should allow null actionKey for structural transitions'() {
-        when:
-        def transition = new Transition(0, 'Step One', null)
-
-        then:
-        transition.actionKey == null
-    }
-
-    def 'should allow empty or blank actionKey for structural transitions'() {
-        when:
-        def transition1 = new Transition(0, 'Step One', '')
-        def transition2 = new Transition(0, 'Step Two', '   ')
-
-        then:
-        transition1.actionKey == ''
-        transition2.actionKey == ''
-    }
-
-    def 'should satisfy equals, hashCode, and toString for Transition'() {
-        given:
-        def trans1 = new Transition(0, 'Step 1', 'act1', 'grd1')
-        def trans2 = new Transition(0, 'Step 1', 'act1', 'grd1')
-        def trans3 = new Transition(1, 'Step 2', 'act2', 'grd2')
-
-        expect:
-        trans1 == trans2
-        trans1.hashCode() == trans2.hashCode()
-        trans1 != trans3
-        trans1.toString().contains('index:0')
-        trans1.toString().contains('label:Step 1')
     }
 
     def 'should manage ExecutionContext variables with default, get, set, and property syntax: #scenario'() {

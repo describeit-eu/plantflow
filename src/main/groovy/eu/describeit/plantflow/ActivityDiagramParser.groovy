@@ -50,8 +50,6 @@ class ActivityDiagramParser {
 
     private PetriNet parseConditionalDiagram(List<String> lines) {
         String guardCondition = null
-        String thenLabel = null
-        String elseLabel = null
         String thenAction = null
         String elseAction = null
         Boolean hasStart = false
@@ -77,7 +75,6 @@ class ActivityDiagramParser {
             Matcher ifMatcher = IF_PATTERN.matcher(line)
             if (ifMatcher.matches()) {
                 guardCondition = ifMatcher.group(1).trim()
-                thenLabel = ifMatcher.group(2).trim()
                 hasIf = true
                 inIfBlock = true
                 inThenBlock = true
@@ -87,7 +84,6 @@ class ActivityDiagramParser {
             // Parse else statement
             Matcher elseMatcher = ELSE_PATTERN.matcher(line)
             if (elseMatcher.matches()) {
-                elseLabel = elseMatcher.group(1).trim()
                 hasElse = true
                 inIfBlock = false
                 inThenBlock = false
@@ -120,7 +116,7 @@ class ActivityDiagramParser {
         validateIfThenElseStructure(hasIf, hasElse, hasEndif, hasStart, hasEnd)
 
         // Build the Petri net with branching
-        return constructConditionalPetriNet(guardCondition, thenLabel, elseLabel, thenAction, elseAction, hasStart, hasEnd)
+        return constructConditionalPetriNet(guardCondition, thenAction, elseAction)
     }
 
     private void validateIfThenElseStructure(Boolean hasIf, Boolean hasElse, Boolean hasEndif, Boolean hasStart, Boolean hasEnd) {
@@ -141,7 +137,7 @@ class ActivityDiagramParser {
         }
     }
 
-    private PetriNet constructConditionalPetriNet(String guardCondition, String thenLabel, String elseLabel, String thenAction, String elseAction, Boolean hasStart, Boolean hasEnd) {
+    private PetriNet constructConditionalPetriNet(String guardCondition, String thenAction, String elseAction) {
         if (thenAction == null) {
             throw new IllegalArgumentException("thenAction cannot be null. Make sure there is an action in the then block.")
         }

@@ -1,8 +1,5 @@
 package eu.describeit.plantflow
 
-import eu.describeit.plantflow.engine.PetriNet
-import eu.describeit.plantflow.engine.Place
-import eu.describeit.plantflow.engine.Transition
 import spock.lang.Specification
 
 class IfThenElseEndifPumlParserSpec extends Specification {
@@ -66,7 +63,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
 
         // Verify guard keys on branch transitions
         branchYesTransition.guardKey == "actions['process all']"
-        branchNoTransition.guardKey == "!(" + "actions['process all']" + ")"
+        branchNoTransition.guardKey == "!(actions['process all'])"
 
         // Verify action keys on action transitions
         actionThenTransition.actionKey == 'process all'

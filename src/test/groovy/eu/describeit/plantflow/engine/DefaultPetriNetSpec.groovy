@@ -10,7 +10,7 @@ class DefaultPetriNetSpec extends Specification {
         given:
         def pStart = new Place(0, 'start')
         def pEnd = new Place(1, 'end')
-        def tAction = new Transition(0, 'process order', 'process order')
+        def tAction = new Transition(0, 'process order', 'process order', null)
 
         def inputMatrix = [
             [1], // P_start
@@ -232,7 +232,7 @@ class DefaultPetriNetSpec extends Specification {
         given:
         def pStart = new Place(0, 'start')
         def pEnd = new Place(1, 'end')
-        def tNoAction = new ActionlessTestTransition(0, 'noAction')
+        def tNoAction = new Transition(0, 'noAction')
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
         def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
@@ -300,17 +300,6 @@ class DefaultPetriNetSpec extends Specification {
 
         expect:
         net.isEnabled(tGuarded, marking, registry, new ExecutionContext())
-    }
-
-    static class ActionlessTestTransition extends Transition {
-        ActionlessTestTransition(int index, String label) {
-            super(index, label, 'dummyAction')
-        }
-
-        @Override
-        String getActionKey() {
-            return null
-        }
     }
 
     static class EmptyConnectedPetriNet extends DefaultPetriNet {
