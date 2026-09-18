@@ -480,4 +480,152 @@ class PlantFlowSpec extends Specification {
             return false
         }
     }
+
+    def 'should execute if-then-else workflow with guard evaluating to true'() {
+        given: 'a conditional activity diagram'
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+
+        and: 'a handler registry with registered guard and actions'
+        def registry = new HandlerRegistry()
+        registry.registerGuard("actions['process all']") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == true
+        }
+        registry.registerGuard("!(actions['process all'])") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == false
+        }
+        // Register dummy handlers for structural transitions
+        registry.registerAction('T_start_to_decision') { ctx, tok -> tok }
+        registry.registerAction('T_branch_yes') { ctx, tok -> tok }
+        registry.registerAction('T_branch_no') { ctx, tok -> tok }
+        registry.registerAction('T_endif_to_end') { ctx, tok -> tok }
+        registry.registerAction('process all') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'then branch executed'
+            return tok.withPayload(tok.payload + [branch: 'then'])
+        }
+        registry.registerAction('process none') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'else branch executed'
+            return tok.withPayload(tok.payload + [branch: 'else'])
+        }
+
+        and: 'an execution context where guard evaluates to true'
+        def context = new ExecutionContext([actions: ['process all': true]])
+
+        when: 'the workflow engine is instantiated and executed'
+        def engine = new PlantFlow(file, registry, context)
+        def finalEngine = engine.runUntilEnd()
+
+        then: 'the workflow completes successfully'
+        finalEngine == engine
+        engine.isCompleted()
+
+        and: 'the then branch was executed'
+        context['result'] == 'then branch executed'
+
+        and: 'the token in P_end has the branch information'
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload['branch'] == 'then'
+    }
+
+    def 'should execute if-then-else workflow with guard evaluating to false'() {
+        given: 'a conditional activity diagram'
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+
+        and: 'a handler registry with registered guard and actions'
+        def registry = new HandlerRegistry()
+        registry.registerGuard("actions['process all']") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == true
+        }
+        registry.registerGuard("!(actions['process all'])") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == false
+        }
+        // Register dummy handlers for structural transitions
+        registry.registerAction('T_start_to_decision') { ctx, tok -> tok }
+        registry.registerAction('T_branch_yes') { ctx, tok -> tok }
+        registry.registerAction('T_branch_no') { ctx, tok -> tok }
+        registry.registerAction('T_endif_to_end') { ctx, tok -> tok }
+        registry.registerAction('process all') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'then branch executed'
+            return tok.withPayload(tok.payload + [branch: 'then'])
+        }
+        registry.registerAction('process none') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'else branch executed'
+            return tok.withPayload(tok.payload + [branch: 'else'])
+        }
+
+        and: 'an execution context where guard evaluates to false'
+        def context = new ExecutionContext([actions: ['process all': false]])
+
+        when: 'the workflow engine is instantiated and executed'
+        def engine = new PlantFlow(file, registry, context)
+        def finalEngine = engine.runUntilEnd()
+
+        then: 'the workflow completes successfully'
+        finalEngine == engine
+        engine.isCompleted()
+
+        and: 'the else branch was executed'
+        context['result'] == 'else branch executed'
+
+        and: 'the token in P_end has the branch information'
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload['branch'] == 'else'
+    }
+
+    def 'should throw UnregisteredHandlerException when guard is not registered for if-then-else'() {
+        given: 'a conditional activity diagram'
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+
+        and: 'a handler registry missing the guard'
+        def registry = new HandlerRegistry()
+        // Register dummy handlers for structural transitions
+        registry.registerAction('T_start_to_decision') { ctx, tok -> tok }
+        registry.registerAction('T_branch_yes') { ctx, tok -> tok }
+        registry.registerAction('T_branch_no') { ctx, tok -> tok }
+        registry.registerAction('T_endif_to_end') { ctx, tok -> tok }
+        registry.registerAction('process all') { ctx, tok -> tok }
+        registry.registerAction('process none') { ctx, tok -> tok }
+
+        when: 'the workflow engine is instantiated and executed'
+        def engine = new PlantFlow(file, registry)
+        engine.runUntilEnd()
+
+        then: 'it throws UnregisteredHandlerException for the missing guard'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains("actions['process all']")
+    }
+
+    def 'should throw UnregisteredHandlerException when action is not registered for if-then-else'() {
+        given: 'a conditional activity diagram'
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+
+        and: 'a handler registry missing an action handler'
+        def registry = new HandlerRegistry()
+        registry.registerGuard("actions['process all']") { ctx, tok -> ctx['actions']?['process all'] == true }
+        registry.registerGuard("!(actions['process all'])") { ctx, tok -> ctx['actions']?['process all'] == false }
+        // Register dummy handlers for structural transitions
+        registry.registerAction('T_start_to_decision') { ctx, tok -> tok }
+        registry.registerAction('T_branch_yes') { ctx, tok -> tok }
+        registry.registerAction('T_branch_no') { ctx, tok -> tok }
+        registry.registerAction('T_endif_to_end') { ctx, tok -> tok }
+        registry.registerAction('process all') { ctx, tok -> tok }
+        // Missing 'process none' action
+
+        when: 'the workflow engine is instantiated and executed with guard true'
+        def engine = new PlantFlow(file, registry, new ExecutionContext([actions: ['process all': true]]))
+        engine.runUntilEnd()
+
+        then: 'it completes with then branch'
+        engine.isCompleted()
+
+        when: 'the workflow engine is instantiated and executed with guard false'
+        def engine2 = new PlantFlow(file, registry, new ExecutionContext([actions: ['process all': false]]))
+        engine2.runUntilEnd()
+
+        then: 'it throws UnregisteredHandlerException for the missing action'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('process none')
+    }
 }
+

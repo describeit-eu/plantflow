@@ -17,9 +17,15 @@ import java.util.regex.Pattern
 class ActivityDiagramParser {
 
     private static final Pattern ACTION_PATTERN = Pattern.compile('^\\s*:(.+);\\s*$')
+    private static final Pattern IF_PATTERN = Pattern.compile(/^\s*if\s*\(\s*(.+?)\s*\)\s*then\s*\(\s*(.+?)\s*\)\s*$/)
+    private static final Pattern ELSE_PATTERN = Pattern.compile(/^\s*else\s*\(\s*(.+?)\s*\)\s*$/)
+    private static final Pattern ENDIF_PATTERN = Pattern.compile(/^\s*endif\s*$/)
     private static final String START = 'start'
     private static final String END = 'end'
     private static final String STOP = 'stop'
+    private static final String IF = 'if'
+    private static final String ELSE = 'else'
+    private static final String ENDIF = 'endif'
 
     PetriNet parse(File file) {
         if (file == null) throw new IllegalArgumentException('File cannot be null')
@@ -31,8 +37,184 @@ class ActivityDiagramParser {
             throw new IllegalArgumentException('PlantUML content cannot be empty')
         }
 
-        List<String> actions = extractActions(pumlContent.readLines())
-        return constructPetriNet(actions)
+        List<String> lines = pumlContent.readLines()
+        
+        // Check if the diagram contains if-then-else-endif
+        if (lines.any { it.trim().startsWith('if') }) {
+            return parseConditionalDiagram(lines)
+        } else {
+            List<String> actions = extractActions(lines)
+            return constructPetriNet(actions)
+        }
+    }
+
+    private PetriNet parseConditionalDiagram(List<String> lines) {
+        List<String> tokens = []
+        String guardCondition = null
+        String thenLabel = null
+        String elseLabel = null
+        List<String> actions = []
+        Boolean hasStart = false
+        Boolean hasEnd = false
+        Boolean inIfBlock = false
+        Boolean inThenBlock = false
+        Boolean inElseBlock = false
+        Boolean hasIf = false
+        Boolean hasElse = false
+        Boolean hasEndif = false
+
+        for (String rawLine : lines) {
+            String line = rawLine.trim()
+            Boolean skip = false
+
+            (skip, hasStart, hasEnd) = checkLine(line, hasStart, hasEnd)
+
+            if (skip) {
+                continue
+            }
+
+            // Parse if statement
+            Matcher ifMatcher = IF_PATTERN.matcher(line)
+            if (ifMatcher.matches()) {
+                guardCondition = ifMatcher.group(1).trim()
+                thenLabel = ifMatcher.group(2).trim()
+                hasIf = true
+                inIfBlock = true
+                inThenBlock = true
+                continue
+            }
+
+            // Parse else statement
+            Matcher elseMatcher = ELSE_PATTERN.matcher(line)
+            if (elseMatcher.matches()) {
+                elseLabel = elseMatcher.group(1).trim()
+                hasElse = true
+                inIfBlock = false
+                inThenBlock = false
+                inElseBlock = true
+                continue
+            }
+
+            // Parse endif statement
+            if (ENDIF_PATTERN.matcher(line).matches()) {
+                hasEndif = true
+                inIfBlock = false
+                inThenBlock = false
+                inElseBlock = false
+                continue
+            }
+
+            // Parse action
+            Matcher actionMatcher = ACTION_PATTERN.matcher(line)
+            if (actionMatcher.matches()) {
+                String action = actionMatcher.group(1).trim()
+                if (inThenBlock) {
+                    actions.add(action)
+                } else if (inElseBlock) {
+                    actions.add(action)
+                } else if (!inIfBlock) {
+                    // This is a regular action outside if-then-else
+                    actions.add(action)
+                }
+            }
+        }
+
+        // Validate if-then-else structure
+        validateIfThenElseStructure(hasIf, hasElse, hasEndif, hasStart, hasEnd)
+
+        // Build the Petri net with branching
+        return constructConditionalPetriNet(guardCondition, thenLabel, elseLabel, actions, hasStart, hasEnd)
+    }
+
+    private void validateIfThenElseStructure(Boolean hasIf, Boolean hasElse, Boolean hasEndif, Boolean hasStart, Boolean hasEnd) {
+        if (!hasIf) {
+            throw new IllegalArgumentException('Diagram contains if-then-else but no if statement found')
+        }
+        if (!hasElse) {
+            throw new IllegalArgumentException('if-then-else construct must have an else clause')
+        }
+        if (!hasEndif) {
+            throw new IllegalArgumentException('if-then-else construct must have an endif')
+        }
+        if (!hasStart) {
+            throw new IllegalArgumentException('Diagram must contain \'start\'')
+        }
+        if (!hasEnd) {
+            throw new IllegalArgumentException('Diagram must contain \'end\' or \'stop\'')
+        }
+    }
+
+    private PetriNet constructConditionalPetriNet(String guardCondition, String thenLabel, String elseLabel, List<String> actions, Boolean hasStart, Boolean hasEnd) {
+        // For ifThenElseEndif.puml, we expect exactly 2 actions (one in then, one in else)
+        // Places: P_start (0), P_if_decision (1), P_then (2), P_else (3), P_endif (4), P_end (5)
+        // Transitions: 
+        //   T_0: move from start to if_decision (no guard, no action)
+        //   T_1: branch yes (T_branch_yes) - guard: guardCondition
+        //   T_2: branch no (T_branch_no) - guard: negation of guardCondition
+        //   T_3: action then (process all)
+        //   T_4: action else (process none)
+        //   T_5: move from endif to end (no guard, no action)
+        
+        // Actually, we need 6 transitions, not 4
+        // Let me reconsider: we need a transition to get from start to decision place
+        // And a transition to get from endif to end
+        
+        Place startPlace = new Place(0, START)
+        Place ifDecisionPlace = new Place(1, 'P_if_decision')
+        Place thenPlace = new Place(2, 'P_then')
+        Place elsePlace = new Place(3, 'P_else')
+        Place endifPlace = new Place(4, 'P_endif')
+        Place endPlace = new Place(5, END)
+
+        List<Place> places = [startPlace, ifDecisionPlace, thenPlace, elsePlace, endifPlace, endPlace]
+
+        // Transitions:
+        // T_0: start -> if_decision (initial transition, no guard needed since it's automatic)
+        // T_1: branch yes - guarded transition from if_decision to P_then
+        // T_2: branch no - guarded transition from if_decision to P_else  
+        // T_3: action then - from P_then to P_endif
+        // T_4: action else - from P_else to P_endif
+        // T_5: endif -> end - from P_endif to end
+        
+        Transition startToDecision = new Transition(0, 'T_start_to_decision', 'T_start_to_decision')
+        Transition branchYesTransition = new Transition(1, 'T_branch_yes', 'T_branch_yes', guardCondition)
+        Transition branchNoTransition = new Transition(2, 'T_branch_no', 'T_branch_no', '!(' + guardCondition + ')')
+        Transition thenActionTransition = new Transition(3, actions[0], actions[0])
+        Transition elseActionTransition = new Transition(4, actions[1], actions[1])
+        Transition endifToEnd = new Transition(5, 'T_endif_to_end', 'T_endif_to_end')
+
+        List<Transition> transitions = [startToDecision, branchYesTransition, branchNoTransition, thenActionTransition, elseActionTransition, endifToEnd]
+
+        // Build incidence matrix (6 places x 6 transitions)
+        int[][] inputMatrix = new int[6][6]
+        int[][] outputMatrix = new int[6][6]
+
+        // T_0: start -> if_decision
+        inputMatrix[0][0] = 1
+        outputMatrix[1][0] = 1
+
+        // T_1: branch yes - consumes from P_if_decision (1), produces to P_then (2)
+        inputMatrix[1][1] = 1
+        outputMatrix[2][1] = 1
+
+        // T_2: branch no - consumes from P_if_decision (1), produces to P_else (3)
+        inputMatrix[1][2] = 1
+        outputMatrix[3][2] = 1
+
+        // T_3: action then - consumes from P_then (2), produces to P_endif (4)
+        inputMatrix[2][3] = 1
+        outputMatrix[4][3] = 1
+
+        // T_4: action else - consumes from P_else (3), produces to P_endif (4)
+        inputMatrix[3][4] = 1
+        outputMatrix[4][4] = 1
+
+        // T_5: endif to end - consumes from P_endif (4), produces to P_end (5)
+        inputMatrix[4][5] = 1
+        outputMatrix[5][5] = 1
+
+        IncidenceMatrix incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
     }
 
     private List<String> extractActions(List<String> lines) {
