@@ -71,7 +71,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/implement/SKILL.md",
-      "computedHash": "754f34cbf7e486752c7225f40e5b0f69bcb8ea02e045432bce5616d64a406b0f"
+      "computedHash": "97e98ad75f4a587bf54f603ef463c0a4727d5965e4fa1bf228decbaec1ca41f2"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
@@ -107,7 +107,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/tdd/SKILL.md",
-      "computedHash": "f8fa3331219a24ed07c628e9ba01ad10a368ce82869ef333f9dd92f1e4dda40e"
+      "computedHash": "0814024be2e232fd4de6f0a0d50d30025477948ba8f2d1ed2968ae2039e6650b"
     },
     "teach": {
       "source": "mattpocock/skills",
