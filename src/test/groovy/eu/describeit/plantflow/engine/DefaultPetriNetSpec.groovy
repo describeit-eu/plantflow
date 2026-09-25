@@ -2,6 +2,7 @@ package eu.describeit.plantflow.engine
 
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.HandlerRegistry
+import eu.describeit.plantflow.UnregisteredHandlerException
 import spock.lang.Specification
 
 class DefaultPetriNetSpec extends Specification {
@@ -432,5 +433,149 @@ class DefaultPetriNetSpec extends Specification {
         net.fire(tAction, marking, registry, new ExecutionContext())
         marking.isEmpty(pStart)
         marking.getTokenCount(pEnd) == 2
+    }
+
+    def 'should deterministically select and fire first enabled transition when multiple are enabled'() {
+        given: 'a net with two parallel transitions from the same place'
+        def pStart = new Place(0, 'start')
+        def pEnd1 = new Place(1, 'end1')
+        def pEnd2 = new Place(2, 'end2')
+
+        def tFirst = new Transition(0, 'first', 'first', null)
+        def tSecond = new Transition(1, 'second', 'second', null)
+
+        def inputMatrix = [
+            [1, 1], // P_start
+            [0, 0], // P_end1
+            [0, 0]  // P_end2
+        ] as int[][]
+        def outputMatrix = [
+            [0, 0], // P_start
+            [1, 0], // P_end1
+            [0, 1]  // P_end2
+        ] as int[][]
+
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd1, pEnd2], [tFirst, tSecond], incidenceMatrix, pStart, pEnd1)
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('first') { ExecutionContext ctx, Token tok ->
+            ctx['fired'] = 'first'
+            return tok
+        }
+        registry.registerAction('second') { ExecutionContext ctx, Token tok ->
+            ctx['fired'] = 'second'
+            return tok
+        }
+
+        def marking = new Marking(net.places.size())
+        def context = new ExecutionContext()
+
+        when: 'adding token to start place and checking enabled transitions'
+        marking.addToken(pStart, Token.of())
+        def enabled = net.getEnabledTransitions(marking, registry, context)
+
+        then: 'both transitions are enabled'
+        enabled.size() == 2
+        enabled[0].index == 0  // First transition in declaration order
+        enabled[1].index == 1  // Second transition in declaration order
+
+        when: 'firing the first enabled transition'
+        net.fire(enabled[0], marking, registry, context)
+
+        then: 'the first transition was fired'
+        context['fired'] == 'first'
+        marking.getTokenCount(pStart) == 0
+        marking.getTokenCount(pEnd1) == 1
+        marking.getTokenCount(pEnd2) == 0
+    }
+
+    def 'should throw UnregisteredHandlerException when checking isEnabled with unregistered guard'() {
+        given: 'a net with a transition that has an unregistered guard'
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tGuarded = new Transition(0, 'guarded', 'action', 'unregistered_guard')
+
+        def inputMatrix = [[1], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tGuarded], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('action') { ExecutionContext ctx, Token tok -> tok }
+        // Guard is NOT registered
+
+        def marking = new Marking(net.places.size())
+        marking.addToken(pStart, Token.of())
+
+        when: 'checking if transition is enabled'
+        net.isEnabled(tGuarded, marking, registry, new ExecutionContext())
+
+        then: 'it throws UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered_guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when firing transition with unregistered action'() {
+        given: 'a net with a transition that has an unregistered action'
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'action', 'unregistered_action', null)
+
+        def inputMatrix = [[1], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        // Action is NOT registered
+
+        def marking = new Marking(net.places.size())
+        marking.addToken(pStart, Token.of())
+
+        when: 'firing the transition'
+        net.fire(tAction, marking, registry, new ExecutionContext())
+
+        then: 'it throws UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered_action')
+    }
+
+    def 'should fail fast in runUntilEnd when encountering unregistered handler'() {
+        given: 'a net with a transition that has an unregistered action'
+        def pStart = new Place(0, 'start')
+        def pMid = new Place(1, 'mid')
+        def pEnd = new Place(2, 'end')
+        def tFirst = new Transition(0, 'first', 'first', null)
+        def tUnregistered = new Transition(1, 'unregistered', 'unregistered_action', null)
+        def tThird = new Transition(2, 'third', 'third', null)
+
+        def inputMatrix = [
+            [1, 0, 0], // P_start
+            [0, 1, 0], // P_mid
+            [0, 0, 1]  // P_end
+        ] as int[][]
+        def outputMatrix = [
+            [0, 0, 0], // P_start
+            [1, 0, 0], // P_mid
+            [0, 1, 0]  // P_end
+        ] as int[][]
+
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pMid, pEnd], [tFirst, tUnregistered, tThird], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('first') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('third') { ExecutionContext ctx, Token tok -> tok }
+        // unregistered_action is NOT registered
+
+        def marking = new Marking(net.places.size())
+
+        when: 'running until end'
+        net.runUntilEnd(marking, registry, new ExecutionContext(), Token.of())
+
+        then: 'it throws UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered_action')
     }
 }

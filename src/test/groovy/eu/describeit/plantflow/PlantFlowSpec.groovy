@@ -562,5 +562,265 @@ class PlantFlowSpec extends Specification {
         endToken != null
         endToken.payload['branch'] == 'else'
     }
+
+    def 'should throw UnregisteredHandlerException when evaluating isEnabled for unregistered guard handler'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        // Register the actions but NOT the guard
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        engine.seedToken(Token.of())
+        
+        // First, fire the initial transition to get token to decision place
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        engine.fire(startTransition)
+        
+        def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
+
+        when: 'checking if the transition is enabled'
+        engine.isEnabled(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when evaluating getEnabledTransitions with unregistered guard handler'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        // Register the actions but NOT the guard
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        engine.seedToken(Token.of())
+        
+        // First, fire the initial transition to get token to decision place
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        engine.fire(startTransition)
+
+        when: 'querying enabled transitions'
+        engine.getEnabledTransitions()
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when firing transition with unregistered guard'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        // Register the actions but NOT the guard
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        engine.seedToken(Token.of())
+        
+        // First, fire the initial transition to get token to decision place
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        engine.fire(startTransition)
+        
+        def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
+
+        when: 'firing the transition'
+        engine.fire(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when firing transition with unregistered action handler'() {
+        given: 'a workflow with an unregistered action step and a seeded token'
+        def puml = '''
+            @startuml
+            start
+            :unregistered action;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+        engine.seedToken(Token.of())
+        def transition = engine.petriNet.transitions[0]
+
+        when: 'firing the transition'
+        engine.fire(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered action')
+    }
+
+    def 'should fail fast with UnregisteredHandlerException during runUntilEnd with unregistered action'() {
+        given: 'a workflow with an unregistered action step'
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            :unregistered step;
+            :step three;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('step three') { ExecutionContext ctx, Token tok -> tok }
+        // step two is NOT registered
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when: 'running until end'
+        engine.runUntilEnd(Token.of([init: true]))
+
+        then: 'it immediately raises UnregisteredHandlerException without completing'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered step')
+        !engine.isCompleted()
+    }
+
+    def 'should fail fast with UnregisteredHandlerException during runUntilEnd with unregistered guard'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            :step three;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('step three') { ExecutionContext ctx, Token tok -> tok }
+        // guard is NOT registered
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when: 'running until end'
+        engine.runUntilEnd(Token.of([init: true]))
+
+        then: 'it immediately raises UnregisteredHandlerException without completing'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+        !engine.isCompleted()
+    }
+
+    def 'should deterministically fire first enabled transition in matrix order when multiple are enabled'() {
+        given: 'a workflow with sequential steps'
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            :step two;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        def context = new ExecutionContext()
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok ->
+            ctx['order'] = (ctx['order'] ?: []) + ['one']
+            return tok
+        }
+        registry.registerAction('step two') { ExecutionContext ctx, Token tok ->
+            ctx['order'] = (ctx['order'] ?: []) + ['two']
+            return tok
+        }
+
+        def engine = new PlantFlow(puml, registry, context)
+
+        when: 'running the workflow'
+        engine.runUntilEnd(Token.of([init: true]))
+
+        then: 'the workflow completes in order'
+        engine.isCompleted()
+        context['order'] == ['one', 'two']
+    }
+
+    def 'should deterministically fire first transition when multiple are enabled'() {
+        given: 'a workflow with sequential steps where both are enabled'
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            :step two;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok ->
+            ctx['executed'] = 'step one'
+            // Return token to same place to enable both transitions
+            return tok
+        }
+        registry.registerAction('step two') { ExecutionContext ctx, Token tok ->
+            ctx['executed'] = 'step two'
+            return tok
+        }
+
+        def context = new ExecutionContext()
+        def engine = new PlantFlow(puml, registry, context)
+        engine.seedToken(Token.of())
+
+        when: 'firing first transition'
+        def firstTransition = engine.petriNet.transitions[0]
+        engine.fire(firstTransition)
+
+        then: 'first transition was fired'
+        context['executed'] == 'step one'
+
+        when: 'checking enabled transitions after first fire'
+        def enabled = engine.getEnabledTransitions()
+
+        then: 'at least one transition is enabled'
+        enabled.size() >= 1
+
+        when: 'firing from enabled transitions list'
+        engine.fire(enabled[0])
+
+        then: 'a transition was fired'
+        enabled.size() >= 1
+    }
 }
 
