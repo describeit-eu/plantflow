@@ -30,7 +30,7 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize Transition'() {
         given:
-        def transition = new Transition(0, 'Action', 'actionKey')
+        def transition = new Transition(0, 'Action')
 
         when:
         def json = Marshaller.toJson(transition)
@@ -46,12 +46,12 @@ class IncidenceMatrixMarshallerSpec extends Specification {
         json.contains('"actionKey"')
         deserialized.index == 0
         deserialized.label == 'Action'
-        deserialized.actionKey == 'actionKey'
+        deserialized.actionKey == null
     }
 
-    def 'Marshaller should serialize and deserialize Transition with guardKey'() {
+    def 'Marshaller should serialize and deserialize Transition with actionKey and guardKey'() {
         given:
-        def transition = new Transition(0, 'Action', 'actionKey', 'guardKey')
+        def transition = new Transition(0, 'Action1', 'actionKey1', 'guardKey1')
 
         when:
         def json = Marshaller.toJson(transition)
@@ -60,8 +60,10 @@ class IncidenceMatrixMarshallerSpec extends Specification {
         log.info('Transition JSON: {}', json)
 
         then:
-        json.contains('"guardKey"')
-        deserialized.guardKey == 'guardKey'
+        json.contains('"actionKey1"')
+        deserialized.actionKey == 'actionKey1'
+        json.contains('"guardKey1"')
+        deserialized.guardKey == 'guardKey1'
     }
 
     def 'Marshaller should produce pretty JSON'() {

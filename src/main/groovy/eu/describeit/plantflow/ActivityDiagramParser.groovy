@@ -1,13 +1,11 @@
 package eu.describeit.plantflow
 
-import eu.describeit.plantflow.engine.DefaultPetriNet
-import eu.describeit.plantflow.engine.IncidenceMatrix
+import eu.describeit.plantflow.ast.ActionNode
+import eu.describeit.plantflow.ast.ActivityDiagram
+import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.engine.PetriNet
-import eu.describeit.plantflow.engine.Place
-import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
-
 import java.nio.charset.StandardCharsets
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -15,106 +13,97 @@ import java.util.regex.Pattern
 @CompileStatic
 @Slf4j
 class ActivityDiagramParser {
+    private enum Branch { NONE, THEN, ELSE }
 
     private static final Pattern ACTION_PATTERN = Pattern.compile('^\\s*:(.+);\\s*$')
-    private static final String START = 'start'
-    private static final String END = 'end'
-    private static final String STOP = 'stop'
+    private static final Pattern IF_PATTERN = Pattern.compile(/^\s*if\s*\(\s*(.+?)\s*\)\s*then\s*\(\s*(.+?)\s*\)\s*$/)
+    private static final Pattern ELSE_PATTERN = Pattern.compile(/^\s*else\s*\(\s*(.+?)\s*\)\s*$/)
+    private static final Pattern ENDIF_PATTERN = Pattern.compile(/^\s*endif\s*$/)
+
+    private static final String START_KEYWORD = 'start', END_KEYWORD = 'end', STOP_KEYWORD = 'stop', IF_KEYWORD = 'if'
+    private static final String STARTUML = '@startuml', ENDUML = '@enduml', COMMENT = '\''
+    private static final List<String> IGNORED = [COMMENT, STARTUML, ENDUML]
+
+    private final PetriNetCompiler compiler = new PetriNetCompiler()
 
     PetriNet parse(File file) {
-        if (file == null) throw new IllegalArgumentException('File cannot be null')
+        DiagramValidator.validateFile(file)
         return parse(file.getText(StandardCharsets.UTF_8.name()))
     }
 
     PetriNet parse(String pumlContent) {
-        if (pumlContent == null || pumlContent.trim().isEmpty()) {
-            throw new IllegalArgumentException('PlantUML content cannot be empty')
-        }
-
-        List<String> actions = extractActions(pumlContent.readLines())
-        return constructPetriNet(actions)
+        DiagramValidator.validateContent(pumlContent)
+        List<String> lines = pumlContent.readLines()
+        ActivityDiagram diagram = lines.any { String line -> line.trim().startsWith(IF_KEYWORD) } ?
+            parseConditional(lines) : parseLinear(lines)
+        DiagramValidator.validate(diagram)
+        return compiler.compile(diagram)
     }
 
-    private List<String> extractActions(List<String> lines) {
-        List<String> actions = []
-        Boolean hasStart = false
-        Boolean hasEnd = false
-
+    private ActivityDiagram parseLinear(List<String> lines) {
+        ActivityDiagram diagram = new ActivityDiagram()
         for (String rawLine : lines) {
             String line = rawLine.trim()
-            Boolean skip = false
-
-            (skip, hasStart, hasEnd) = checkLine(line, hasStart, hasEnd)
-
-            if (!skip) {
-                Matcher matcher = ACTION_PATTERN.matcher(line)
-                if (matcher.matches()) {
-                    actions.add(matcher.group(1).trim())
-                }
+            Matcher matcher = ACTION_PATTERN.matcher(line)
+            if (!checkControl(line, diagram) && matcher.matches()) {
+                diagram.addNode(new ActionNode(matcher.group(1).trim()))
             }
         }
-
-        validateDiagramStructure(hasStart, hasEnd, actions)
-        return actions
+        return diagram
     }
 
-    private Tuple3<Boolean, Boolean, Boolean> checkLine(String line, Boolean hasStart, Boolean hasEnd) {
-        Tuple3<Boolean, Boolean, Boolean> result = [false, hasStart, hasEnd]
-
-        if (line.isEmpty() || line.startsWith("'") || line.startsWith('@startuml') || line.startsWith('@enduml')) {
-            result = [true, hasStart, hasEnd]
-        } else if (line == START) {
-            result = [true, true, hasEnd]
-        } else if (line == END || line == STOP) {
-            result = [true, hasStart, true]
+    private ActivityDiagram parseConditional(List<String> lines) {
+        ActivityDiagram diagram = new ActivityDiagram()
+        String guard = null
+        List<ActionNode> thenActions = []
+        List<ActionNode> elseActions = []
+        Branch branch = Branch.NONE
+        for (String rawLine : lines) {
+            String line = rawLine.trim()
+            if (checkControl(line, diagram)) continue
+            Matcher ifMatcher = IF_PATTERN.matcher(line)
+            if (ifMatcher.matches()) {
+                diagram.hasIf = true
+                guard = ifMatcher.group(1).trim()
+                branch = Branch.THEN
+                continue
+            }
+            branch = updateBranch(line, diagram, branch)
+            recordAction(line, branch, thenActions, elseActions)
         }
-
-        log.info('checkLine() - line:"{}" result:{}', line, result)
-
-        return result
+        finalizeConditional(diagram, guard, thenActions, elseActions)
+        return diagram
     }
 
-    private void validateDiagramStructure(boolean hasStart, boolean hasEnd, List<String> actions) {
-        if (!hasStart) {
-            throw new IllegalArgumentException('Diagram must contain \'start\'')
+    private Branch updateBranch(String line, ActivityDiagram diagram, Branch branch) {
+        if (ELSE_PATTERN.matcher(line).matches()) {
+            diagram.hasElse = true
+            return Branch.ELSE
         }
-        if (!hasEnd) {
-            throw new IllegalArgumentException('Diagram must contain \'end\' or \'stop\'')
+        if (ENDIF_PATTERN.matcher(line).matches()) {
+            diagram.hasEndif = true
+            return Branch.NONE
         }
-        if (actions.isEmpty()) {
-            throw new IllegalArgumentException('Diagram must contain at least one action transition')
-        }
+        return branch
     }
 
-    private PetriNet constructPetriNet(List<String> actions) {
-        int n = actions.size()
-        Place startPlace = new Place(0, START)
-        Place endPlace = new Place(n, END)
-
-        List<Place> places = [startPlace]
-        for (int i = 1; i < n; i++) {
-            places.add(new Place(i, "P_${i}"))
-        }
-        places.add(endPlace)
-
-        List<Transition> transitions = []
-        for (int i = 0; i < n; i++) {
-            transitions.add(new Transition(i, actions[i], actions[i]))
-        }
-
-        IncidenceMatrix incidenceMatrix = constructIncidenceMatrix(places.size(), transitions.size(), n)
-        return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
+    private void recordAction(String line, Branch branch, List<ActionNode> thenActions, List<ActionNode> elseActions) {
+        Matcher matcher = ACTION_PATTERN.matcher(line)
+        if (!matcher.matches()) return
+        ActionNode node = new ActionNode(matcher.group(1).trim())
+        if (branch == Branch.THEN) thenActions.add(node)
+        if (branch == Branch.ELSE) elseActions.add(node)
     }
 
-    private IncidenceMatrix constructIncidenceMatrix(int numPlaces, int numTransitions, int n) {
-        int[][] inputMatrix = new int[numPlaces][numTransitions]
-        int[][] outputMatrix = new int[numPlaces][numTransitions]
+    private void finalizeConditional(ActivityDiagram diagram, String guard, List<ActionNode> tNodes, List<ActionNode> eNodes) {
+        if (guard != null) diagram.addNode(new ConditionalNode(guard, tNodes, eNodes))
+        else if (!diagram.hasElse && !diagram.hasEndif) diagram.hasEndif = true
+    }
 
-        for (int i = 0; i < n; i++) {
-            inputMatrix[i][i] = 1
-            outputMatrix[i + 1][i] = 1
-        }
-
-        return new IncidenceMatrix(inputMatrix, outputMatrix)
+    private boolean checkControl(String line, ActivityDiagram diagram) {
+        if (line.isEmpty() || IGNORED.any { String p -> line.startsWith(p) }) return true
+        if (line == START_KEYWORD) return (diagram.hasStart = true)
+        if (line == END_KEYWORD || line == STOP_KEYWORD) return (diagram.hasEnd = true)
+        return false
     }
 }

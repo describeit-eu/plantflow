@@ -1,6 +1,9 @@
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
+    <inspection_tool class="CodeNarc.AbcMetric" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+    </inspection_tool>
     <inspection_tool class="CodeNarc.BlankLineBeforePackage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.BlockEndsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.BlockStartsWithBlankLine" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
@@ -32,6 +35,9 @@
       <option name="doNotApplyToFilesMatching" value=".*Spec\.groovy" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.ConsecutiveBlankLines" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ConsecutiveStringConcatenation" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFileNames" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+    </inspection_tool>
     <inspection_tool class="CodeNarc.CoupledTestCase" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.CyclomaticComplexity" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="maxClassAverageMethodComplexity" value="10" />
@@ -70,6 +76,9 @@
     <inspection_tool class="CodeNarc.IllegalRegex" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.IllegalString" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.IllegalSubclass" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ImplicitClosureParameter" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
+    </inspection_tool>
     <inspection_tool class="CodeNarc.ImplicitReturnStatement" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.InconsistentPropertyLocking" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.InconsistentPropertySynchronization" enabled="false" level="WARNING" enabled_by_default="false" />

@@ -4,14 +4,14 @@ import spock.lang.Specification
 
 class TransitionSpec extends Specification {
 
-    def 'should construct Transition with 3 arguments'() {
+    def 'should construct Transition with 2 arguments'() {
         when:
-        def transition = new Transition(0, 't1', 'action1')
+        def transition = new Transition(0, 't1')
 
         then:
         transition.index == 0
         transition.label == 't1'
-        transition.actionKey == 'action1'
+        transition.actionKey == null
         transition.guardKey == null
     }
 
@@ -28,33 +28,51 @@ class TransitionSpec extends Specification {
 
     def 'should throw IllegalArgumentException when required parameters are null: #scenario'() {
         when:
-        new Transition(index, label, actionKey)
+        new Transition(index, label)
 
         then:
         thrown(IllegalArgumentException)
 
         where:
-        scenario          | index | label  | actionKey
-        'null index'      | null  | 't1'   | 'action1'
-        'null label'      | 0     | null   | 'action1'
-        'null actionKey'  | 0     | 't1'   | null
+        scenario          | index | label
+        'null index'      | null  | 't1'
+        'null label'      | 0     | null
     }
 
-    def 'should throw IllegalArgumentException when label or actionKey is blank or whitespace: #scenario'() {
+    def 'should allow null actionKey for structural transitions'() {
         when:
-        new Transition(0, label, actionKey)
+        def transition = new Transition(0, 't1', null, null)
+
+        then:
+        transition.index == 0
+        transition.label == 't1'
+        transition.actionKey == null
+        transition.guardKey == null
+    }
+
+    def 'should allow empty or whitespace actionKey for structural transitions'() {
+        when:
+        def transition1 = new Transition(0, 't1', '', null)
+        def transition2 = new Transition(0, 't2', '   ', null)
+
+        then:
+        transition1.actionKey == ''
+        transition2.actionKey == ''
+    }
+
+    def 'should throw IllegalArgumentException when label is blank or whitespace: #scenario'() {
+        when:
+        new Transition(0, label)
 
         then:
         thrown(IllegalArgumentException)
 
         where:
-        scenario               | label   | actionKey
-        'empty label'          | ''      | 'action1'
-        'whitespace label'     | '   '   | 'action1'
-        'empty actionKey'      | 't1'    | ''
-        'whitespace actionKey' | 't1'    | '   '
+        scenario          | label
+        'empty label'     | ''
+        'whitespace label'| '   '
     }
-
+    
     def 'should satisfy equals, hashCode, and toString contracts'() {
         given:
         def t1 = new Transition(0, 't1', 'act1', 'guard1')

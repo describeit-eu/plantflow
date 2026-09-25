@@ -3,6 +3,7 @@ plugins {
   jacoco
   codenarc
   id("name.remal.jacoco-to-cobertura") version "2.0.4"
+  id("info.solidsoft.pitest") version "1.19.0"
 }
 
 java {
@@ -32,6 +33,16 @@ codenarc {
   isIgnoreFailures = false
   maxPriority1Violations = 0
   sourceSets = listOf()
+}
+
+pitest {
+  junit5PluginVersion.set("1.2.3")
+  targetClasses.set(listOf("eu.describeit.plantflow.*"))
+  targetTests.set(listOf("eu.describeit.plantflow.*"))
+  threads.set(Runtime.getRuntime().availableProcessors().coerceAtLeast(2))
+  features.set(listOf("-FGROOVY"))
+  outputFormats.set(listOf("XML", "HTML"))
+  timestampedReports.set(false)
 }
 
 tasks.codenarcTest {
