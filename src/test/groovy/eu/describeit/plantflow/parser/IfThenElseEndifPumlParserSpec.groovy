@@ -1,22 +1,17 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.parser
 
 import spock.lang.Specification
+
+import eu.describeit.plantflow.parser.ParserTestBase
 
 class IfThenElseEndifPumlParserSpec extends Specification {
 
     def 'should parse ifThenElseEndif.puml from file'() {
-        given:
-        def parser = new ActivityDiagramParser()
-        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
-
         when:
-        def net = parser.parse(file)
+        def net = ParserTestBase.parse(new File('src/test/data/puml/ifThenElseEndif.puml'))
 
         then:
-        net != null
-        // Expected places: P_start (0), P_if_decision (1), P_then (2), P_else (3), P_endif (4), P_end (5)
-        net.places.size() == 6
-        net.transitions.size() == 6 // T_start_to_decision, T_branch_yes, T_branch_no, T_action_then, T_action_else, T_endif_to_end
+        ParserTestBase.validateNetStructure(net, 6, 6)
 
         and:
         net.startPlace.index == 0
@@ -62,12 +57,12 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         endifToEnd != null
 
         // Verify guard keys on branch transitions
-        branchYesTransition.guardKey == "actions['process all']"
+        ParserTestBase.validateTransitionGuard(net, "actions['process all']", branchYesTransition.index)
         branchNoTransition.guardKey == "!(actions['process all'])"
 
         // Verify action keys on action transitions
-        actionThenTransition.actionKey == 'process all'
-        actionElseTransition.actionKey == 'process none'
+        ParserTestBase.validateTransitionAction(net, 'process all', actionThenTransition.index)
+        ParserTestBase.validateTransitionAction(net, 'process none', actionElseTransition.index)
 
         // Verify structural transitions have null actionKey
         startToDecision.actionKey == null
@@ -76,54 +71,21 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         endifToEnd.actionKey == null
 
         and:
-        // Verify incidence matrix connections
-        // T_start_to_decision: consumes from P_start (0), produces to P_if_decision (1)
-        net.incidenceMatrix.getInputWeight(0, startToDecision.index) == 1
-        net.incidenceMatrix.getOutputWeight(1, startToDecision.index) == 1
-
-        // T_branch_yes: consumes from P_if_decision (1), produces to P_then (2)
-        net.incidenceMatrix.getInputWeight(1, branchYesTransition.index) == 1
-        net.incidenceMatrix.getOutputWeight(2, branchYesTransition.index) == 1
-
-        // T_branch_no: consumes from P_if_decision (1), produces to P_else (3)
-        net.incidenceMatrix.getInputWeight(1, branchNoTransition.index) == 1
-        net.incidenceMatrix.getOutputWeight(3, branchNoTransition.index) == 1
-
-        // T_action_then: consumes from P_then (2), produces to P_endif (4)
-        net.incidenceMatrix.getInputWeight(2, actionThenTransition.index) == 1
-        net.incidenceMatrix.getOutputWeight(4, actionThenTransition.index) == 1
-
-        // T_action_else: consumes from P_else (3), produces to P_endif (4)
-        net.incidenceMatrix.getInputWeight(3, actionElseTransition.index) == 1
-        net.incidenceMatrix.getOutputWeight(4, actionElseTransition.index) == 1
-
-        // T_endif_to_end: consumes from P_endif (4), produces to P_end (5)
-        net.incidenceMatrix.getInputWeight(4, endifToEnd.index) == 1
-        net.incidenceMatrix.getOutputWeight(5, endifToEnd.index) == 1
+        // Verify incidence matrix connections using verifyTransitionConnection
+        ParserTestBase.verifyTransitionConnection(net, startToDecision.index, 0, 1)
+        ParserTestBase.verifyTransitionConnection(net, branchYesTransition.index, 1, 2)
+        ParserTestBase.verifyTransitionConnection(net, branchNoTransition.index, 1, 3)
+        ParserTestBase.verifyTransitionConnection(net, actionThenTransition.index, 2, 4)
+        ParserTestBase.verifyTransitionConnection(net, actionElseTransition.index, 3, 4)
+        ParserTestBase.verifyTransitionConnection(net, endifToEnd.index, 4, 5)
     }
 
     def 'should parse if-then-else-endif diagram from string'() {
-        given:
-        def puml = '''
-            @startuml
-            start
-            if ( actions['process all'] ) then (yes)
-              :process all;
-            else (no)
-              :process none;
-            endif
-            end
-            @enduml
-        '''
-        def parser = new ActivityDiagramParser()
-
         when:
-        def net = parser.parse(puml)
+        def net = ParserTestBase.parse(ParserTestBase.createConditionalPuml("actions['process all']", 'process all', 'process none'))
 
         then:
-        net != null
-        net.places.size() == 6
-        net.transitions.size() == 6
+        ParserTestBase.validateNetStructure(net, 6, 6)
     }
 
     def 'should throw IllegalArgumentException when if statement has no matching endif'() {
@@ -136,10 +98,9 @@ class IfThenElseEndifPumlParserSpec extends Specification {
             end
             @enduml
         '''
-        def parser = new ActivityDiagramParser()
 
         when:
-        parser.parse(puml)
+        ParserTestBase.parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -157,10 +118,9 @@ class IfThenElseEndifPumlParserSpec extends Specification {
             end
             @enduml
         '''
-        def parser = new ActivityDiagramParser()
 
         when:
-        parser.parse(puml)
+        ParserTestBase.parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)

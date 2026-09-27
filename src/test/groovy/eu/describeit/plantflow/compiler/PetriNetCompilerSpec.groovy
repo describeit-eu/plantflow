@@ -1,5 +1,6 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.compiler
 
+import eu.describeit.plantflow.PetriNetCompiler
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ConditionalNode
