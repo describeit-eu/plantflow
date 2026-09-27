@@ -1,7 +1,8 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.engine.Token
+
 import spock.lang.Specification
+
 import java.time.Instant
 
 import static java.time.Instant.ofEpochMilli
