@@ -1,6 +1,6 @@
 package eu.describeit.plantflow.engine
 
-import eu.describeit.plantflow.engine.Token
+
 import spock.lang.Specification
 
 import java.time.Instant

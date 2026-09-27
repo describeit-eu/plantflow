@@ -2,8 +2,6 @@ package eu.describeit.plantflow.parser
 
 import spock.lang.Specification
 
-import eu.describeit.plantflow.parser.ParserTestBase
-
 class SequencePumlParserSpec extends Specification {
 
     def 'should parse single action linear activity diagram into PetriNet'() {

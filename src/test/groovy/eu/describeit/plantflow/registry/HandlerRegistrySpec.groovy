@@ -1,5 +1,6 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.registry
 
+import eu.describeit.plantflow.*
 import eu.describeit.plantflow.engine.Token
 import spock.lang.Specification
 

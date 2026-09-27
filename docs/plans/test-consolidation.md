@@ -68,6 +68,8 @@
 | IfThenElseEndifPumlParserSpec | root | parser/ | 3 |
 | SequencePumlParserSpec | root | parser/ | 3 |
 | HandlerRegistrySpec | root | registry/ | 4 |
+| IncidenceMatrixMarshallerSpec | json/ | marshaller/ | 4 |
+| MarkingMarshallerSpec | json/ | marshaller/ | 4 |
 
 ### Modify
 - PlantFlowSpec: Reduce to integration-only tests (Step 2)
@@ -91,11 +93,12 @@ Create 4 utilities, update 2-3 specs to use them. **Verify**: JaCoCo report show
 - Move TokenSpec to engine/
 **Verify**: Run JaCoCo, confirm LINE=100%, INSTRUCTION≥98.9%, BRANCH≥93.0%, COMPLEXITY≥90.7%
 
-### Step 4: Final
-- Move the remaining 4 files to new packages
+### Step 4: Final - Complete
+- Move HandlerRegistrySpec to registry/
+- Move IncidenceMatrixMarshallerSpec and MarkingMarshallerSpec to marshaller/
 - Standardize patterns, verify all tests pass
 - Update docs (CONTEXT.md, AGENTS.md)
-**Verify**: Run JaCoCo, confirm LINE=100%, INSTRUCTION≥98%, BRANCH≥92%, COMPLEXITY≥93%
+**Verify**: Run JaCoCo, confirm LINE=100%, INSTRUCTION≥98%, BRANCH≥92%, COMPLEXITY≥93% - PASSED
 
 ---
 ---

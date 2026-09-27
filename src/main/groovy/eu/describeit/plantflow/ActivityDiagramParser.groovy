@@ -6,6 +6,7 @@ import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.engine.PetriNet
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import java.nio.charset.StandardCharsets
 import java.util.regex.Matcher
 import java.util.regex.Pattern

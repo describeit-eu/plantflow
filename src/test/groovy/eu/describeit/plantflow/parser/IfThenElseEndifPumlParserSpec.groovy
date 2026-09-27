@@ -2,8 +2,6 @@ package eu.describeit.plantflow.parser
 
 import spock.lang.Specification
 
-import eu.describeit.plantflow.parser.ParserTestBase
-
 class IfThenElseEndifPumlParserSpec extends Specification {
 
     def 'should parse ifThenElseEndif.puml from file'() {
