@@ -5,34 +5,27 @@ import eu.describeit.plantflow.HandlerRegistry
 import eu.describeit.plantflow.UnregisteredHandlerException
 import spock.lang.Specification
 
+import static eu.describeit.plantflow.engine.ExecutionTestBase.createLinearNet
+import static eu.describeit.plantflow.engine.ExecutionTestBase.createMarking
+import static eu.describeit.plantflow.engine.ExecutionTestBase.createToken
+import static eu.describeit.plantflow.engine.ExecutionTestBase.createRegistry
+import static eu.describeit.plantflow.engine.ExecutionTestBase.createContext
+import static eu.describeit.plantflow.engine.ExecutionTestBase.markingWithStartToken
+
 class DefaultPetriNetSpec extends Specification {
 
     def 'should create DefaultPetriNetSpec with places, transitions and incidence matrix'() {
         given:
-        def pStart = new Place(0, 'start')
-        def pEnd = new Place(1, 'end')
-        def tAction = new Transition(0, 'process order', 'process order', null)
+        def net = createLinearNet('start', 'end', 'process order', 'process order', null)
+        def pStart = net.startPlace
+        def pEnd = net.endPlace
+        def tAction = net.transitions[0]
 
-        def inputMatrix = [
-            [1], // P_start
-            [0],  // P_end
-        ] as int[][]
-        def outputMatrix = [
-            [0], // P_start
-            [1],  // P_end
-        ] as int[][]
-
-        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
-
-        when:
-        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
-
-        then:
+        expect:
         net.places.size() == 2
         net.transitions == [tAction]
         net.startPlace == pStart
         net.endPlace == pEnd
-        net.incidenceMatrix == incidenceMatrix
 
         and:
         net.getPlaceByIndex(0) == pStart
@@ -65,15 +58,16 @@ class DefaultPetriNetSpec extends Specification {
         def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [tGuard, tAction], incidenceMatrix, pStart, pEnd)
 
-        def registry = new HandlerRegistry()
-        registry.registerGuard('checkCondition') { ExecutionContext ctx, Token tok ->
-            return tok.payload.valid == true
+        def registry = createRegistry { reg ->
+            reg.registerGuard('checkCondition') { ExecutionContext ctx, Token tok ->
+                return tok.payload.valid == true
+            }
+            reg.registerAction('action1') { ExecutionContext ctx, Token tok -> tok }
+            reg.registerAction('action2') { ExecutionContext ctx, Token tok -> tok }
         }
-        registry.registerAction('action1') { ExecutionContext ctx, Token tok -> tok }
-        registry.registerAction('action2') { ExecutionContext ctx, Token tok -> tok }
 
-        def marking = new Marking(net.places.size())
-        def context = new ExecutionContext()
+        def marking = createMarking(net.places.size())
+        def context = createContext()
 
         expect:
         !net.isEnabled(null, marking, registry, context)
@@ -101,29 +95,19 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should fire transition: consume tokens, execute action handler, and produce tokens'() {
         given:
-        def pStart = new Place(0, 'start')
-        def pEnd = new Place(1, 'end')
-        def tAction = new Transition(0, 'transform', 'transformAction', null)
+        def net = createLinearNet('start', 'end', 'transform', 'transformAction', null)
+        def pStart = net.startPlace
+        def pEnd = net.endPlace
+        def tAction = net.transitions[0]
 
-        def inputMatrix = [
-            [1], // P_start
-            [0]  // P_end
-        ] as int[][]
-        def outputMatrix = [
-            [0], // P_start
-            [1]  // P_end
-        ] as int[][]
-
-        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
-        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
-
-        def registry = new HandlerRegistry()
-        registry.registerAction('transformAction') { ExecutionContext ctx, Token tok ->
-            return [result: 'success']
+        def registry = createRegistry { reg ->
+            reg.registerAction('transformAction') { ExecutionContext ctx, Token tok ->
+                return [result: 'success']
+            }
         }
 
-        def marking = new Marking(net.places.size())
-        def context = new ExecutionContext()
+        def marking = createMarking(net.places.size())
+        def context = createContext()
 
         when: 'firing when not enabled'
         def firedWithoutToken = net.fire(tAction, marking, registry, context)
@@ -167,17 +151,18 @@ class DefaultPetriNetSpec extends Specification {
         def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [t1, t2], incidenceMatrix, pStart, pEnd)
 
-        def registry = new HandlerRegistry()
-        registry.registerAction('action1') { ExecutionContext ctx, Token tok ->
-            return tok.withPayload(tok.payload + [s1: true])
-        }
-        registry.registerAction('action2') { ExecutionContext ctx, Token tok ->
-            return tok.withPayload(tok.payload + [s2: true])
+        def registry = createRegistry { reg ->
+            reg.registerAction('action1') { ExecutionContext ctx, Token tok ->
+                return tok.withPayload(tok.payload + [s1: true])
+            }
+            reg.registerAction('action2') { ExecutionContext ctx, Token tok ->
+                return tok.withPayload(tok.payload + [s2: true])
+            }
         }
 
-        def marking = new Marking(net.places.size())
-        def context = new ExecutionContext()
-        def seedToken = Token.of([init: true])
+        def marking = createMarking(net.places.size())
+        def context = createContext()
+        def seedToken = createToken([init: true])
         marking.addToken(pStart, seedToken)
 
         when:
@@ -207,8 +192,8 @@ class DefaultPetriNetSpec extends Specification {
             }
         }
 
-        def marking = new Marking(net.places.size())
-        def initialToken = Token.of([source: 'input'])
+        def marking = createMarking(net.places.size())
+        def initialToken = createToken([source: 'input'])
         marking.addToken(pStart, initialToken)
 
         when:

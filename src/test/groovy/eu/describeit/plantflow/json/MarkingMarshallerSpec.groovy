@@ -4,6 +4,7 @@ import eu.describeit.plantflow.Marshaller
 import eu.describeit.plantflow.engine.Marking
 import eu.describeit.plantflow.engine.Place
 import eu.describeit.plantflow.engine.Token
+import eu.describeit.plantflow.marshaller.MarshallerTestBase
 import groovy.util.logging.Slf4j
 import spock.lang.Specification
 
@@ -12,9 +13,9 @@ class MarkingMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize Marking'() {
         given:
-        def p1 = new Place(0, 'P1')
-        def p2 = new Place(1, 'P2')
-        def marking = new Marking(2)
+        def p1 = MarshallerTestBase.createPlace(0, 'P1')
+        def p2 = MarshallerTestBase.createPlace(1, 'P2')
+        def marking = MarshallerTestBase.createMarking(2)
 
         when:
         def json = Marshaller.toJson(marking)
@@ -30,11 +31,11 @@ class MarkingMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize Marking with tokens'() {
         given:
-        def p1 = new Place(0, 'P1')
-        def p2 = new Place(1, 'P2')
-        def marking = new Marking(2)
-        def token1 = new Token('token-1', null, [key1: 'value1'])
-        def token2 = new Token('token-2', null, [key2: 'value2'])
+        def p1 = MarshallerTestBase.createPlace(0, 'P1')
+        def p2 = MarshallerTestBase.createPlace(1, 'P2')
+        def marking = MarshallerTestBase.createMarking(2)
+        def token1 = MarshallerTestBase.createToken('token-1', [key1: 'value1'])
+        def token2 = MarshallerTestBase.createToken('token-2', [key2: 'value2'])
         marking.addToken(p1, token1)
         marking.addToken(p2, token2)
 

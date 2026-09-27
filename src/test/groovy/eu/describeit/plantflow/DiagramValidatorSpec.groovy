@@ -4,6 +4,7 @@ import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ValidationTestUtil
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -91,10 +92,10 @@ class DiagramValidatorSpec extends Specification {
 
         where:
         scenario             | thenActions                | elseActions                | expectedMessage
-        'null thenActions'   | null                       | [new ActionNode('else1')]  | DiagramValidator.ERR_THEN_EMPTY
-        'empty thenActions'  | []                         | [new ActionNode('else1')]  | DiagramValidator.ERR_THEN_EMPTY
-        'null elseActions'   | [new ActionNode('then1')]  | null                       | DiagramValidator.ERR_ELSE_EMPTY
-        'empty elseActions'  | [new ActionNode('then1')]  | []                         | DiagramValidator.ERR_ELSE_EMPTY
+        'null thenActions'   | null                       | [ValidationTestUtil.action('else1')]  | DiagramValidator.ERR_THEN_EMPTY
+        'empty thenActions'  | []                         | [ValidationTestUtil.action('else1')]  | DiagramValidator.ERR_THEN_EMPTY
+        'null elseActions'   | [ValidationTestUtil.action('then1')]  | null                       | DiagramValidator.ERR_ELSE_EMPTY
+        'empty elseActions'  | [ValidationTestUtil.action('then1')]  | []                         | DiagramValidator.ERR_ELSE_EMPTY
     }
 
     @Unroll
@@ -116,7 +117,10 @@ class DiagramValidatorSpec extends Specification {
 
     def 'should pass validateBranchActions when both branches have actions'() {
         when:
-        DiagramValidator.validateBranchActions([new ActionNode('a')], [new ActionNode('b')])
+        DiagramValidator.validateBranchActions(
+            [ValidationTestUtil.action('a')], 
+            [ValidationTestUtil.action('b')]
+        )
 
         then:
         noExceptionThrown()
@@ -132,11 +136,11 @@ class DiagramValidatorSpec extends Specification {
         ex.message == expectedMessage
 
         where:
-        scenario          | hasStart | hasEnd | actions     | expectedMessage
-        'missing start'   | false    | true   | ['action1'] | DiagramValidator.ERR_MUST_CONTAIN_START
-        'missing end'     | true     | false  | ['action1'] | DiagramValidator.ERR_MUST_CONTAIN_END
-        'null actions'    | true     | true   | null        | DiagramValidator.ERR_MUST_CONTAIN_ACTION
-        'empty actions'   | true     | true   | []          | DiagramValidator.ERR_MUST_CONTAIN_ACTION
+        scenario          | hasStart | hasEnd | actions             | expectedMessage
+        'missing start'   | false    | true   | ['action1']         | DiagramValidator.ERR_MUST_CONTAIN_START
+        'missing end'     | true     | false  | ['action1']         | DiagramValidator.ERR_MUST_CONTAIN_END
+        'null actions'    | true     | true   | null                | DiagramValidator.ERR_MUST_CONTAIN_ACTION
+        'empty actions'   | true     | true   | []                  | DiagramValidator.ERR_MUST_CONTAIN_ACTION
     }
 
     def 'should pass validateDiagramStructure when start, end, and actions are valid'() {
@@ -159,7 +163,7 @@ class DiagramValidatorSpec extends Specification {
     @Unroll
     def 'should throw IllegalArgumentException when validating linear diagram: #scenario'() {
         given:
-        def diagram = new ActivityDiagram(hasStart, hasEnd, nodes)
+        def diagram = ValidationTestUtil.diagram(hasStart, hasEnd, nodes)
 
         when:
         DiagramValidator.validate(diagram)
@@ -169,15 +173,15 @@ class DiagramValidatorSpec extends Specification {
         ex.message == expectedMessage
 
         where:
-        scenario                     | hasStart | hasEnd | nodes                    | expectedMessage
-        'missing start'              | false    | true   | [new ActionNode('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_START
-        'missing end'                | true     | false  | [new ActionNode('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_END
-        'empty action transitions'   | true     | true   | []                       | DiagramValidator.ERR_MUST_CONTAIN_ACTION
+        scenario                     | hasStart | hasEnd | nodes                              | expectedMessage
+        'missing start'              | false    | true   | [ValidationTestUtil.action('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_START
+        'missing end'                | true     | false  | [ValidationTestUtil.action('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_END
+        'empty action transitions'   | true     | true   | []                                   | DiagramValidator.ERR_MUST_CONTAIN_ACTION
     }
 
     def 'should pass validation for valid linear ActivityDiagram'() {
         given:
-        def diagram = new ActivityDiagram(true, true, [new ActionNode('process order')])
+        def diagram = ValidationTestUtil.diagram(true, true, [ValidationTestUtil.action('process order')])
 
         when:
         DiagramValidator.validate(diagram)
@@ -205,15 +209,15 @@ class DiagramValidatorSpec extends Specification {
         ex.message == expectedMessage
 
         where:
-        scenario          | hasIf | hasElse | hasEndif | hasStart | hasEnd | nodes                                                                             | expectedMessage
-        'missing if'      | false | true    | true     | true     | true   | [new ConditionalNode('c', [new ActionNode('a')], [new ActionNode('b')])]          | DiagramValidator.ERR_NO_IF
-        'missing else'    | true  | false   | true     | true     | true   | [new ConditionalNode('c', [new ActionNode('a')], [new ActionNode('b')])]          | DiagramValidator.ERR_NO_ELSE
-        'missing endif'   | true  | true    | false    | true     | true   | [new ConditionalNode('c', [new ActionNode('a')], [new ActionNode('b')])]          | DiagramValidator.ERR_NO_ENDIF
-        'missing start'   | true  | true    | true     | false    | true   | [new ConditionalNode('c', [new ActionNode('a')], [new ActionNode('b')])]          | DiagramValidator.ERR_MUST_CONTAIN_START
-        'missing end'     | true  | true    | true     | true     | false  | [new ConditionalNode('c', [new ActionNode('a')], [new ActionNode('b')])]          | DiagramValidator.ERR_MUST_CONTAIN_END
-        'empty then block'| true  | true    | true     | true     | true   | [new ConditionalNode('c', [], [new ActionNode('b')])]                             | DiagramValidator.ERR_THEN_EMPTY
-        'empty else block'| true  | true    | true     | true     | true   | [new ConditionalNode('c', [new ActionNode('a')], [])]                             | DiagramValidator.ERR_ELSE_EMPTY
-        'empty nodes'     | true  | true    | true     | true     | true   | []                                                                                | DiagramValidator.ERR_THEN_EMPTY
+        scenario          | hasIf | hasElse | hasEndif | hasStart | hasEnd | nodes                                                                                     | expectedMessage
+        'missing if'      | false | true    | true     | true     | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_IF
+        'missing else'    | true  | false   | true     | true     | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_ELSE
+        'missing endif'   | true  | true    | false    | true     | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_ENDIF
+        'missing start'   | true  | true    | true     | false    | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_MUST_CONTAIN_START
+        'missing end'     | true  | true    | true     | true     | false  | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_MUST_CONTAIN_END
+        'empty then block'| true  | true    | true     | true     | true   | [ValidationTestUtil.conditional('c', [], ['b'])]                                 | DiagramValidator.ERR_THEN_EMPTY
+        'empty else block'| true  | true    | true     | true     | true   | [ValidationTestUtil.conditional('c', ['a'], [])]                                 | DiagramValidator.ERR_ELSE_EMPTY
+        'empty nodes'     | true  | true    | true     | true     | true   | []                                                                                        | DiagramValidator.ERR_THEN_EMPTY
     }
 
     def 'should pass validation for valid conditional ActivityDiagram'() {
@@ -224,7 +228,7 @@ class DiagramValidatorSpec extends Specification {
             .withIf(true)
             .withElse(true)
             .withEndif(true)
-            .addNode(new ConditionalNode("actions['check']", [new ActionNode('then action')], [new ActionNode('else action')]))
+            .addNode(ValidationTestUtil.conditional("actions['check']", ['then action'], ['else action']))
 
         when:
         DiagramValidator.validate(diagram)
@@ -235,8 +239,8 @@ class DiagramValidatorSpec extends Specification {
 
     def 'should pass validation for valid conditional ActivityDiagram constructed without flags'() {
         given:
-        def diagram = new ActivityDiagram(true, true, [
-            new ConditionalNode("actions['check']", [new ActionNode('then action')], [new ActionNode('else action')])
+        def diagram = ValidationTestUtil.diagram(true, true, [
+            ValidationTestUtil.conditional("actions['check']", ['then action'], ['else action'])
         ])
 
         when:
@@ -248,9 +252,9 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ActionNode should store trimmed action and support equals, hashCode, and toString'() {
         given:
-        def node1 = new ActionNode('  do something  ')
-        def node2 = new ActionNode('do something')
-        def node3 = new ActionNode('other')
+        def node1 = ValidationTestUtil.action('  do something  ')
+        def node2 = ValidationTestUtil.action('do something')
+        def node3 = ValidationTestUtil.action('other')
 
         expect:
         node1.action == 'do something'
@@ -275,12 +279,12 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ConditionalNode should store safe unmodifiable copies of actions'() {
         given:
-        def thenList = [new ActionNode('then1')]
-        def elseList = [new ActionNode('else1')]
-        def node = new ConditionalNode('x > 0', thenList, elseList)
+        def thenList = [ValidationTestUtil.action('then1')]
+        def elseList = [ValidationTestUtil.action('else1')]
+        def node = ValidationTestUtil.conditional('x > 0', thenList, elseList)
 
         when:
-        thenList.add(new ActionNode('then2'))
+        thenList.add(ValidationTestUtil.action('then2'))
 
         then:
         node.thenActions.size() == 1
@@ -290,13 +294,13 @@ class DiagramValidatorSpec extends Specification {
         node.guardCondition == 'x > 0'
 
         when:
-        node.thenActions.add(new ActionNode('fail'))
+        node.thenActions.add(ValidationTestUtil.action('fail'))
 
         then:
         thrown(UnsupportedOperationException)
 
         when:
-        node.elseActions.add(new ActionNode('fail'))
+        node.elseActions.add(ValidationTestUtil.action('fail'))
 
         then:
         thrown(UnsupportedOperationException)
@@ -304,7 +308,7 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ConditionalNode should safely handle null action lists'() {
         when:
-        def node = new ConditionalNode('guard', null, null)
+        def node = ValidationTestUtil.conditional('guard', null, null)
 
         then:
         node.thenActions != null
@@ -315,9 +319,9 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ConditionalNode should implement equals, hashCode, and toString'() {
         given:
-        def node1 = new ConditionalNode('c', [new ActionNode('t')], [new ActionNode('e')])
-        def node2 = new ConditionalNode('c', [new ActionNode('t')], [new ActionNode('e')])
-        def node3 = new ConditionalNode('other', [new ActionNode('t')], [new ActionNode('e')])
+        def node1 = ValidationTestUtil.conditional('c', ['t'], ['e'])
+        def node2 = ValidationTestUtil.conditional('c', ['t'], ['e'])
+        def node3 = ValidationTestUtil.conditional('other', ['t'], ['e'])
 
         expect:
         node1 == node2
@@ -334,7 +338,7 @@ class DiagramValidatorSpec extends Specification {
             .withIf(true)
             .withElse(true)
             .withEndif(true)
-        def action = new ActionNode('step 1')
+        def action = ValidationTestUtil.action('step 1')
         diagram.addNode(action)
 
         expect:
@@ -348,7 +352,7 @@ class DiagramValidatorSpec extends Specification {
         diagram.nodes[0] == action
 
         when:
-        diagram.nodes.add(new ActionNode('step 2'))
+        diagram.nodes.add(ValidationTestUtil.action('step 2'))
 
         then:
         thrown(UnsupportedOperationException)
@@ -360,7 +364,7 @@ class DiagramValidatorSpec extends Specification {
         new ActivityDiagram().withIf().isConditional()
         new ActivityDiagram().withElse().isConditional()
         new ActivityDiagram().withEndif().isConditional()
-        new ActivityDiagram(true, true, [new ConditionalNode('c', [], [])]).isConditional()
-        !new ActivityDiagram(true, true, [new ActionNode('a')]).isConditional()
+        new ActivityDiagram(true, true, [ValidationTestUtil.conditional('c', [], [])]).isConditional()
+        !ValidationTestUtil.diagram(true, true, [ValidationTestUtil.action('a')]).isConditional()
     }
 }
