@@ -5,12 +5,7 @@ import eu.describeit.plantflow.HandlerRegistry
 import eu.describeit.plantflow.UnregisteredHandlerException
 import spock.lang.Specification
 
-import static eu.describeit.plantflow.engine.ExecutionTestBase.createLinearNet
-import static eu.describeit.plantflow.engine.ExecutionTestBase.createMarking
-import static eu.describeit.plantflow.engine.ExecutionTestBase.createToken
-import static eu.describeit.plantflow.engine.ExecutionTestBase.createRegistry
-import static eu.describeit.plantflow.engine.ExecutionTestBase.createContext
-import static eu.describeit.plantflow.engine.ExecutionTestBase.markingWithStartToken
+import static eu.describeit.plantflow.engine.ExecutionTestBase.*
 
 class DefaultPetriNetSpec extends Specification {
 

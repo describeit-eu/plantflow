@@ -2,11 +2,6 @@ package eu.describeit.plantflow.engine
 
 import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.engine.IncidenceMatrix
-import eu.describeit.plantflow.engine.Marking
-import eu.describeit.plantflow.engine.Place
-import eu.describeit.plantflow.engine.Token
-import eu.describeit.plantflow.engine.Transition
 
 /**
  * Base utility class for Petri net execution tests.

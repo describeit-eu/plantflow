@@ -1,10 +1,6 @@
-package eu.describeit.plantflow
+package eu.describeit.plantflow.ast
 
-import eu.describeit.plantflow.ast.ActionNode
-import eu.describeit.plantflow.ast.ActivityDiagram
-import eu.describeit.plantflow.ast.ActivityNode
-import eu.describeit.plantflow.ast.ConditionalNode
-import eu.describeit.plantflow.ast.ValidationTestUtil
+import eu.describeit.plantflow.DiagramValidator
 import spock.lang.Specification
 import spock.lang.Unroll
 

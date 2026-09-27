@@ -2,8 +2,6 @@ package eu.describeit.plantflow.json
 
 import eu.describeit.plantflow.Marshaller
 import eu.describeit.plantflow.engine.Marking
-import eu.describeit.plantflow.engine.Place
-import eu.describeit.plantflow.engine.Token
 import eu.describeit.plantflow.marshaller.MarshallerTestBase
 import groovy.util.logging.Slf4j
 import spock.lang.Specification

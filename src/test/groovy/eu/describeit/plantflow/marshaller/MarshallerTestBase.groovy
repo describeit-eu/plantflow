@@ -1,11 +1,7 @@
 package eu.describeit.plantflow.marshaller
 
 import eu.describeit.plantflow.Marshaller
-import eu.describeit.plantflow.engine.IncidenceMatrix
-import eu.describeit.plantflow.engine.Marking
-import eu.describeit.plantflow.engine.Place
-import eu.describeit.plantflow.engine.Token
-import eu.describeit.plantflow.engine.Transition
+import eu.describeit.plantflow.engine.*
 
 /**
  * Base utility class for marshaller tests.
