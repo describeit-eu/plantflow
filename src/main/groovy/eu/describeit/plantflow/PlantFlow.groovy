@@ -1,5 +1,6 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.Marking
 import eu.describeit.plantflow.engine.PetriNet
 import eu.describeit.plantflow.engine.Token
 import eu.describeit.plantflow.engine.Transition
@@ -55,8 +56,18 @@ class PlantFlow {
         return petriNet.getEnabledTransitions(handlerRegistry, executionContext)
     }
 
+    List<Transition> getEnabledTransitions(Marking marking, ExecutionContext context) {
+        return petriNet.getEnabledTransitions(marking, handlerRegistry, context)
+    }
+
     boolean fire(Transition transition) {
         return petriNet.fire(transition, handlerRegistry, executionContext)
+    }
+
+    Marking fire(Transition transition, Marking marking, ExecutionContext context) {
+        Marking newMarking = marking.copy()
+        petriNet.fire(transition, newMarking, handlerRegistry, context)
+        return newMarking
     }
 
     boolean step() {
