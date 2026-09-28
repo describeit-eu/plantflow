@@ -1,45 +1,100 @@
-# Issue tracker: GitHub
+# Issue Tracker: GitHub
 
-Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Issues and specs live as GitHub issues. Use `gh` CLI for all operations.
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
-- **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
-- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
-- **Comment on an issue**: `gh issue comment <number> --body "..."`
-- **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
+For git workflow, branch naming, and commit conventions, see `git-user` skill.
+
+- **Create**: `gh issue create --title "..." --body "..."`; use heredoc for multi-line bodies
+- **Read**: `gh issue view <number> --comments`; filter comments with `jq` and fetch labels
+- **List**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with `--label` and `--state` filters
+- **Comment**: `gh issue comment <number> --body "..."`
+- **Apply label**: `gh issue edit <number> --add-label "..."`
+- **Remove label**: `gh issue edit <number> --remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
-## Pull requests as a triage surface
+## PRs as Triage Surface
 
-**PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
+**PRs as request surface: no.** Set to `yes` if this repo treats external PRs as feature requests.
 
-When set to `yes`, PRs run through the same labels and states as issues, using the `gh pr` equivalents:
+For PR lifecycle and workflow, see `git-user` skill.
 
-- **Read a PR**: `gh pr view <number> --comments` and `gh pr diff <number>` for the diff.
-- **List external PRs for triage**: `gh pr list --state open --json number,title,body,labels,author,authorAssociation,comments` then keep only `authorAssociation` of `CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`, or `NONE` (drop `OWNER`/`MEMBER`/`COLLABORATOR`).
-- **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
+When enabled, use `gh pr` equivalents:
 
-GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
+- **Read**: `gh pr view <number> --comments` and `gh pr diff <number>` for diff
+- **List external PRs**: `gh pr list --state open --json number,title,body,labels,author,authorAssociation,comments`; keep only `authorAssociation` of `CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`, or `NONE`
+- **Comment**: `gh pr comment <number> --body "..."`
+- **Apply label**: `gh pr edit <number> --add-label "..."`
+- **Remove label**: `gh pr edit <number> --remove-label "..."`
+- **Close**: `gh pr close <number>`
 
-## When a skill says "publish to the issue tracker"
+GitHub shares one number space across issues and PRs. Resolve with `gh pr view <n>` and fall back to `gh issue view <n>`.
 
-Create a GitHub issue.
+## Skill Integrations
 
-## When a skill says "fetch the relevant ticket"
+- **Publish to issue tracker**: Create GitHub issue
+- **Fetch relevant ticket**: `gh issue view <number> --comments`
 
-Run `gh issue view <number> --comments`.
+## Wayfinding Operations
 
-## Wayfinding operations
+Leading word: **structured** — used by `/wayfinder` with map and child ticket system.
 
-Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
+### Map
+Single issue labelled `wayfinder:map`, holding Notes, Decisions-so-far, and Fog body.
+```bash
+gh issue create --label wayfinder:map
+```
 
-- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body. `gh issue create --label wayfinder:map`.
-- **Child ticket**: an issue linked to the map as a GitHub sub-issue (`gh api` on the sub-issues endpoint). Where sub-issues aren't enabled, add the child to a task list in the map body and put `Part of #<map>` at the top of the child body. Labels: `wayfinder:<type>` (`research`/`prototype`/`grilling`/`task`). Once claimed, the ticket is assigned to the driving dev.
-- **Blocking**: GitHub's **native issue dependencies**, the canonical, UI-visible representation. Add an edge with `gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>`, where `<blocker-db-id>` is the blocker's numeric **database id** (`gh api repos/<owner>/<repo>/issues/<n> --jq .id`, _not_ the `#number` or `node_id`). GitHub reports `issue_dependencies_summary.blocked_by` (open blockers only, the live gate). Where dependencies aren't available, fall back to a `Blocked by: #<n>, #<n>` line at the top of the child body. A ticket is unblocked when every blocker is closed.
-- **Frontier query**: list the map's open children (`gh issue list --state open`, scoped to the map's sub-issues / task list), drop any with an open blocker (`issue_dependencies_summary.blocked_by > 0`, or an open issue in the `Blocked by` line) or an assignee; first in map order wins.
-- **Claim**: `gh issue edit <n> --add-assignee @me`, the session's first write.
-- **Resolve**: `gh issue comment <n> --body "<answer>"`, then `gh issue close <n>`, then append a context pointer (gist + link) to the map's Decisions-so-far.
+### Child Ticket
+Issue linked to map as GitHub sub-issue via `gh api` on sub-issues endpoint. Where unavailable, add child to task list in map body and put `Part of #<map>` at top of child body.
+
+Labels: `wayfinder:<type>` where type is `research`, `prototype`, `grilling`, or `task`.
+
+Once claimed, assign to driving dev.
+
+### Blocking
+Use GitHub native issue dependencies (UI-visible).
+
+Add dependency edge:
+```bash
+gh api --method POST repos/<owner>/<repo>/issues/<child>/dependencies/blocked_by -F issue_id=<blocker-db-id>
+```
+
+Where `<blocker-db-id>` is the blocker's numeric database id:
+```bash
+gh api repos/<owner>/<repo>/issues/<n> --jq .id
+```
+
+Note: Use database id, _not_ the `#number` or `node_id`.
+
+GitHub reports `issue_dependencies_summary.blocked_by` (open blockers only).
+
+Fallback: add `Blocked by: #<n>, #<n>` line at top of child body.
+
+A ticket is unblocked when every blocker is closed.
+
+### Frontier Query
+List map's open children (`gh issue list --state open`, scoped to map's sub-issues / task list).
+
+Drop any with:
+- Open blocker (`issue_dependencies_summary.blocked_by > 0`)
+- Open issue in `Blocked by` line
+- Assignee
+
+First in map order wins.
+
+### Claim
+```bash
+gh issue edit <n> --add-assignee @me
+```
+Session's first write.
+
+### Resolve
+```bash
+gh issue comment <n> --body "<answer>"
+gh issue close <n>
+```
+Then append context pointer (gist + link) to map's Decisions-so-far.
