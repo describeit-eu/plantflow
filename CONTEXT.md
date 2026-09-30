@@ -88,6 +88,18 @@ _Avoid_: Job, task callback, processor
 The central registry mapping diagram expression strings and labels to executable Guard predicates and Action handlers.
 _Avoid_: Script engine, dispatcher
 
+**Fork**:
+A control structure that creates parallel execution branches in an activity diagram, enabling concurrent workflow paths.
+_Avoid_: Parallel split, concurrent node, thread
+
+**Merge**:
+A control structure that synchronizes parallel branches created by a fork, ensuring all branches complete before execution continues.
+_Avoid_: Join, synchronization point, converge
+
+**Parallel Branch**:
+An independent execution path created by a fork that runs concurrently with other branches.
+_Avoid_: Concurrent path, thread, async path
+
 **Activity Diagram Parser**:
 The top-level parser and facade that transforms PlantUML activity diagram syntax into an executable Petri Net structure.
 _Avoid_: Diagram importer, workflow parser
