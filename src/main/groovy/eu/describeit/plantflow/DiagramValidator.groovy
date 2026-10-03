@@ -131,33 +131,45 @@ class DiagramValidator {
 
     private static void validateNodes(ActivityDiagram diagram, boolean isConditional, boolean isFork) {
         if (isConditional) {
-            boolean hasConditionalNode = false
-            for (ActivityNode node : diagram.nodes) {
-                if (node instanceof ConditionalNode) {
-                    hasConditionalNode = true
-                    ConditionalNode condNode = (ConditionalNode) node
-                    validateBranchActions(condNode.thenActions, condNode.elseActions)
-                }
-            }
-            if (!hasConditionalNode && diagram.nodes.isEmpty()) {
-                throw new IllegalArgumentException(ERR_THEN_EMPTY)
-            }
+            validateConditionalNodes(diagram)
         } else if (isFork) {
-            boolean hasForkNode = false
-            for (ActivityNode node : diagram.nodes) {
-                if (node instanceof ForkNode) {
-                    hasForkNode = true
-                    ForkNode forkNode = (ForkNode) node
-                    validateForkBranches(forkNode.branches)
-                }
-            }
-            if (!hasForkNode && diagram.nodes.isEmpty()) {
-                throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
-            }
+            validateForkNodes(diagram)
         } else {
-            if (diagram.nodes.isEmpty()) {
-                throw new IllegalArgumentException(ERR_MUST_CONTAIN_ACTION)
+            validateLinearNodes(diagram)
+        }
+    }
+
+    private static void validateConditionalNodes(ActivityDiagram diagram) {
+        boolean hasConditionalNode = false
+        for (ActivityNode node : diagram.nodes) {
+            if (node instanceof ConditionalNode) {
+                hasConditionalNode = true
+                ConditionalNode condNode = (ConditionalNode) node
+                validateBranchActions(condNode.thenActions, condNode.elseActions)
             }
+        }
+        if (!hasConditionalNode && diagram.nodes.isEmpty()) {
+            throw new IllegalArgumentException(ERR_THEN_EMPTY)
+        }
+    }
+
+    private static void validateForkNodes(ActivityDiagram diagram) {
+        boolean hasForkNode = false
+        for (ActivityNode node : diagram.nodes) {
+            if (node instanceof ForkNode) {
+                hasForkNode = true
+                ForkNode forkNode = (ForkNode) node
+                validateForkBranches(forkNode.branches)
+            }
+        }
+        if (!hasForkNode && diagram.nodes.isEmpty()) {
+            throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+        }
+    }
+
+    private static void validateLinearNodes(ActivityDiagram diagram) {
+        if (diagram.nodes.isEmpty()) {
+            throw new IllegalArgumentException(ERR_MUST_CONTAIN_ACTION)
         }
     }
 

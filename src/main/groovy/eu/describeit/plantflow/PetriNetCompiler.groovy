@@ -110,11 +110,8 @@ class PetriNetCompiler {
         List<Place> intermediatePlaces = generateIntermediatePlaces(builder, actionNodes.size())
         Place endPlace = builder.addPlace(PLACE_END)
 
-        builder.startPlace = startPlace
-        builder.endPlace = endPlace
-
-        List<Place> places = assembleLinearPlaces(startPlace, intermediatePlaces, endPlace)
-        connectLinearActions(builder, places, actionNodes)
+        builder.startPlace = startPlace; builder.endPlace = endPlace
+        connectLinearActions(builder, assembleLinearPlaces(startPlace, intermediatePlaces, endPlace), actionNodes)
 
         return builder.build()
     }
@@ -179,12 +176,9 @@ class PetriNetCompiler {
         builder.with {
             connect(startPlace, startToDecision)
             connect(startToDecision, decisionPlace)
-            connect(decisionPlace, branchYes)
-            connect(branchYes, thenPlaces.get(0))
-            connect(decisionPlace, branchNo)
-            connect(branchNo, elsePlaces.get(0))
-            connect(endifPlace, endifToEnd)
-            connect(endifToEnd, endPlace)
+            connect(decisionPlace, branchYes); connect(branchYes, thenPlaces.get(0))
+            connect(decisionPlace, branchNo); connect(branchNo, elsePlaces.get(0))
+            connect(endifPlace, endifToEnd); connect(endifToEnd, endPlace)
         }
 
         return builder.build()
@@ -215,129 +209,102 @@ class PetriNetCompiler {
         return transitions
     }
 
-    private static void connectBranchActions(
-        PetriNetBuilder builder,
-        List<Place> places,
-        List<Transition> transitions,
-        Place endifPlace
-    ) {
+    private static void connectBranchActions(PetriNetBuilder builder, List<Place> places,
+                                              List<Transition> transitions, Place endifPlace) {
         for (int i = 0; i < places.size(); i++) {
-            Place fromPlace = places.get(i)
-            Transition transition = transitions.get(i)
+            Place fromPlace = places.get(i); Transition transition = transitions.get(i)
             Place toPlace = (i < places.size() - 1) ? places.get(i + 1) : endifPlace
-            builder.connect(fromPlace, transition)
-            builder.connect(transition, toPlace)
+            builder.connect(fromPlace, transition); builder.connect(transition, toPlace)
         }
     }
 
     private static PetriNet assembleForkNet(ForkNode node) {
         PetriNetBuilder builder = new PetriNetBuilder()
-        int forkIndex = 1 // Using 1 as the default fork index
-        int numBranches = node.branches.size()
+        int forkIndex = 1
         
-        // Create places
         Place startPlace = builder.addPlace(PLACE_START)
+        Transition forkTransition = addForkTransition(builder, forkIndex)
         
-        // Create fork transition
-        Transition forkTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex)
+        List<Place> branchEndPlaces = processForkBranches(builder, node, forkIndex, forkTransition)
         
-        // Create branch start places
-        List<Place> branchStartPlaces = []
-        List<Place> branchEndPlaces = []
-        
-         // Process each branch
-        for (int branchIdx = 0; branchIdx < numBranches; branchIdx++) {
-            List<ActivityNode> branchActions = node.branches.get(branchIdx)
-            String branchLabel = PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_BRANCH_SUFFIX + (branchIdx + 1)
-            
-            // Create branch start place
-            Place branchStartPlace = builder.addPlace(branchLabel)
-            branchStartPlaces.add(branchStartPlace)
-            
-            // Connect fork transition to branch start place
-            builder.connect(forkTransition, branchStartPlace)
-            
-            // Process actions in this branch
-            Place currentPlace = branchStartPlace
-            
-            for (int actionIdx = 0; actionIdx < branchActions.size(); actionIdx++) {
-                ActivityNode actionNode = branchActions.get(actionIdx)
-                if (actionNode instanceof ActionNode) {
-                    ActionNode action = (ActionNode) actionNode
-                    String transitionLabel = TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_BRANCH_SUFFIX + (branchIdx + 1)
-                    Transition transition = builder.addTransition(transitionLabel, action.action, null)
-                    
-                    // Connect current place to transition
-                    builder.connect(currentPlace, transition)
-                    
-                    // Create next place
-                    Place nextPlace = builder.addPlace(branchLabel + (actionIdx < branchActions.size() - 1 ? '_' + (actionIdx + 1) : '_end'))
-                    builder.connect(transition, nextPlace)
-                    currentPlace = nextPlace
-                }
-            }
-            
-            branchEndPlaces.add(currentPlace)
-        }
-        
-        // Connect start to fork transition
-        builder.connect(startPlace, forkTransition)
-        
-        // Create merge place and synchronization transition
-        Place mergePlace = builder.addPlace(PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_MERGE_SUFFIX)
-        Transition mergeSyncTransition = builder.addTransition(
-            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC
-        )
-        
-        // Connect each branch end to merge sync transition
-        for (Place branchEnd : branchEndPlaces) {
-            builder.connect(branchEnd, mergeSyncTransition)
-        }
-        
-        // Connect merge sync transition to merge place
-        builder.connect(mergeSyncTransition, mergePlace)
-        
-        // Create transition from merge to end
-        Transition toEndTransition = builder.addTransition(
-            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END
-        )
-        Place endPlace = builder.addPlace(PLACE_END)
-        
-        // Connect merge place to end transition
-        builder.connect(mergePlace, toEndTransition)
-        builder.connect(toEndTransition, endPlace)
-        
-        builder.startPlace = startPlace
-        builder.endPlace = endPlace
+        connectForkComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex)
         
         return builder.build()
     }
 
-    private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
-        for (ActivityNode node : diagram.nodes) {
-            if (node instanceof ConditionalNode) {
-                return (ConditionalNode) node
+    private static Transition addForkTransition(PetriNetBuilder builder, int forkIndex) {
+        return builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex)
+    }
+
+    private static List<Place> processForkBranches(PetriNetBuilder builder, ForkNode node, 
+                                                      int forkIndex, Transition forkTransition) {
+        List<Place> branchEndPlaces = []
+        int numBranches = node.branches.size()
+        
+        for (int branchIdx = 0; branchIdx < numBranches; branchIdx++) {
+            List<ActivityNode> branchActions = node.branches.get(branchIdx)
+            String branchLabel = PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_BRANCH_SUFFIX + (branchIdx + 1)
+            String transitionLabel = TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_BRANCH_SUFFIX + (branchIdx + 1)
+            
+            Place branchStartPlace = builder.addPlace(branchLabel)
+            builder.connect(forkTransition, branchStartPlace)
+            
+            Place branchEnd = processBranchActions(builder, branchActions, branchLabel, transitionLabel, branchStartPlace)
+            branchEndPlaces.add(branchEnd)
+        }
+        
+        return branchEndPlaces
+    }
+
+    private static Place processBranchActions(PetriNetBuilder builder, List<ActivityNode> branchActions,
+                                              String branchLabel, String transitionLabel, Place startPlace) {
+        Place currentPlace = startPlace
+        int totalActions = branchActions.size()
+        
+        for (int actionIdx = 0; actionIdx < totalActions; actionIdx++) {
+            ActivityNode actionNode = branchActions.get(actionIdx)
+            if (actionNode instanceof ActionNode) {
+                ActionNode action = (ActionNode) actionNode
+                Transition transition = builder.addTransition(transitionLabel, action.action, null)
+                builder.connect(currentPlace, transition)
+                
+                String placeSuffix = actionIdx < totalActions - 1 ? '_' + (actionIdx + 1) : '_end'
+                currentPlace = builder.addPlace(branchLabel + placeSuffix)
+                builder.connect(transition, currentPlace)
             }
         }
-        return null
+        
+        return currentPlace
+    }
+
+    private static void connectForkComponents(PetriNetBuilder builder, Place startPlace, 
+                                              Transition forkTransition, List<Place> branchEndPlaces, int forkIndex) {
+        builder.connect(startPlace, forkTransition)
+        
+        Place mergePlace = builder.addPlace(PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_MERGE_SUFFIX)
+        Transition mergeSyncTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC)
+        
+        branchEndPlaces.each { Place branchEnd -> builder.connect(branchEnd, mergeSyncTransition) }
+        builder.connect(mergeSyncTransition, mergePlace)
+        
+        Transition toEndTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END)
+        Place endPlace = builder.addPlace(PLACE_END)
+        
+        builder.connect(mergePlace, toEndTransition)
+        builder.connect(toEndTransition, endPlace)
+        builder.startPlace = startPlace
+        builder.endPlace = endPlace
+    }
+
+    private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
+        diagram.nodes.find { ActivityNode node -> node instanceof ConditionalNode } as ConditionalNode
     }
 
     private static ForkNode findForkNode(ActivityDiagram diagram) {
-        for (ActivityNode node : diagram.nodes) {
-            if (node instanceof ForkNode) {
-                return (ForkNode) node
-            }
-        }
-        return null
+        diagram.nodes.find { ActivityNode node -> node instanceof ForkNode } as ForkNode
     }
 
     private static List<ActionNode> extractActionNodes(ActivityDiagram diagram) {
-        List<ActionNode> actionNodes = []
-        for (ActivityNode node : diagram.nodes) {
-            if (node instanceof ActionNode) {
-                actionNodes.add((ActionNode) node)
-            }
-        }
-        return actionNodes
+        diagram.nodes.findAll { ActivityNode node -> node instanceof ActionNode } as List<ActionNode>
     }
 }

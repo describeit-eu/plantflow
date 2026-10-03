@@ -96,73 +96,100 @@ class ActivityDiagramParser {
         ActivityDiagram diagram = new ActivityDiagram()
         List<List<ActionNode>> branches = []
         int currentBranchIndex = -1
-        Stack<Integer> forkStack = new Stack<>()
+        Stack<Integer> forkStack = [] as Stack
         boolean forkComplete = false
         
         for (String rawLine : lines) {
             String line = rawLine.trim()
             
-            // Handle control keywords that should be ignored
-            if (line.isEmpty() || IGNORED.any { String p -> line.startsWith(p) }) continue
-            if (line == START_KEYWORD) { diagram.hasStart = true; continue }
-            if (line == END_KEYWORD || line == STOP_KEYWORD) { diagram.hasEnd = true; continue }
+            if (checkControl(line, diagram)) continue
             
-            Matcher forkMatcher = FORK_PATTERN.matcher(line)
-            if (forkMatcher.matches()) {
-                diagram.hasFork = true
-                forkStack.push(branches.size())
-                branches.add([])
+            if (handleForkMatching(line, diagram, forkStack, branches)) {
                 currentBranchIndex = branches.size() - 1
                 continue
             }
             
-            Matcher forkAgainMatcher = FORK_AGAIN_PATTERN.matcher(line)
-            if (forkAgainMatcher.matches()) {
-                if (forkStack.isEmpty()) {
-                    throw new IllegalArgumentException("fork again without active fork context")
-                }
-                branches.add([])
+            if (handleForkAgainMatching(line, forkStack, branches)) {
                 currentBranchIndex = branches.size() - 1
                 continue
             }
             
-            Matcher endMergeMatcher = END_MERGE_PATTERN.matcher(line)
-            if (endMergeMatcher.matches()) {
-                if (forkStack.isEmpty()) {
-                    throw new IllegalArgumentException("end merge without active fork context")
-                }
-                diagram.hasEndMerge = true
-                forkStack.pop()
+            if (handleEndMergeMatching(line, diagram, forkStack)) {
                 currentBranchIndex = -1
                 forkComplete = forkStack.isEmpty()
                 continue
             }
             
-            // Record action for current branch or as regular action
-            Matcher actionMatcher = ACTION_PATTERN.matcher(line)
-            if (actionMatcher.matches()) {
-                if (currentBranchIndex >= 0 && currentBranchIndex < branches.size()) {
-                    // Action belongs to current branch
-                    branches.get(currentBranchIndex).add(new ActionNode(actionMatcher.group(1).trim()))
-                } else if (forkComplete) {
-                    // Action after fork/end merge - treat as regular action
-                    diagram.addNode(new ActionNode(actionMatcher.group(1).trim()))
-                }
-                // If we're not in a branch and fork is not complete, ignore the action
-                // (this handles actions between fork and first fork again)
+            handleActionRecording(line, diagram, branches, currentBranchIndex, forkComplete)
+        }
+        
+        validateForkCompletion(forkStack)
+        finalizeForkNode(diagram, branches)
+        
+        return diagram
+    }
+
+    private boolean handleForkMatching(String line, ActivityDiagram diagram, Stack<Integer> forkStack, 
+                                     List<List<ActionNode>> branches) {
+        Matcher forkMatcher = FORK_PATTERN.matcher(line)
+        if (forkMatcher.matches()) {
+            diagram.hasFork = true
+            forkStack.push(branches.size())
+            branches.add([])
+            return true
+        }
+        return false
+    }
+
+    private boolean handleForkAgainMatching(String line, Stack<Integer> forkStack, 
+                                           List<List<ActionNode>> branches) {
+        Matcher forkAgainMatcher = FORK_AGAIN_PATTERN.matcher(line)
+        if (forkAgainMatcher.matches()) {
+            if (forkStack.isEmpty()) {
+                throw new IllegalArgumentException('fork again without active fork context')
+            }
+            branches.add([])
+            return true
+        }
+        return false
+    }
+
+    private boolean handleEndMergeMatching(String line, ActivityDiagram diagram, Stack<Integer> forkStack) {
+        Matcher endMergeMatcher = END_MERGE_PATTERN.matcher(line)
+        if (endMergeMatcher.matches()) {
+            if (forkStack.isEmpty()) {
+                throw new IllegalArgumentException('end merge without active fork context')
+            }
+            diagram.hasEndMerge = true
+            forkStack.pop()
+            return true
+        }
+        return false
+    }
+
+    private void handleActionRecording(String line, ActivityDiagram diagram, List<List<ActionNode>> branches,
+                                      int currentBranchIndex, boolean forkComplete) {
+        Matcher actionMatcher = ACTION_PATTERN.matcher(line)
+        if (actionMatcher.matches()) {
+            if (currentBranchIndex >= 0 && currentBranchIndex < branches.size()) {
+                branches.get(currentBranchIndex).add(new ActionNode(actionMatcher.group(1).trim()))
+            } else if (forkComplete) {
+                diagram.addNode(new ActionNode(actionMatcher.group(1).trim()))
             }
         }
-        
+    }
+
+    private void validateForkCompletion(Stack<Integer> forkStack) {
         if (!forkStack.isEmpty()) {
-            throw new IllegalArgumentException("Unclosed fork - missing end merge")
+            throw new IllegalArgumentException('Unclosed fork - missing end merge')
         }
-        
+    }
+
+    private void finalizeForkNode(ActivityDiagram diagram, List<List<ActionNode>> branches) {
         if (!branches.isEmpty()) {
             List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
             diagram.addNode(new ForkNode(branchList))
         }
-        
-        return diagram
     }
 
     private Branch updateBranch(String line, ActivityDiagram diagram, Branch branch) {
@@ -194,7 +221,6 @@ class ActivityDiagramParser {
         if (line.isEmpty() || IGNORED.any { String p -> line.startsWith(p) }) return true
         if (line == START_KEYWORD) return (diagram.hasStart = true)
         if (line == END_KEYWORD || line == STOP_KEYWORD) return (diagram.hasEnd = true)
-        if (line == FORK_KEYWORD || line == FORK_AGAIN_KEYWORD || line == END_MERGE_KEYWORD) return true
         return false
     }
 }
