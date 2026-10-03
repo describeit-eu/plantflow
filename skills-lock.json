@@ -8,9 +8,9 @@
       "computedHash": "e59e88ad97b8766d13350afaecabeca3b9af62ad88a4e089a22b47c32e2e4f69"
     },
     "code-review": {
-      "source": "mattpocock/skills",
+      "source": "cristal-ise/skills",
       "sourceType": "github",
-      "skillPath": "skills/engineering/code-review/SKILL.md",
+      "skillPath": "skills/code-review/SKILL.md",
       "computedHash": "caa9a086baaf9e0f7cd71f64edfa83da6821c05e826b083221f3d02e3d6a1905"
     },
     "codebase-design": {
@@ -68,10 +68,10 @@
       "computedHash": "20e5f4afdef502637510bc5c64d27645d3c85c88df9cb006824bbb0980166319"
     },
     "implement": {
-      "source": "mattpocock/skills",
+      "source": "cristal-ise/skills",
       "sourceType": "github",
-      "skillPath": "skills/engineering/implement/SKILL.md",
-      "computedHash": "2139cfedf24791adbc839aaab6019cff158af1e28bfead020ec6e0ce01b3e74d"
+      "skillPath": "skills/implement/SKILL.md",
+      "computedHash": "97e98ad75f4a587bf54f603ef463c0a4727d5965e4fa1bf228decbaec1ca41f2"
     },
     "implement-afk": {
       "source": "cristal-ise/skills",
@@ -134,10 +134,10 @@
       "computedHash": "43766f53afe7eb9feba0bb7716590c35cbb8d39d4a91eddef50e9566a6f6ae19"
     },
     "tdd": {
-      "source": "mattpocock/skills",
+      "source": "cristal-ise/skills",
       "sourceType": "github",
-      "skillPath": "skills/engineering/tdd/SKILL.md",
-      "computedHash": "9ce12c4a1e209e557fcf9d02086ade3d7ffdb976186018fc1b063b4164246004"
+      "skillPath": "skills/tdd/SKILL.md",
+      "computedHash": "0814024be2e232fd4de6f0a0d50d30025477948ba8f2d1ed2968ae2039e6650b"
     },
     "teach": {
       "source": "mattpocock/skills",
