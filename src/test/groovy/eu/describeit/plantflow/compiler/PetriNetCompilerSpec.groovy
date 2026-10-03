@@ -3,7 +3,10 @@ package eu.describeit.plantflow.compiler
 import eu.describeit.plantflow.PetriNetCompiler
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
+import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.ast.ValidationTestUtil
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -293,6 +296,141 @@ class PetriNetCompilerSpec extends Specification {
         // T_endif_to_end (8): P_endif (7) -> end (8)
         net.incidenceMatrix.getInputWeight(7, 8) == 1
         net.incidenceMatrix.getOutputWeight(8, 8) == 1
+    }
+
+    def 'should compile fork AST with two branches'() {
+        given:
+        def branch1 = [new ActionNode('fork_a'), new ActionNode('fork_b')]
+        def branch2 = [new ActionNode('fork_c')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        net.startPlace != null
+        net.endPlace != null
+        
+        and:
+        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
+        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
+        def toEndTransition = net.transitions.find { it.label == 'T_fork_1_to_end' }
+        
+        forkTransition != null
+        mergeSyncTransition != null
+        toEndTransition != null
+    }
+
+    def 'should compile fork AST with single action branches'() {
+        given:
+        def branch1 = [new ActionNode('action1')]
+        def branch2 = [new ActionNode('action2')]
+        def branch3 = [new ActionNode('action3')]
+        def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def action1Transition = net.transitions.find { it.actionKey == 'action1' }
+        def action2Transition = net.transitions.find { it.actionKey == 'action2' }
+        def action3Transition = net.transitions.find { it.actionKey == 'action3' }
+        
+        action1Transition != null
+        action2Transition != null
+        action3Transition != null
+    }
+
+    def 'should compile fork AST with multiple action branches'() {
+        given:
+        def branch1 = [new ActionNode('a1'), new ActionNode('a2')]
+        def branch2 = [new ActionNode('b1'), new ActionNode('b2'), new ActionNode('b3')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def a1Transition = net.transitions.find { it.actionKey == 'a1' }
+        def a2Transition = net.transitions.find { it.actionKey == 'a2' }
+        def b1Transition = net.transitions.find { it.actionKey == 'b1' }
+        def b2Transition = net.transitions.find { it.actionKey == 'b2' }
+        def b3Transition = net.transitions.find { it.actionKey == 'b3' }
+        
+        a1Transition != null
+        a2Transition != null
+        b1Transition != null
+        b2Transition != null
+        b3Transition != null
+    }
+
+    def 'should throw IllegalArgumentException for null fork node'() {
+        when:
+        PetriNetCompiler.compileFork(null)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == PetriNetCompiler.ERR_FORK_NODE_NULL
+    }
+
+    def 'should throw IllegalArgumentException for fork node with null branches'() {
+        when:
+        PetriNetCompiler.compileFork(new ForkNode(null))
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == PetriNetCompiler.ERR_BRANCH_EMPTY
+    }
+
+    def 'should throw IllegalArgumentException for fork node with empty branches'() {
+        when:
+        PetriNetCompiler.compileFork(new ForkNode([]))
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == PetriNetCompiler.ERR_BRANCH_EMPTY
+    }
+
+    def 'should throw IllegalArgumentException for fork node with empty branch'() {
+        given:
+        def branch1 = [new ActionNode('action1')]
+        def branch2 = []
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == PetriNetCompiler.ERR_BRANCH_EMPTY
+    }
+
+    def 'should throw IllegalArgumentException for fork node with null branch'() {
+        given:
+        def branch1 = [new ActionNode('action1')]
+        def forkNode = new ForkNode([branch1, null] as List<List<ActivityNode>>)
+
+        when:
+        PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == PetriNetCompiler.ERR_BRANCH_EMPTY
     }
 
     @Unroll

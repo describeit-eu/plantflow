@@ -26,7 +26,7 @@ class ForkEndMergePumlParserSpec extends Specification {
         mergePlace != null
 
         and:
-        // Check that we have action transitions
+        // Check that we have action transitions for the fork branches
         def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
         def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
         def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
@@ -109,4 +109,142 @@ class ForkEndMergePumlParserSpec extends Specification {
          net.places.size() > 0
          net.transitions.size() > 0
     }
+
+    def 'should throw IllegalArgumentException when fork has single branch'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('2 branches') || ex.message.contains('branch')
+    }
+
+    def 'should throw IllegalArgumentException when fork has no branches at all'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('branch') || ex.message.contains('action')
+    }
+
+    def 'should throw IllegalArgumentException when fork has empty branches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+            fork again
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('branch') || ex.message.contains('action')
+    }
+
+    def 'should handle fork with only whitespace in branches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+
+            fork again
+
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('branch') || ex.message.contains('action')
+    }
+
+    def 'should handle fork with multiple actions in branches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+              :action 2;
+            fork again
+              :action 3;
+              :action 4;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+         net != null
+         net.places.size() > 0
+         net.transitions.size() > 0
+         
+         and:
+         def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
+         def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
+         def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
+         def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
+         
+         action1Transition != null
+         action2Transition != null
+         action3Transition != null
+         action4Transition != null
+    }
+
+    def 'should throw IllegalArgumentException when fork again without active fork context'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork again
+              :action 1;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('fork again') || ex.message.contains('context')
+    }
+
 }
