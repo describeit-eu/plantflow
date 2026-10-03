@@ -21,49 +21,39 @@ At system boundaries, design interfaces that are easy to mock:
 
 Pass external dependencies in rather than creating them internally:
 
-```java
+```typescript
 // Easy to mock
-public class PaymentService {
-    private final PaymentClient paymentClient;
-
-    public PaymentService(PaymentClient paymentClient) {
-        this.paymentClient = paymentClient;
-    }
-
-    public PaymentResult processPayment(Order order) {
-        return paymentClient.charge(order.getTotal());
-    }
+function processPayment(order, paymentClient) {
+  return paymentClient.charge(order.total);
 }
 
 // Hard to mock
-public class PaymentService {
-    public PaymentResult processPayment(Order order) {
-        PaymentClient client = new StripeClient(System.getenv("STRIPE_KEY"));
-        return client.charge(order.getTotal());
-    }
+function processPayment(order) {
+  const client = new StripeClient(process.env.STRIPE_KEY);
+  return client.charge(order.total);
 }
 ```
 
 **2. Prefer SDK-style interfaces over generic fetchers**
 
-Create specific methods for each external operation instead of one generic method with conditional logic:
+Create specific functions for each external operation instead of one generic function with conditional logic:
 
-```java
-// GOOD: Each method is independently mockable
-public interface UserApiClient {
-    User getUser(String id);
-    List<Order> getOrders(String userId);
-    Order createOrder(CreateOrderRequest request);
-}
+```typescript
+// GOOD: Each function is independently mockable
+const api = {
+  getUser: (id) => fetch(`/users/${id}`),
+  getOrders: (userId) => fetch(`/users/${userId}/orders`),
+  createOrder: (data) => fetch('/orders', { method: 'POST', body: data }),
+};
 
 // BAD: Mocking requires conditional logic inside the mock
-public interface GenericApiClient {
-    <T> HttpResponse<T> execute(HttpRequest request, Class<T> responseType);
-}
+const api = {
+  fetch: (endpoint, options) => fetch(endpoint, options),
+};
 ```
 
 The SDK approach means:
-- Each mock returns one specific type
+- Each mock returns one specific shape
 - No conditional logic in test setup
 - Easier to see which endpoints a test exercises
 - Type safety per endpoint
