@@ -83,6 +83,31 @@ end
     }
 
     /**
+     * Creates a fork diagram PlantUML string with multiple branches.
+     */
+    static String createForkPuml(List<String> branch1Actions, List<String> branch2Actions, List<String> branch3Actions) {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << 'fork\n'
+        branch1Actions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << 'fork again\n'
+        branch2Actions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << 'fork again\n'
+        branch3Actions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << 'end merge\n'
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
+    /**
      * Validates that a parsed PetriNet has the expected structure.
      * Verifies place count, transition count, start place, and end place.
      */

@@ -3,6 +3,7 @@ package eu.describeit.plantflow
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -19,6 +20,9 @@ class DiagramValidator {
     public static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
     public static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
     public static final String ERR_DIAGRAM_NULL = 'Diagram cannot be null'
+    public static final String ERR_NO_FORK = 'Diagram contains fork but no fork statement found'
+    public static final String ERR_NO_END_MERGE = 'fork construct must have an end merge'
+    public static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one action'
 
     static void validate(ActivityDiagram diagram) {
         if (diagram == null) {
@@ -26,14 +30,17 @@ class DiagramValidator {
         }
 
         boolean isConditional = diagram.isConditional()
+        boolean isFork = diagram.hasForkStructure()
 
         if (isConditional) {
             validateConditionalStructure(diagram)
+        } else if (isFork) {
+            validateForkStructure(diagram)
         } else {
             validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
         }
 
-        validateNodes(diagram, isConditional)
+        validateNodes(diagram, isConditional, isFork)
     }
 
     static void validateIfThenElseStructure(
@@ -99,6 +106,19 @@ class DiagramValidator {
         validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
     }
 
+    private static void validateForkStructure(ActivityDiagram diagram) {
+        boolean hasForkFlags = diagram.hasFork || diagram.hasEndMerge
+        if (hasForkFlags) {
+            if (!diagram.hasFork) {
+                throw new IllegalArgumentException(ERR_NO_FORK)
+            }
+            if (!diagram.hasEndMerge) {
+                throw new IllegalArgumentException(ERR_NO_END_MERGE)
+            }
+        }
+        validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
+    }
+
     private static void validateStartAndEnd(boolean hasStart, boolean hasEnd) {
         if (!hasStart) {
             throw new IllegalArgumentException(ERR_MUST_CONTAIN_START)
@@ -108,7 +128,7 @@ class DiagramValidator {
         }
     }
 
-    private static void validateNodes(ActivityDiagram diagram, boolean isConditional) {
+    private static void validateNodes(ActivityDiagram diagram, boolean isConditional, boolean isFork) {
         if (isConditional) {
             boolean hasConditionalNode = false
             for (ActivityNode node : diagram.nodes) {
@@ -121,9 +141,32 @@ class DiagramValidator {
             if (!hasConditionalNode && diagram.nodes.isEmpty()) {
                 throw new IllegalArgumentException(ERR_THEN_EMPTY)
             }
+        } else if (isFork) {
+            boolean hasForkNode = false
+            for (ActivityNode node : diagram.nodes) {
+                if (node instanceof ForkNode) {
+                    hasForkNode = true
+                    ForkNode forkNode = (ForkNode) node
+                    validateForkBranches(forkNode.branches)
+                }
+            }
+            if (!hasForkNode && diagram.nodes.isEmpty()) {
+                throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+            }
         } else {
             if (diagram.nodes.isEmpty()) {
                 throw new IllegalArgumentException(ERR_MUST_CONTAIN_ACTION)
+            }
+        }
+    }
+
+    private static void validateForkBranches(List<List<ActivityNode>> branches) {
+        if (branches == null || branches.isEmpty()) {
+            throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+        }
+        for (List<ActivityNode> branch : branches) {
+            if (branch == null || branch.isEmpty()) {
+                throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
             }
         }
     }

@@ -2,7 +2,9 @@ package eu.describeit.plantflow
 
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
+import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.engine.PetriNet
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -20,8 +22,12 @@ class ActivityDiagramParser {
     private static final Pattern IF_PATTERN = Pattern.compile(/^\s*if\s*\(\s*(.+?)\s*\)\s*then\s*\(\s*(.+?)\s*\)\s*$/)
     private static final Pattern ELSE_PATTERN = Pattern.compile(/^\s*else\s*\(\s*(.+?)\s*\)\s*$/)
     private static final Pattern ENDIF_PATTERN = Pattern.compile(/^\s*endif\s*$/)
+    private static final Pattern FORK_PATTERN = Pattern.compile(/^\s*fork\s*$/)
+    private static final Pattern FORK_AGAIN_PATTERN = Pattern.compile(/^\s*fork again\s*$/)
+    private static final Pattern END_MERGE_PATTERN = Pattern.compile(/^\s*end merge\s*$/)
 
     private static final String START_KEYWORD = 'start', END_KEYWORD = 'end', STOP_KEYWORD = 'stop', IF_KEYWORD = 'if'
+    private static final String FORK_KEYWORD = 'fork', FORK_AGAIN_KEYWORD = 'fork again', END_MERGE_KEYWORD = 'end merge'
     private static final String STARTUML = '@startuml', ENDUML = '@enduml', COMMENT = '\''
     private static final List<String> IGNORED = [COMMENT, STARTUML, ENDUML]
 
@@ -35,8 +41,18 @@ class ActivityDiagramParser {
     PetriNet parse(String pumlContent) {
         DiagramValidator.validateContent(pumlContent)
         List<String> lines = pumlContent.readLines()
-        ActivityDiagram diagram = lines.any { String line -> line.trim().startsWith(IF_KEYWORD) } ?
-            parseConditional(lines) : parseLinear(lines)
+        ActivityDiagram diagram
+        if (lines.any { String line -> line.trim().startsWith(IF_KEYWORD) }) {
+            diagram = parseConditional(lines)
+        } else if (lines.any { String line -> 
+            line.trim().startsWith(FORK_KEYWORD) || 
+            line.trim().startsWith(FORK_AGAIN_KEYWORD) || 
+            line.trim().startsWith(END_MERGE_KEYWORD) 
+        }) {
+            diagram = parseFork(lines)
+        } else {
+            diagram = parseLinear(lines)
+        }
         DiagramValidator.validate(diagram)
         return compiler.compile(diagram)
     }
@@ -76,6 +92,82 @@ class ActivityDiagramParser {
         return diagram
     }
 
+    private ActivityDiagram parseFork(List<String> lines) {
+        ActivityDiagram diagram = new ActivityDiagram()
+        List<List<ActionNode>> branches = []
+        List<Integer> branchIndentationLevels = []
+        int currentBranchIndex = -1
+        Stack<Integer> forkStack = new Stack<>()
+        boolean forkComplete = false
+        
+        for (String rawLine : lines) {
+            String line = rawLine.trim()
+            
+            // Handle control keywords that should be ignored
+            if (line.isEmpty() || IGNORED.any { String p -> line.startsWith(p) }) continue
+            if (line == START_KEYWORD) { diagram.hasStart = true; continue }
+            if (line == END_KEYWORD || line == STOP_KEYWORD) { diagram.hasEnd = true; continue }
+            
+            Matcher forkMatcher = FORK_PATTERN.matcher(line)
+            if (forkMatcher.matches()) {
+                diagram.hasFork = true
+                forkStack.push(branches.size())
+                branches.add([])
+                branchIndentationLevels.add(0)
+                currentBranchIndex = branches.size() - 1
+                continue
+            }
+            
+            Matcher forkAgainMatcher = FORK_AGAIN_PATTERN.matcher(line)
+            if (forkAgainMatcher.matches()) {
+                if (forkStack.isEmpty()) {
+                    throw new IllegalArgumentException("fork again without active fork context")
+                }
+                branches.add([])
+                branchIndentationLevels.add(0)
+                currentBranchIndex = branches.size() - 1
+                continue
+            }
+            
+            Matcher endMergeMatcher = END_MERGE_PATTERN.matcher(line)
+            if (endMergeMatcher.matches()) {
+                if (forkStack.isEmpty()) {
+                    throw new IllegalArgumentException("end merge without active fork context")
+                }
+                diagram.hasEndMerge = true
+                forkStack.pop()
+                currentBranchIndex = -1
+                forkComplete = forkStack.isEmpty()
+                continue
+            }
+            
+            // Record action for current branch or as regular action
+            Matcher actionMatcher = ACTION_PATTERN.matcher(line)
+            if (actionMatcher.matches()) {
+                if (currentBranchIndex >= 0 && currentBranchIndex < branches.size()) {
+                    // Action belongs to current branch
+                    branches.get(currentBranchIndex).add(new ActionNode(actionMatcher.group(1).trim()))
+                } else if (forkComplete) {
+                    // Action after fork/end merge - treat as regular action
+                    diagram.addNode(new ActionNode(actionMatcher.group(1).trim()))
+                }
+                // If we're not in a branch and fork is not complete, ignore the action
+                // (this handles actions between fork and first fork again)
+            }
+        }
+        
+        if (!forkStack.isEmpty()) {
+            throw new IllegalArgumentException("Unclosed fork - missing end merge")
+        }
+        
+        if (!branches.isEmpty()) {
+            List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
+            diagram.addNode(new ForkNode(branchList))
+        }
+        
+        return diagram
+    }
+
     private Branch updateBranch(String line, ActivityDiagram diagram, Branch branch) {
         if (ELSE_PATTERN.matcher(line).matches()) {
             diagram.hasElse = true
@@ -105,6 +197,7 @@ class ActivityDiagramParser {
         if (line.isEmpty() || IGNORED.any { String p -> line.startsWith(p) }) return true
         if (line == START_KEYWORD) return (diagram.hasStart = true)
         if (line == END_KEYWORD || line == STOP_KEYWORD) return (diagram.hasEnd = true)
+        if (line == FORK_KEYWORD || line == FORK_AGAIN_KEYWORD || line == END_MERGE_KEYWORD) return true
         return false
     }
 }

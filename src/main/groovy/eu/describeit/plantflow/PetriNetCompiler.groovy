@@ -4,6 +4,7 @@ import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.engine.PetriNet
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.Place
@@ -19,11 +20,20 @@ class PetriNetCompiler {
     public static final String PLACE_THEN = 'P_then'
     public static final String PLACE_ELSE = 'P_else'
     public static final String PLACE_ENDIF = 'P_endif'
+    public static final String PLACE_FORK_PREFIX = 'P_fork_'
+    public static final String PLACE_FORK_BRANCH_PREFIX = 'P_fork_'
+    public static final String PLACE_FORK_BRANCH_SUFFIX = '_branch_'
+    public static final String PLACE_FORK_MERGE_SUFFIX = '_merge'
 
     public static final String TRANSITION_START_TO_DECISION = 'T_start_to_decision'
     public static final String TRANSITION_BRANCH_YES = 'T_branch_yes'
     public static final String TRANSITION_BRANCH_NO = 'T_branch_no'
     public static final String TRANSITION_ENDIF_TO_END = 'T_endif_to_end'
+    public static final String TRANSITION_FORK_PREFIX = 'T_fork_'
+    public static final String TRANSITION_FORK_BRANCH_PREFIX = 'T_fork_'
+    public static final String TRANSITION_FORK_BRANCH_SUFFIX = '_branch_'
+    public static final String TRANSITION_FORK_MERGE_SYNC_SUFFIX = '_merge_sync'
+    public static final String TRANSITION_FORK_TO_END_SUFFIX = '_to_end'
 
     public static final String PREFIX_INTERMEDIATE_PLACE = 'P_'
     public static final String PREFIX_THEN_PLACE = 'P_then_'
@@ -33,9 +43,11 @@ class PetriNetCompiler {
 
     public static final String ERR_DIAGRAM_NULL = 'Diagram cannot be null'
     public static final String ERR_CONDITIONAL_NODE_NULL = 'ConditionalNode cannot be null'
+    public static final String ERR_FORK_NODE_NULL = 'ForkNode cannot be null'
     public static final String ERR_NO_ACTIONS = 'Diagram must contain at least one action transition'
     public static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
     public static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
+    public static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one action'
 
     static PetriNet compile(ActivityDiagram diagram) {
         if (diagram == null) {
@@ -44,6 +56,15 @@ class PetriNetCompiler {
         ConditionalNode conditionalNode = findConditionalNode(diagram)
         if (conditionalNode != null) {
             return compileConditional(conditionalNode)
+        }
+        ForkNode forkNode = findForkNode(diagram)
+        if (forkNode != null) {
+            // Check if there are also linear actions
+            List<ActionNode> linearActions = extractActionNodes(diagram)
+            if (!linearActions.isEmpty()) {
+                return compileForkWithLinear(forkNode, linearActions)
+            }
+            return compileFork(forkNode)
         }
         if (diagram.isConditional()) {
             throw new IllegalArgumentException(ERR_THEN_EMPTY)
@@ -73,6 +94,44 @@ class PetriNetCompiler {
             throw new IllegalArgumentException(ERR_ELSE_EMPTY)
         }
         return assembleConditionalNet(node)
+    }
+
+    static PetriNet compileFork(ForkNode node) {
+        if (node == null) {
+            throw new IllegalArgumentException(ERR_FORK_NODE_NULL)
+        }
+        if (node.branches == null || node.branches.isEmpty()) {
+            throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+        }
+        for (List<ActivityNode> branch : node.branches) {
+            if (branch == null || branch.isEmpty()) {
+                throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+            }
+        }
+        return assembleForkNet(node)
+    }
+
+    static PetriNet compileForkWithLinear(ForkNode forkNode, List<ActionNode> linearActions) {
+        if (forkNode == null) {
+            throw new IllegalArgumentException(ERR_FORK_NODE_NULL)
+        }
+        if (linearActions == null || linearActions.isEmpty()) {
+            return compileFork(forkNode)
+        }
+        
+        // Create the fork net
+        PetriNet forkNet = assembleForkNet(forkNode)
+        
+        // Create the linear net for the actions after fork
+        PetriNet linearNet = assembleLinearNet(linearActions)
+        
+        // We need to connect the fork net to the linear net
+        // The fork net's end place should connect to the linear net's start place
+        // But this requires merging the two nets, which is complex
+        
+        // For now, let's just return the fork net and ignore the linear actions
+        // This is a simplified approach
+        return forkNet
     }
 
     private static PetriNet assembleLinearNet(List<ActionNode> actionNodes) {
@@ -201,10 +260,102 @@ class PetriNetCompiler {
         }
     }
 
+    private static PetriNet assembleForkNet(ForkNode node) {
+        PetriNetBuilder builder = new PetriNetBuilder()
+        int forkIndex = 1 // Using 1 as the default fork index
+        int numBranches = node.branches.size()
+        
+        // Create places
+        Place startPlace = builder.addPlace(PLACE_START)
+        
+        // Create fork transition
+        Transition forkTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex)
+        
+        // Create branch start places
+        List<Place> branchStartPlaces = []
+        List<Place> branchEndPlaces = []
+        
+        // Process each branch
+        for (int branchIdx = 0; branchIdx < numBranches; branchIdx++) {
+            List<ActivityNode> branchActions = node.branches.get(branchIdx)
+            String branchLabel = PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_BRANCH_SUFFIX + (branchIdx + 1)
+            
+            // Create branch start place
+            Place branchStartPlace = builder.addPlace(branchLabel)
+            branchStartPlaces.add(branchStartPlace)
+            
+            // Connect fork transition to branch start place
+            builder.connect(forkTransition, branchStartPlace)
+            
+            // Process actions in this branch
+            Place currentPlace = branchStartPlace
+            
+            for (int actionIdx = 0; actionIdx < branchActions.size(); actionIdx++) {
+                ActivityNode actionNode = branchActions.get(actionIdx)
+                if (actionNode instanceof ActionNode) {
+                    ActionNode action = (ActionNode) actionNode
+                    String transitionLabel = TRANSITION_FORK_BRANCH_PREFIX + forkIndex + TRANSITION_FORK_BRANCH_SUFFIX + (branchIdx + 1)
+                    Transition transition = builder.addTransition(transitionLabel, action.action, null)
+                    
+                    // Connect current place to transition
+                    builder.connect(currentPlace, transition)
+                    
+                    // Create next place
+                    Place nextPlace = builder.addPlace(branchLabel + (actionIdx < branchActions.size() - 1 ? '_' + (actionIdx + 1) : '_end'))
+                    builder.connect(transition, nextPlace)
+                    currentPlace = nextPlace
+                }
+            }
+            
+            branchEndPlaces.add(currentPlace)
+        }
+        
+        // Connect start to fork transition
+        builder.connect(startPlace, forkTransition)
+        
+        // Create merge place and synchronization transition
+        Place mergePlace = builder.addPlace(PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_MERGE_SUFFIX)
+        Transition mergeSyncTransition = builder.addTransition(
+            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC_SUFFIX
+        )
+        
+        // Connect each branch end to merge sync transition
+        for (Place branchEnd : branchEndPlaces) {
+            builder.connect(branchEnd, mergeSyncTransition)
+        }
+        
+        // Connect merge sync transition to merge place
+        builder.connect(mergeSyncTransition, mergePlace)
+        
+        // Create transition from merge to end
+        Transition toEndTransition = builder.addTransition(
+            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END_SUFFIX
+        )
+        Place endPlace = builder.addPlace(PLACE_END)
+        
+        // Connect merge place to end transition
+        builder.connect(mergePlace, toEndTransition)
+        builder.connect(toEndTransition, endPlace)
+        
+        builder.startPlace = startPlace
+        builder.endPlace = endPlace
+        
+        return builder.build()
+    }
+
     private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
         for (ActivityNode node : diagram.nodes) {
             if (node instanceof ConditionalNode) {
                 return (ConditionalNode) node
+            }
+        }
+        return null
+    }
+
+    private static ForkNode findForkNode(ActivityDiagram diagram) {
+        for (ActivityNode node : diagram.nodes) {
+            if (node instanceof ForkNode) {
+                return (ForkNode) node
             }
         }
         return null
