@@ -467,4 +467,60 @@ class DiagramValidatorSpec extends Specification {
         expect:
         !diagram.hasEndMerge
     }
+
+    def 'ActivityDiagram constructor should handle null nodes list'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, null)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.nodes.isEmpty()
+    }
+
+    def 'ActivityDiagram constructor with hasFork and hasEndMerge should handle null nodes list'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, true, true, null)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+        diagram.nodes.isEmpty()
+    }
+
+    def 'ActivityDiagram addNode should handle null node'() {
+        given:
+        def diagram = new ActivityDiagram()
+
+        when:
+        diagram.addNode(null)
+
+        then:
+        noExceptionThrown()
+        diagram.nodes.isEmpty()
+    }
+
+    def 'ActivityDiagram with forks and endMerge should work with ForkNode'() {
+        given:
+        def forkNode = ValidationTestUtil.fork([
+            ValidationTestUtil.action('branch1'),
+            ValidationTestUtil.action('branch2')
+        ])
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(forkNode)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+        diagram.nodes.size() == 1
+        diagram.nodes[0] == forkNode
+    }
 }
