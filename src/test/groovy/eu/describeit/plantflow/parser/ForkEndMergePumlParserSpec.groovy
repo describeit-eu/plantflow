@@ -105,8 +105,8 @@ class ForkEndMergePumlParserSpec extends Specification {
         def net = ParserTestBase.parse(puml)
 
         then:
-        net != null
-        net.places.size() > 0
-        net.transitions.size() > 0
+         net != null
+         net.places.size() > 0
+         net.transitions.size() > 0
     }
 }

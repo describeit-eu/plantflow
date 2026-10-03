@@ -95,7 +95,6 @@ class ActivityDiagramParser {
     private ActivityDiagram parseFork(List<String> lines) {
         ActivityDiagram diagram = new ActivityDiagram()
         List<List<ActionNode>> branches = []
-        List<Integer> branchIndentationLevels = []
         int currentBranchIndex = -1
         Stack<Integer> forkStack = new Stack<>()
         boolean forkComplete = false
@@ -113,7 +112,6 @@ class ActivityDiagramParser {
                 diagram.hasFork = true
                 forkStack.push(branches.size())
                 branches.add([])
-                branchIndentationLevels.add(0)
                 currentBranchIndex = branches.size() - 1
                 continue
             }
@@ -124,7 +122,6 @@ class ActivityDiagramParser {
                     throw new IllegalArgumentException("fork again without active fork context")
                 }
                 branches.add([])
-                branchIndentationLevels.add(0)
                 currentBranchIndex = branches.size() - 1
                 continue
             }

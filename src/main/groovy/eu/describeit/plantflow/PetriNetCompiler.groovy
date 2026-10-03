@@ -21,7 +21,6 @@ class PetriNetCompiler {
     public static final String PLACE_ELSE = 'P_else'
     public static final String PLACE_ENDIF = 'P_endif'
     public static final String PLACE_FORK_PREFIX = 'P_fork_'
-    public static final String PLACE_FORK_BRANCH_PREFIX = 'P_fork_'
     public static final String PLACE_FORK_BRANCH_SUFFIX = '_branch_'
     public static final String PLACE_FORK_MERGE_SUFFIX = '_merge'
 
@@ -30,10 +29,9 @@ class PetriNetCompiler {
     public static final String TRANSITION_BRANCH_NO = 'T_branch_no'
     public static final String TRANSITION_ENDIF_TO_END = 'T_endif_to_end'
     public static final String TRANSITION_FORK_PREFIX = 'T_fork_'
-    public static final String TRANSITION_FORK_BRANCH_PREFIX = 'T_fork_'
     public static final String TRANSITION_FORK_BRANCH_SUFFIX = '_branch_'
-    public static final String TRANSITION_FORK_MERGE_SYNC_SUFFIX = '_merge_sync'
-    public static final String TRANSITION_FORK_TO_END_SUFFIX = '_to_end'
+    public static final String TRANSITION_FORK_MERGE_SYNC = '_merge_sync'
+    public static final String TRANSITION_FORK_TO_END = '_to_end'
 
     public static final String PREFIX_INTERMEDIATE_PLACE = 'P_'
     public static final String PREFIX_THEN_PLACE = 'P_then_'
@@ -59,11 +57,6 @@ class PetriNetCompiler {
         }
         ForkNode forkNode = findForkNode(diagram)
         if (forkNode != null) {
-            // Check if there are also linear actions
-            List<ActionNode> linearActions = extractActionNodes(diagram)
-            if (!linearActions.isEmpty()) {
-                return compileForkWithLinear(forkNode, linearActions)
-            }
             return compileFork(forkNode)
         }
         if (diagram.isConditional()) {
@@ -109,29 +102,6 @@ class PetriNetCompiler {
             }
         }
         return assembleForkNet(node)
-    }
-
-    static PetriNet compileForkWithLinear(ForkNode forkNode, List<ActionNode> linearActions) {
-        if (forkNode == null) {
-            throw new IllegalArgumentException(ERR_FORK_NODE_NULL)
-        }
-        if (linearActions == null || linearActions.isEmpty()) {
-            return compileFork(forkNode)
-        }
-        
-        // Create the fork net
-        PetriNet forkNet = assembleForkNet(forkNode)
-        
-        // Create the linear net for the actions after fork
-        PetriNet linearNet = assembleLinearNet(linearActions)
-        
-        // We need to connect the fork net to the linear net
-        // The fork net's end place should connect to the linear net's start place
-        // But this requires merging the two nets, which is complex
-        
-        // For now, let's just return the fork net and ignore the linear actions
-        // This is a simplified approach
-        return forkNet
     }
 
     private static PetriNet assembleLinearNet(List<ActionNode> actionNodes) {
@@ -275,7 +245,7 @@ class PetriNetCompiler {
         List<Place> branchStartPlaces = []
         List<Place> branchEndPlaces = []
         
-        // Process each branch
+         // Process each branch
         for (int branchIdx = 0; branchIdx < numBranches; branchIdx++) {
             List<ActivityNode> branchActions = node.branches.get(branchIdx)
             String branchLabel = PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_BRANCH_SUFFIX + (branchIdx + 1)
@@ -294,7 +264,7 @@ class PetriNetCompiler {
                 ActivityNode actionNode = branchActions.get(actionIdx)
                 if (actionNode instanceof ActionNode) {
                     ActionNode action = (ActionNode) actionNode
-                    String transitionLabel = TRANSITION_FORK_BRANCH_PREFIX + forkIndex + TRANSITION_FORK_BRANCH_SUFFIX + (branchIdx + 1)
+                    String transitionLabel = TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_BRANCH_SUFFIX + (branchIdx + 1)
                     Transition transition = builder.addTransition(transitionLabel, action.action, null)
                     
                     // Connect current place to transition
@@ -316,7 +286,7 @@ class PetriNetCompiler {
         // Create merge place and synchronization transition
         Place mergePlace = builder.addPlace(PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_MERGE_SUFFIX)
         Transition mergeSyncTransition = builder.addTransition(
-            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC_SUFFIX
+            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC
         )
         
         // Connect each branch end to merge sync transition
@@ -329,7 +299,7 @@ class PetriNetCompiler {
         
         // Create transition from merge to end
         Transition toEndTransition = builder.addTransition(
-            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END_SUFFIX
+            TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END
         )
         Place endPlace = builder.addPlace(PLACE_END)
         
