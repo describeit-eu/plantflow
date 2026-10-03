@@ -11,7 +11,7 @@ Apply canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-
 
 ## Domain
 
-Single-context: `CONTEXT.md` and `docs/adr/` at root. On consumption rules: `docs/agents/domain.md`.
+Single-context: `GLOSSARY.md` and `docs/adr/` at root. On consumption rules: `docs/agents/domain.md`.
 
 ## Quality
 
