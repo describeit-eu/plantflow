@@ -573,9 +573,68 @@ class DiagramValidatorSpec extends Specification {
         noExceptionThrown()
     }
 
-    def 'should pass validation for valid fork branches with multiple actions'() {
+     def 'should pass validation for valid fork branches with multiple actions'() {
         when:
         DiagramValidator.validateForkBranches([['a1', 'a2'], ['b1', 'b2', 'b3']])
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should validate fork diagram with valid ForkNode containing multiple branches'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([
+                [ValidationTestUtil.action('branch1 action1'), ValidationTestUtil.action('branch1 action2')],
+                [ValidationTestUtil.action('branch2 action1'), ValidationTestUtil.action('branch2 action2')]
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should validate fork diagram with exactly two branches'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([
+                [ValidationTestUtil.action('first branch')],
+                [ValidationTestUtil.action('second branch')]
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should validate fork diagram with more than two branches'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([
+                [ValidationTestUtil.action('branch 1')],
+                [ValidationTestUtil.action('branch 2')],
+                [ValidationTestUtil.action('branch 3')],
+                [ValidationTestUtil.action('branch 4')]
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
 
         then:
         noExceptionThrown()

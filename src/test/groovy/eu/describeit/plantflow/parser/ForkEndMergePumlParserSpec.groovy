@@ -64,7 +64,28 @@ class ForkEndMergePumlParserSpec extends Specification {
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message.contains('end merge') || ex.message.contains('fork')
+        ex.message.contains('Unclosed fork')
+    }
+
+    def 'should throw IllegalArgumentException with specific message for unclosed fork'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+            fork again
+              :action 2;
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'Unclosed fork - missing end merge'
     }
 
     def 'should throw IllegalArgumentException when end merge without active fork'() {
@@ -82,7 +103,46 @@ class ForkEndMergePumlParserSpec extends Specification {
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message.contains('end merge') || ex.message.contains('fork')
+        ex.message.contains('end merge without active fork context')
+    }
+
+    def 'should handle multiple nested fork structures correctly'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+              fork
+                :nested action 1;
+              fork again
+                :nested action 2;
+              end merge
+            fork again
+              :action 2;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
+        def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
+        def nested1Transition = net.transitions.find { it.actionKey == 'nested action 1' }
+        def nested2Transition = net.transitions.find { it.actionKey == 'nested action 2' }
+        
+        action1Transition != null
+        action2Transition != null
+        nested1Transition != null
+        nested2Transition != null
     }
 
     def 'should handle multiple branches in fork'() {
@@ -211,20 +271,153 @@ class ForkEndMergePumlParserSpec extends Specification {
         def net = ParserTestBase.parse(puml)
 
         then:
-         net != null
-         net.places.size() > 0
-         net.transitions.size() > 0
-         
-         and:
-         def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
-         def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
-         def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
-         def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
-         
-         action1Transition != null
-         action2Transition != null
-         action3Transition != null
-         action4Transition != null
+          net != null
+          net.places.size() > 0
+          net.transitions.size() > 0
+          
+          and:
+          def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
+          def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
+          def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
+          def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
+          
+          action1Transition != null
+          action2Transition != null
+          action3Transition != null
+          action4Transition != null
+    }
+
+    def 'should handle actions after fork completion'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :branch action 1;
+            fork again
+              :branch action 2;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def branch1Transition = net.transitions.find { it.actionKey == 'branch action 1' }
+        def branch2Transition = net.transitions.find { it.actionKey == 'branch action 2' }
+        
+        branch1Transition != null
+        branch2Transition != null
+        
+        // Test that the diagram has the expected structure for fork completion
+        net.places.any { it.label.contains('merge') || it.label.contains('end') }
+    }
+
+    def 'should handle end merge return true when pattern matches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+            fork again
+              :action 2;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        // Verify that end merge was processed correctly
+        net.places.any { it.label.contains('end merge') || it.label.contains('merge') }
+    }
+
+    def 'should handle fork with exactly two branches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+            fork again
+              :action 2;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
+        def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
+        
+        action1Transition != null
+        action2Transition != null
+    }
+
+    def 'should handle fork with many branches to test boundary conditions'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+            fork again
+              :action 2;
+            fork again
+              :action 3;
+            fork again
+              :action 4;
+            fork again
+              :action 5;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        // Test all actions are parsed correctly
+        def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
+        def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
+        def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
+        def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
+        def action5Transition = net.transitions.find { it.actionKey == 'action 5' }
+        
+        action1Transition != null
+        action2Transition != null
+        action3Transition != null
+        action4Transition != null
+        action5Transition != null
     }
 
     def 'should throw IllegalArgumentException when fork again without active fork context'() {

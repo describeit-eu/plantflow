@@ -377,6 +377,52 @@ class PetriNetCompilerSpec extends Specification {
         b1Transition != null
         b2Transition != null
         b3Transition != null
+        
+        and:
+        // Test place naming for multiple actions in branches
+        // This tests the conditional boundary in processBranchActions
+        def branch1Places = net.places.findAll { it.label.contains('P_fork_1_branch_1') }
+        def branch2Places = net.places.findAll { it.label.contains('P_fork_1_branch_2') }
+        
+        branch1Places.size() >= 2  // Should have places for each action + end place
+        branch2Places.size() >= 3  // Should have places for each action + end place
+        
+        // Check for specific place names that would be affected by the boundary condition
+        def branch1EndPlace = net.places.find { it.label == 'P_fork_1_branch_1_end' }
+        def branch2EndPlace = net.places.find { it.label == 'P_fork_1_branch_2_end' }
+        
+        branch1EndPlace != null
+        branch2EndPlace != null
+    }
+
+    def 'should compile fork with exactly two actions in first branch to test boundary'() {
+        given:
+        def branch1 = [new ActionNode('action1'), new ActionNode('action2')]
+        def branch2 = [new ActionNode('action3')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        // Test the specific place naming logic that uses actionIdx < totalActions - 1
+        def branch1Places = net.places.findAll { it.label.contains('P_fork_1_branch_1') }
+        def branch2Places = net.places.findAll { it.label.contains('P_fork_1_branch_2') }
+        
+        // For branch 1 with 2 actions, we should have intermediate places + end place
+        branch1Places.size() >= 2
+        // For branch 2 with 1 action, we should have at least the end place  
+        branch2Places.size() >= 1
+        
+        // Check that we have places with expected patterns
+        // The key is that the conditional boundary mutation should be killed by having multiple actions
+        net.places.any { it.label.contains('P_fork_1_branch_1') }
+        net.places.any { it.label.contains('P_fork_1_branch_2') }
     }
 
     def 'should throw IllegalArgumentException for null fork node'() {
