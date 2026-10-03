@@ -49,4 +49,18 @@ class ValidationTestUtil {
         builder.call(diagram)
         return diagram
     }
+
+    /**
+     * Creates a ForkNode with the given list of branches.
+     */
+    static ForkNode fork(List<ActivityNode> branches) {
+        return new ForkNode(branches)
+    }
+
+    /**
+     * Creates a ForkNode with the given activity node branches.
+     */
+    static ForkNode fork(ActivityNode... branches) {
+        return new ForkNode(Arrays.asList(branches))
+    }
 }

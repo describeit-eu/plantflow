@@ -14,6 +14,8 @@ class ActivityDiagram {
     boolean hasIf = false
     boolean hasElse = false
     boolean hasEndif = false
+    boolean hasFork = false
+    boolean hasEndMerge = false
     final List<ActivityNode> nodes = []
 
     ActivityDiagram() {
@@ -22,6 +24,16 @@ class ActivityDiagram {
     ActivityDiagram(boolean hasStart, boolean hasEnd, List<ActivityNode> nodes = []) {
         this.hasStart = hasStart
         this.hasEnd = hasEnd
+        if (nodes != null) {
+            this.nodes.addAll(nodes)
+        }
+    }
+
+    ActivityDiagram(boolean hasStart, boolean hasEnd, boolean hasFork, boolean hasEndMerge, List<ActivityNode> nodes = []) {
+        this.hasStart = hasStart
+        this.hasEnd = hasEnd
+        this.hasFork = hasFork
+        this.hasEndMerge = hasEndMerge
         if (nodes != null) {
             this.nodes.addAll(nodes)
         }
@@ -49,6 +61,16 @@ class ActivityDiagram {
 
     ActivityDiagram withEndif(boolean hasEndif = true) {
         this.hasEndif = hasEndif
+        return this
+    }
+
+    ActivityDiagram withFork(boolean hasFork = true) {
+        this.hasFork = hasFork
+        return this
+    }
+
+    ActivityDiagram withEndMerge(boolean hasEndMerge = true) {
+        this.hasEndMerge = hasEndMerge
         return this
     }
 

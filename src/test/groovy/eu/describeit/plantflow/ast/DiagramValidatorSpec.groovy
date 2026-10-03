@@ -363,4 +363,164 @@ class DiagramValidatorSpec extends Specification {
         new ActivityDiagram(true, true, [ValidationTestUtil.conditional('c', [], [])]).isConditional()
         !ValidationTestUtil.diagram(true, true, [ValidationTestUtil.action('a')]).isConditional()
     }
+
+    def 'ForkNode should store safe unmodifiable copies of branches'() {
+        given:
+        def branchList = [ValidationTestUtil.action('branch1'), ValidationTestUtil.action('branch2')]
+        def node = ValidationTestUtil.fork(branchList)
+
+        when:
+        branchList.add(ValidationTestUtil.action('branch3'))
+
+        then:
+        node.branches.size() == 2
+        node.branches[0].action == 'branch1'
+        node.branches[1].action == 'branch2'
+
+        when:
+        node.branches.add(ValidationTestUtil.action('fail'))
+
+        then:
+        thrown(UnsupportedOperationException)
+    }
+
+    def 'ForkNode should safely handle null branches list'() {
+        when:
+        def node = ValidationTestUtil.fork(null)
+
+        then:
+        node.branches != null
+        node.branches.isEmpty()
+    }
+
+    def 'ForkNode should implement equals, hashCode, and toString'() {
+        given:
+        def node1 = ValidationTestUtil.fork([ValidationTestUtil.action('a'), ValidationTestUtil.action('b')])
+        def node2 = ValidationTestUtil.fork([ValidationTestUtil.action('a'), ValidationTestUtil.action('b')])
+        def node3 = ValidationTestUtil.fork([ValidationTestUtil.action('c')])
+
+        expect:
+        node1 == node2
+        node1 != node3
+        node1.hashCode() == node2.hashCode()
+        node1.toString().contains('ForkNode')
+    }
+
+    def 'ActivityDiagram should support hasFork and hasEndMerge fields'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+    }
+
+    def 'ActivityDiagram constructor should support hasFork and hasEndMerge'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, true, true)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+    }
+
+    def 'ActivityDiagram withFork and withEndMerge should be fluent'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart()
+            .withEnd()
+            .withFork()
+            .withEndMerge()
+
+        expect:
+        diagram instanceof ActivityDiagram
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+    }
+
+    def 'ActivityDiagram withFork should allow setting to false'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withFork(true)
+            .withFork(false)
+
+        expect:
+        !diagram.hasFork
+    }
+
+    def 'ActivityDiagram withEndMerge should allow setting to false'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withEndMerge(true)
+            .withEndMerge(false)
+
+        expect:
+        !diagram.hasEndMerge
+    }
+
+    def 'ActivityDiagram constructor should handle null nodes list'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, null)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.nodes.isEmpty()
+    }
+
+    def 'ActivityDiagram constructor with hasFork and hasEndMerge should handle null nodes list'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, true, true, null)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+        diagram.nodes.isEmpty()
+    }
+
+    def 'ActivityDiagram addNode should handle null node'() {
+        given:
+        def diagram = new ActivityDiagram()
+
+        when:
+        diagram.addNode(null)
+
+        then:
+        noExceptionThrown()
+        diagram.nodes.isEmpty()
+    }
+
+    def 'ActivityDiagram with forks and endMerge should work with ForkNode'() {
+        given:
+        def forkNode = ValidationTestUtil.fork([
+            ValidationTestUtil.action('branch1'),
+            ValidationTestUtil.action('branch2')
+        ])
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(forkNode)
+
+        expect:
+        diagram.hasStart
+        diagram.hasEnd
+        diagram.hasFork
+        diagram.hasEndMerge
+        diagram.nodes.size() == 1
+        diagram.nodes[0] == forkNode
+    }
 }
