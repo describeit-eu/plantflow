@@ -132,6 +132,16 @@ end
     }
 
     /**
+     * Creates a fork diagram PlantUML string with the given number of branches.
+     * Each branch contains a single action with the format "action N".
+     */
+    static String createForkPumlWithBranchCount(int branchCount) {
+        def branches = []
+        (1..branchCount).each { i -> branches.add(["action ${i}"]) }
+        return createForkPumlWithBranches(branches)
+    }
+
+    /**
      * Validates that a parsed PetriNet has the expected structure.
      * Verifies place count, transition count, start place, and end place.
      */
