@@ -9,15 +9,15 @@ import groovy.transform.ToString
 @ToString
 class ForkNode implements ActivityNode {
 
-    final List<ActivityNode> branches
+    final List<List<ActivityNode>> branches
 
-    ForkNode(List<ActivityNode> branches) {
+    ForkNode(List<List<ActivityNode>> branches) {
         this.branches = branches != null ?
             Collections.unmodifiableList(new ArrayList<>(branches)) :
-            Collections.<ActivityNode>emptyList()
+            Collections.<List<ActivityNode>>emptyList()
     }
 
-    List<ActivityNode> getBranches() {
+    List<List<ActivityNode>> getBranches() {
         return branches
     }
 }

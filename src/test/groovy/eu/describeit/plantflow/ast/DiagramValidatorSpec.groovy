@@ -490,6 +490,115 @@ class DiagramValidatorSpec extends Specification {
         diagram.nodes.isEmpty()
     }
 
+    @Unroll
+    def 'should throw IllegalArgumentException for invalid fork structure: #scenario'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(hasStart)
+            .withEnd(hasEnd)
+            .withFork(hasFork)
+            .withEndMerge(hasEndMerge)
+        nodes.each { diagram.addNode(it) }
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario | hasStart | hasEnd | hasFork | hasEndMerge | nodes | expectedMessage
+        'fork without end merge' | true | true | true | false | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_NO_END_MERGE
+        'end merge without fork' | true | true | false | true | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_NO_FORK
+        'fork without start' | false | true | true | true | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_MUST_CONTAIN_START
+        'fork without end' | true | false | true | true | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_MUST_CONTAIN_END
+        'fork with single branch' | true | true | true | true | [ValidationTestUtil.fork([['a']])] | DiagramValidator.ERR_MIN_BRANCHES
+        'fork with empty branches' | true | true | true | true | [ValidationTestUtil.fork([])] | DiagramValidator.ERR_BRANCH_EMPTY
+         'fork with null branches' | true | true | true | true | [new ForkNode(null)] | DiagramValidator.ERR_BRANCH_EMPTY
+         'fork with empty nodes and no fork node' | true | true | true | true | [] | DiagramValidator.ERR_BRANCH_EMPTY
+    }
+
+    def 'should pass validation for valid fork ActivityDiagram'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([['a'], ['b']]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for valid fork ActivityDiagram constructed without flags'() {
+        given:
+        def diagram = ValidationTestUtil.diagram(true, true, [
+            ValidationTestUtil.fork([['a'], ['b']])
+        ])
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for valid fork with multiple actions per branch'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([
+                [ValidationTestUtil.action('branch1 action1'), ValidationTestUtil.action('branch1 action2')],
+                [ValidationTestUtil.action('branch2 action1'), ValidationTestUtil.action('branch2 action2')]
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for fork with invalid branches: #scenario'() {
+        when:
+        DiagramValidator.validateForkBranches(branches)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario | branches | expectedMessage
+        'null branches' | null | DiagramValidator.ERR_BRANCH_EMPTY
+        'empty branches' | [] | DiagramValidator.ERR_BRANCH_EMPTY
+        'single branch' | [['a']] | DiagramValidator.ERR_MIN_BRANCHES
+        'branch with null actions' | [['a'], null] | DiagramValidator.ERR_BRANCH_EMPTY
+        'branch with empty actions' | [['a'], []] | DiagramValidator.ERR_BRANCH_EMPTY
+    }
+
+    @Unroll
+    def 'should pass validation for valid fork branches with #scenario'() {
+        when:
+        DiagramValidator.validateForkBranches(branches)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        scenario | branches
+        'two branches' | [['a'], ['b']]
+        'branches with multiple actions' | [['a1', 'a2'], ['b1', 'b2', 'b3']]
+    }
+
     def 'ActivityDiagram addNode should handle null node'() {
         given:
         def diagram = new ActivityDiagram()

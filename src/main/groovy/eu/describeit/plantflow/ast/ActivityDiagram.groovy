@@ -88,4 +88,8 @@ class ActivityDiagram {
     boolean isConditional() {
         return hasIf || hasElse || hasEndif || nodes.any { ActivityNode node -> node instanceof ConditionalNode }
     }
+
+    boolean hasForkStructure() {
+        return hasFork || hasEndMerge || nodes.any { ActivityNode node -> node instanceof ForkNode }
+    }
 }

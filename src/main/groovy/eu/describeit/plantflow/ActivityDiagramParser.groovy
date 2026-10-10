@@ -2,7 +2,9 @@ package eu.describeit.plantflow
 
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
+import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.engine.PetriNet
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -20,8 +22,12 @@ class ActivityDiagramParser {
     private static final Pattern IF_PATTERN = Pattern.compile(/^\s*if\s*\(\s*(.+?)\s*\)\s*then\s*\(\s*(.+?)\s*\)\s*$/)
     private static final Pattern ELSE_PATTERN = Pattern.compile(/^\s*else\s*\(\s*(.+?)\s*\)\s*$/)
     private static final Pattern ENDIF_PATTERN = Pattern.compile(/^\s*endif\s*$/)
+    private static final Pattern FORK_PATTERN = Pattern.compile(/^\s*fork\s*$/)
+    private static final Pattern FORK_AGAIN_PATTERN = Pattern.compile(/^\s*fork again\s*$/)
+    private static final Pattern END_MERGE_PATTERN = Pattern.compile(/^\s*end merge\s*$/)
 
     private static final String START_KEYWORD = 'start', END_KEYWORD = 'end', STOP_KEYWORD = 'stop', IF_KEYWORD = 'if'
+    private static final String FORK_KEYWORD = 'fork', FORK_AGAIN_KEYWORD = 'fork again', END_MERGE_KEYWORD = 'end merge'
     private static final String STARTUML = '@startuml', ENDUML = '@enduml', COMMENT = '\''
     private static final List<String> IGNORED = [COMMENT, STARTUML, ENDUML]
 
@@ -35,8 +41,18 @@ class ActivityDiagramParser {
     PetriNet parse(String pumlContent) {
         DiagramValidator.validateContent(pumlContent)
         List<String> lines = pumlContent.readLines()
-        ActivityDiagram diagram = lines.any { String line -> line.trim().startsWith(IF_KEYWORD) } ?
-            parseConditional(lines) : parseLinear(lines)
+        ActivityDiagram diagram
+        if (lines.any { String line -> line.trim().startsWith(IF_KEYWORD) }) {
+            diagram = parseConditional(lines)
+        } else if (lines.any { String line -> 
+            line.trim().startsWith(FORK_KEYWORD) || 
+            line.trim().startsWith(FORK_AGAIN_KEYWORD) || 
+            line.trim().startsWith(END_MERGE_KEYWORD) 
+        }) {
+            diagram = parseFork(lines)
+        } else {
+            diagram = parseLinear(lines)
+        }
         DiagramValidator.validate(diagram)
         return compiler.compile(diagram)
     }
@@ -74,6 +90,106 @@ class ActivityDiagramParser {
         }
         finalizeConditional(diagram, guard, thenActions, elseActions)
         return diagram
+    }
+
+    private ActivityDiagram parseFork(List<String> lines) {
+        ActivityDiagram diagram = new ActivityDiagram()
+        List<List<ActionNode>> branches = []
+        int currentBranchIndex = -1
+        Stack<Integer> forkStack = [] as Stack
+        boolean forkComplete = false
+        
+        for (String rawLine : lines) {
+            String line = rawLine.trim()
+            
+            if (checkControl(line, diagram)) continue
+            
+            if (handleForkMatching(line, diagram, forkStack, branches)) {
+                currentBranchIndex = branches.size() - 1
+                continue
+            }
+            
+            if (handleForkAgainMatching(line, forkStack, branches)) {
+                currentBranchIndex = branches.size() - 1
+                continue
+            }
+            
+            if (handleEndMergeMatching(line, diagram, forkStack)) {
+                currentBranchIndex = -1
+                forkComplete = forkStack.isEmpty()
+                continue
+            }
+            
+            handleActionRecording(line, diagram, branches, currentBranchIndex, forkComplete)
+        }
+        
+        validateForkCompletion(forkStack)
+        finalizeForkNode(diagram, branches)
+        
+        return diagram
+    }
+
+    private boolean handleForkMatching(String line, ActivityDiagram diagram, Stack<Integer> forkStack, 
+                                     List<List<ActionNode>> branches) {
+        Matcher forkMatcher = FORK_PATTERN.matcher(line)
+        if (forkMatcher.matches()) {
+            diagram.hasFork = true
+            forkStack.push(branches.size())
+            branches.add([])
+            return true
+        }
+        return false
+    }
+
+    private boolean handleForkAgainMatching(String line, Stack<Integer> forkStack, 
+                                           List<List<ActionNode>> branches) {
+        Matcher forkAgainMatcher = FORK_AGAIN_PATTERN.matcher(line)
+        if (forkAgainMatcher.matches()) {
+            if (forkStack.isEmpty()) {
+                throw new IllegalArgumentException('fork again without active fork context')
+            }
+            branches.add([])
+            return true
+        }
+        return false
+    }
+
+    private boolean handleEndMergeMatching(String line, ActivityDiagram diagram, Stack<Integer> forkStack) {
+        Matcher endMergeMatcher = END_MERGE_PATTERN.matcher(line)
+        if (endMergeMatcher.matches()) {
+            if (forkStack.isEmpty()) {
+                throw new IllegalArgumentException('end merge without active fork context')
+            }
+            diagram.hasEndMerge = true
+            forkStack.pop()
+            return true
+        }
+        return false
+    }
+
+    private void handleActionRecording(String line, ActivityDiagram diagram, List<List<ActionNode>> branches,
+                                      int currentBranchIndex, boolean forkComplete) {
+        Matcher actionMatcher = ACTION_PATTERN.matcher(line)
+        if (actionMatcher.matches()) {
+            if (currentBranchIndex >= 0 && currentBranchIndex < branches.size()) {
+                branches.get(currentBranchIndex).add(new ActionNode(actionMatcher.group(1).trim()))
+            } else if (forkComplete) {
+                diagram.addNode(new ActionNode(actionMatcher.group(1).trim()))
+            }
+        }
+    }
+
+    private void validateForkCompletion(Stack<Integer> forkStack) {
+        if (!forkStack.isEmpty()) {
+            throw new IllegalArgumentException('Unclosed fork - missing end merge')
+        }
+    }
+
+    private void finalizeForkNode(ActivityDiagram diagram, List<List<ActionNode>> branches) {
+        if (!branches.isEmpty()) {
+            List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
+            diagram.addNode(new ForkNode(branchList))
+        }
     }
 
     private Branch updateBranch(String line, ActivityDiagram diagram, Branch branch) {

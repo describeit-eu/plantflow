@@ -83,6 +83,65 @@ end
     }
 
     /**
+     * Creates a fork diagram PlantUML string with multiple branches.
+     */
+    static String createForkPuml(List<String> branch1Actions, List<String> branch2Actions, List<String> branch3Actions) {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << 'fork\n'
+        branch1Actions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << 'fork again\n'
+        branch2Actions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << 'fork again\n'
+        branch3Actions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << 'end merge\n'
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
+    /**
+     * Creates a fork diagram PlantUML string with variable number of branches.
+     */
+    static String createForkPumlWithBranches(List<List<String>> branches) {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << 'fork\n'
+        
+        branches.eachWithIndex { branchActions, index ->
+            if (index > 0) {
+                sb << 'fork again\n'
+            }
+            branchActions.each { action ->
+                sb << "  :${action};\n"
+            }
+        }
+        
+        sb << 'end merge\n'
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
+    /**
+     * Creates a fork diagram PlantUML string with the given number of branches.
+     * Each branch contains a single action with the format "action N".
+     */
+    static String createForkPumlWithBranchCount(int branchCount) {
+        def branches = []
+        (1..branchCount).each { i -> branches.add(["action ${i}"]) }
+        return createForkPumlWithBranches(branches)
+    }
+
+    /**
      * Validates that a parsed PetriNet has the expected structure.
      * Verifies place count, transition count, start place, and end place.
      */

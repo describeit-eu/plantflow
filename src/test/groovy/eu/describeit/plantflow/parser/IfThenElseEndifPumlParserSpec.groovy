@@ -120,8 +120,127 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         when:
         ParserTestBase.parse(puml)
 
+         then:
+         def ex = thrown(IllegalArgumentException)
+         ex.message.contains('then') || ex.message.contains('else')
+     }
+
+    def 'should handle conditional with else block correctly'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            if (condition) then (yes)
+              :then action;
+            else (no)
+              :else action;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
         then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message.contains('then') || ex.message.contains('else')
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def thenTransition = net.transitions.find { it.actionKey == 'then action' }
+        def elseTransition = net.transitions.find { it.actionKey == 'else action' }
+        
+        thenTransition != null
+        elseTransition != null
+    }
+
+    def 'should handle conditional with explicit else block'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            if (x > 0) then (positive)
+              :process positive;
+            else (non-positive)
+              :process non-positive;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def positiveTransition = net.transitions.find { it.actionKey == 'process positive' }
+        def nonPositiveTransition = net.transitions.find { it.actionKey == 'process non-positive' }
+        
+        positiveTransition != null
+        nonPositiveTransition != null
+    }
+
+    def 'should handle conditional with guard containing spaces'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            if ( x > 0 ) then (yes)
+              :then action;
+            else (no)
+              :else action;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+    }
+
+    def 'should handle conditional with multiple actions in branches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            if (condition) then (yes)
+              :action 1;
+              :action 2;
+            else (no)
+              :action 3;
+              :action 4;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+        
+        and:
+        def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
+        def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
+        def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
+        def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
+        
+        action1Transition != null
+        action2Transition != null
+        action3Transition != null
+        action4Transition != null
     }
 }
