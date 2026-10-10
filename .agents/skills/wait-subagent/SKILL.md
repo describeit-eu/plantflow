@@ -1,7 +1,6 @@
 ---
 name: wait-subagent
 description: Spawn a subagent with user's message, wait for result, close it, return result.
-disable-model-invocation: true
 ---
 
 Split the first argument on comma to get name and timeout (format: /spawn-subagent `<name>,<timeout>` <message>). You must execute the following steps in sequence. You must spawn a subagent.
