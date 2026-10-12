@@ -1,3 +1,3 @@
 interface:
-  display_name: "Wait subagent"
-  short_description: "Executes a subagent with user's message"
+  display_name: "Wait Subagent"
+  short_description: "Run a subagent to completion and return its result"

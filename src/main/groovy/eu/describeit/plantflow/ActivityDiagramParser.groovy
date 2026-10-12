@@ -117,6 +117,9 @@ class ActivityDiagramParser {
             if (handleEndMergeMatching(line, diagram, forkStack)) {
                 currentBranchIndex = -1
                 forkComplete = forkStack.isEmpty()
+                if (forkComplete) {
+                    addForkNodeToDiagram(diagram, branches)
+                }
                 continue
             }
             
@@ -124,8 +127,7 @@ class ActivityDiagramParser {
         }
         
         validateForkCompletion(forkStack)
-        finalizeForkNode(diagram, branches)
-        
+
         return diagram
     }
 
@@ -167,6 +169,13 @@ class ActivityDiagramParser {
         return false
     }
 
+    private void addForkNodeToDiagram(ActivityDiagram diagram, List<List<ActionNode>> branches) {
+        if (!branches.isEmpty()) {
+            List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
+            diagram.addNode(new ForkNode(branchList))
+        }
+    }
+
     private void handleActionRecording(String line, ActivityDiagram diagram, List<List<ActionNode>> branches,
                                       int currentBranchIndex, boolean forkComplete) {
         Matcher actionMatcher = ACTION_PATTERN.matcher(line)
@@ -182,13 +191,6 @@ class ActivityDiagramParser {
     private void validateForkCompletion(Stack<Integer> forkStack) {
         if (!forkStack.isEmpty()) {
             throw new IllegalArgumentException('Unclosed fork - missing end merge')
-        }
-    }
-
-    private void finalizeForkNode(ActivityDiagram diagram, List<List<ActionNode>> branches) {
-        if (!branches.isEmpty()) {
-            List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
-            diagram.addNode(new ForkNode(branchList))
         }
     }
 

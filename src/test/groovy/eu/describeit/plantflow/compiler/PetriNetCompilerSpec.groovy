@@ -1,6 +1,7 @@
 package eu.describeit.plantflow.compiler
 
 import eu.describeit.plantflow.PetriNetCompiler
+import eu.describeit.plantflow.PetriNetTestUtil
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
@@ -298,10 +299,10 @@ class PetriNetCompilerSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(8, 8) == 1
     }
 
-    def 'should compile fork AST with two branches'() {
+    def 'should compile ForkNode via compileFork method'() {
         given:
-        def branch1 = [new ActionNode('fork_a'), new ActionNode('fork_b')]
-        def branch2 = [new ActionNode('fork_c')]
+        def branch1 = [new ActionNode('fork_a')]
+        def branch2 = [new ActionNode('fork_b')]
         def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
 
         when:
@@ -311,27 +312,20 @@ class PetriNetCompilerSpec extends Specification {
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
-        and:
         net.startPlace != null
         net.endPlace != null
-        
+
         and:
         def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
         def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        def toEndTransition = net.transitions.find { it.label == 'T_fork_1_to_end' }
-        
         forkTransition != null
         mergeSyncTransition != null
-        toEndTransition != null
     }
 
-    def 'should compile fork AST with single action branches'() {
+    @Unroll
+    def 'should compile fork AST with #branches.size() branches'() {
         given:
-        def branch1 = [new ActionNode('action1')]
-        def branch2 = [new ActionNode('action2')]
-        def branch3 = [new ActionNode('action3')]
-        def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
+        def forkNode = new ForkNode(branches as List<List<ActivityNode>>)
 
         when:
         def net = PetriNetCompiler.compileFork(forkNode)
@@ -340,46 +334,24 @@ class PetriNetCompilerSpec extends Specification {
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+        net.startPlace != null
+        net.endPlace != null
+
         and:
-        def action1Transition = net.transitions.find { it.actionKey == 'action1' }
-        def action2Transition = net.transitions.find { it.actionKey == 'action2' }
-        def action3Transition = net.transitions.find { it.actionKey == 'action3' }
-        
-        action1Transition != null
-        action2Transition != null
-        action3Transition != null
+        net.transitions.find { it.label == 'T_fork_1' } != null
+        net.transitions.find { it.label == 'T_fork_1_merge_sync' } != null
+        net.transitions.find { it.label == 'T_fork_1_to_end' } != null
+
+        and:
+        allActions.every { action -> net.transitions.find { it.actionKey == action } != null }
+
+        where:
+        branches                                                            | allActions
+        [[new ActionNode('fork_a'), new ActionNode('fork_b')], [new ActionNode('fork_c')]] | ['fork_a', 'fork_b', 'fork_c']
+        [[new ActionNode('action1')], [new ActionNode('action2')], [new ActionNode('action3')]] | ['action1', 'action2', 'action3']
     }
 
-    def 'should compile fork AST with multiple action branches'() {
-        given:
-        def branch1 = [new ActionNode('a1'), new ActionNode('a2')]
-        def branch2 = [new ActionNode('b1'), new ActionNode('b2'), new ActionNode('b3')]
-        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
-
-        when:
-        def net = PetriNetCompiler.compileFork(forkNode)
-
-        then:
-        net != null
-        net.places.size() > 0
-        net.transitions.size() > 0
-        
-        and:
-        def a1Transition = net.transitions.find { it.actionKey == 'a1' }
-        def a2Transition = net.transitions.find { it.actionKey == 'a2' }
-        def b1Transition = net.transitions.find { it.actionKey == 'b1' }
-        def b2Transition = net.transitions.find { it.actionKey == 'b2' }
-        def b3Transition = net.transitions.find { it.actionKey == 'b3' }
-        
-        a1Transition != null
-        a2Transition != null
-        b1Transition != null
-        b2Transition != null
-        b3Transition != null
-    }
-
-    def 'should compile fork AST and verify place naming for multiple actions in branches'() {
+    def 'should compile fork AST with multiple action branches and verify transitions and place naming'() {
         given:
         def branch1 = [new ActionNode('a1'), new ActionNode('a2')]
         def branch2 = [new ActionNode('b1'), new ActionNode('b2'), new ActionNode('b3')]
@@ -392,22 +364,19 @@ class PetriNetCompilerSpec extends Specification {
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+
         and:
-        // Test place naming for multiple actions in branches
-        // This tests the conditional boundary in processBranchActions
-        def branch1Places = net.places.findAll { it.label.contains('P_fork_1_branch_1') }
-        def branch2Places = net.places.findAll { it.label.contains('P_fork_1_branch_2') }
-        
-        branch1Places.size() >= 2  // Should have places for each action + end place
-        branch2Places.size() >= 3  // Should have places for each action + end place
-        
-        // Check for specific place names that would be affected by the boundary condition
-        def branch1EndPlace = net.places.find { it.label == 'P_fork_1_branch_1_end' }
-        def branch2EndPlace = net.places.find { it.label == 'P_fork_1_branch_2_end' }
-        
-        branch1EndPlace != null
-        branch2EndPlace != null
+        net.transitions.find { it.actionKey == 'a1' } != null
+        net.transitions.find { it.actionKey == 'a2' } != null
+        net.transitions.find { it.actionKey == 'b1' } != null
+        net.transitions.find { it.actionKey == 'b2' } != null
+        net.transitions.find { it.actionKey == 'b3' } != null
+
+        and:
+        net.places.findAll { it.label.contains('P_fork_1_branch_1') }.size() >= 2
+        net.places.findAll { it.label.contains('P_fork_1_branch_2') }.size() >= 3
+        net.places.find { it.label == 'P_fork_1_branch_1_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2_end' } != null
     }
 
     def 'should throw IllegalArgumentException for null fork node'() {
@@ -462,6 +431,152 @@ class PetriNetCompilerSpec extends Specification {
         then:
         def ex = thrown(IllegalArgumentException)
         ex.message == PetriNetCompiler.ERR_BRANCH_EMPTY
+    }
+
+    def 'should compile fork diagram with post-merge actions'() {
+        given:
+        def branch1 = [new ActionNode('action 1')]
+        def branch2 = [new ActionNode('action 2')]
+        def branch3 = [new ActionNode('action 3'), new ActionNode('action 4')]
+        def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
+        def postAction = new ActionNode('action 5')
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode, postAction])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+
+        and:
+        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
+        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
+        forkTransition != null
+        mergeSyncTransition != null
+
+        and:
+        def action5Transition = net.transitions.find { it.actionKey == 'action 5' }
+        action5Transition != null
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+
+        and:
+        net.incidenceMatrix.getInputWeight(mergePlace.index, action5Transition.index) == 1
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, action5Transition.index) == 1
+    }
+
+    def 'should compile fork with postForkActions via compileFork two-arg method'() {
+        given:
+        def branch1 = [new ActionNode('branch a')]
+        def branch2 = [new ActionNode('branch b')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+        def postActions = [new ActionNode('post 1'), new ActionNode('post 2')]
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode, postActions)
+
+        then:
+        net != null
+        def post1 = net.transitions.find { it.actionKey == 'post 1' }
+        def post2 = net.transitions.find { it.actionKey == 'post 2' }
+        post1 != null
+        post2 != null
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+        net.incidenceMatrix.getInputWeight(mergePlace.index, post1.index) == 1
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, post2.index) == 1
+    }
+
+    def 'should compile fork diagram with another ForkNode after first fork (second fork ignored in post-fork extraction)'() {
+        given:
+        def branch1 = [new ActionNode('action 1')]
+        def branch2 = [new ActionNode('action 2')]
+        def forkNode1 = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+        def branch3 = [new ActionNode('action 3')]
+        def branch4 = [new ActionNode('action 4')]
+        def forkNode2 = new ForkNode([branch3, branch4] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode1, forkNode2])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action 1' } != null
+        net.transitions.find { it.actionKey == 'action 2' } != null
+    }
+
+    def 'should compile fork with correct branch transition and place labels'() {
+        given:
+        def branch1 = [new ActionNode('a1')]
+        def branch2 = [new ActionNode('a2')]
+        def branch3 = [new ActionNode('a3')]
+        def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net.places.find { it.label == 'P_fork_1_branch_1' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3' } != null
+
+        and:
+        net.places.find { it.label == 'P_fork_1_branch_1_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3_end' } != null
+
+        and:
+        net.transitions.find { it.label == 'T_fork_1_branch_1' } != null
+        net.transitions.find { it.label == 'T_fork_1_branch_2' } != null
+        net.transitions.find { it.label == 'T_fork_1_branch_3' } != null
+    }
+
+    def 'should compile fork with two branches and verify fork transition has 1 input and N outputs'() {
+        given:
+        def branch1 = [new ActionNode('a1')]
+        def branch2 = [new ActionNode('a2')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
+        forkTransition != null
+
+        and:
+        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 2)
+
+        and:
+        net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
+    }
+
+    def 'should compile fork with three branches and verify merge transition has N inputs and 1 output'() {
+        given:
+        def branch1 = [new ActionNode('a1')]
+        def branch2 = [new ActionNode('a2')]
+        def branch3 = [new ActionNode('a3')]
+        def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
+        mergeSyncTransition != null
+
+        and:
+        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+        net.incidenceMatrix.getOutputWeight(mergePlace.index, mergeSyncTransition.index) == 1
     }
 
     @Unroll

@@ -73,12 +73,6 @@
       "skillPath": "skills/engineering/implement/SKILL.md",
       "computedHash": "b6371a0a6723bad551f3adc721e3729a6a97acfc3670dc2bdea198bbe78408c0"
     },
-    "implement-afk": {
-      "source": "cristal-ise/skills",
-      "sourceType": "github",
-      "skillPath": "skills/implement-afk/SKILL.md",
-      "computedHash": "b476e57e4b50b12cd511b0eeef7e17ac2db667f954b4bbff73cb3aed9288dda1"
-    },
     "implement-spec": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -173,7 +167,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/wait-subagent/SKILL.md",
-      "computedHash": "8a645c5fc5470c5c2206d722e28e6b6c5c1096808c46f379d314b1310a9674e6"
+      "computedHash": "da14a9c437669f74c35dec38ae8bf2b14f6f7f97bc66984c638ec7f71623561b"
     },
     "wait-what": {
       "source": "mattpocock/skills",

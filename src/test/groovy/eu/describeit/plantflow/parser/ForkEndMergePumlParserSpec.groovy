@@ -1,5 +1,6 @@
 package eu.describeit.plantflow.parser
 
+import eu.describeit.plantflow.PetriNetTestUtil
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -209,6 +210,229 @@ class ForkEndMergePumlParserSpec extends Specification {
             end
             @enduml
         ''' | 'branch'
+    }
+
+    def 'should compile forkEndMerge.puml with correct fork transition structure (1 input, N outputs)'() {
+        when:
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+
+        then:
+        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
+        forkTransition != null
+
+        and:
+        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 3)
+
+        and:
+        net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
+    }
+
+    def 'should compile forkEndMerge.puml with correct merge transition structure (N inputs, 1 output)'() {
+        when:
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+
+        then:
+        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
+        mergeSyncTransition != null
+
+        and:
+        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+        net.incidenceMatrix.getOutputWeight(mergePlace.index, mergeSyncTransition.index) == 1
+    }
+
+    def 'should compile forkEndMerge.puml with post-merge action connected to merge place'() {
+        when:
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+
+        then:
+        def action5Transition = net.transitions.find { it.actionKey == 'action 5' }
+        action5Transition != null
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+
+        and:
+        net.incidenceMatrix.getInputWeight(mergePlace.index, action5Transition.index) == 1
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, action5Transition.index) == 1
+    }
+
+    def 'should compile forkEndMerge.puml with all branch actions present'() {
+        when:
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+
+        then:
+        def action1 = net.transitions.find { it.actionKey == 'action 1' }
+        def action2 = net.transitions.find { it.actionKey == 'action 2' }
+        def action3 = net.transitions.find { it.actionKey == 'action 3' }
+        def action4 = net.transitions.find { it.actionKey == 'action 4' }
+        def action5 = net.transitions.find { it.actionKey == 'action 5' }
+
+        action1 != null
+        action2 != null
+        action3 != null
+        action4 != null
+        action5 != null
+    }
+
+    def 'should compile forkEndMerge.puml with correct branch end places feeding merge sync'() {
+        when:
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+
+        then:
+        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
+        mergeSyncTransition != null
+
+        and:
+        def branch1EndPlace = net.places.find { it.label == 'P_fork_1_branch_1_end' }
+        def branch2EndPlace = net.places.find { it.label == 'P_fork_1_branch_2_end' }
+        def branch3EndPlace = net.places.find { it.label == 'P_fork_1_branch_3_end' }
+
+        branch1EndPlace != null
+        branch2EndPlace != null
+        branch3EndPlace != null
+
+        and:
+        net.incidenceMatrix.getInputWeight(branch1EndPlace.index, mergeSyncTransition.index) == 1
+        net.incidenceMatrix.getInputWeight(branch2EndPlace.index, mergeSyncTransition.index) == 1
+        net.incidenceMatrix.getInputWeight(branch3EndPlace.index, mergeSyncTransition.index) == 1
+    }
+
+    def 'should compile forkEndMerge.puml with correct place and transition counts'() {
+        when:
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+
+        then:
+        net.startPlace.label == 'start'
+        net.endPlace.label == 'end'
+
+        and:
+        net.places.find { it.label == 'P_fork_1_branch_1' } != null
+        net.places.find { it.label == 'P_fork_1_branch_1_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3_1' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3_end' } != null
+        net.places.find { it.label == 'P_fork_1_merge' } != null
+
+        and:
+        net.transitions.find { it.label == 'T_fork_1' } != null
+        net.transitions.find { it.label == 'T_fork_1_merge_sync' } != null
+    }
+
+    def 'should compile fork with post-merge actions from string and verify structure'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :branch a;
+            fork again
+              :branch b;
+            end merge
+            :after merge 1;
+            :after merge 2;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        def afterMerge1 = net.transitions.find { it.actionKey == 'after merge 1' }
+        def afterMerge2 = net.transitions.find { it.actionKey == 'after merge 2' }
+        afterMerge1 != null
+        afterMerge2 != null
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+
+        and:
+        net.incidenceMatrix.getInputWeight(mergePlace.index, afterMerge1.index) == 1
+
+        and:
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, afterMerge2.index) == 1
+    }
+
+    def 'should parse fork diagram with comment lines between fork and end merge'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              'this is a comment
+              :action a;
+              'another comment
+            fork again
+              :action b;
+            end merge
+            'comment after merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
+    def 'should parse fork diagram with action before fork keyword (ignored)'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :before fork;
+            fork
+              :action a;
+            fork again
+              :action b;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
+    def 'should parse fork diagram with unrecognized line (ignored)'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action a;
+              some unrecognized line
+            fork again
+              :action b;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
     }
 
 }
