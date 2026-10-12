@@ -1,5 +1,6 @@
 package eu.describeit.plantflow.parser
 
+import eu.describeit.plantflow.PetriNetTestUtil
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -220,9 +221,7 @@ class ForkEndMergePumlParserSpec extends Specification {
         forkTransition != null
 
         and:
-        def io = countTransitionIO(net, forkTransition)
-        io[0] == 1
-        io[1] == 3
+        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 3)
 
         and:
         net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
@@ -237,9 +236,7 @@ class ForkEndMergePumlParserSpec extends Specification {
         mergeSyncTransition != null
 
         and:
-        def io = countTransitionIO(net, mergeSyncTransition)
-        io[0] == 3
-        io[1] == 1
+        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
 
         and:
         def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
@@ -436,16 +433,6 @@ class ForkEndMergePumlParserSpec extends Specification {
         net != null
         net.transitions.find { it.actionKey == 'action a' } != null
         net.transitions.find { it.actionKey == 'action b' } != null
-    }
-
-    private static int[] countTransitionIO(def net, def transition) {
-        int inputCount = 0
-        int outputCount = 0
-        net.places.each { place ->
-            if (net.incidenceMatrix.getInputWeight(place.index, transition.index) > 0) inputCount++
-            if (net.incidenceMatrix.getOutputWeight(place.index, transition.index) > 0) outputCount++
-        }
-        [inputCount, outputCount] as int[]
     }
 
 }
