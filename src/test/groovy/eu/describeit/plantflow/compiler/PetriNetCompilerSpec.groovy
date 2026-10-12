@@ -521,6 +521,49 @@ class PetriNetCompilerSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, action5Transition.index) == 1
     }
 
+    def 'should compile fork with postForkActions via compileFork two-arg method'() {
+        given:
+        def branch1 = [new ActionNode('branch a')]
+        def branch2 = [new ActionNode('branch b')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+        def postActions = [new ActionNode('post 1'), new ActionNode('post 2')]
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode, postActions)
+
+        then:
+        net != null
+        def post1 = net.transitions.find { it.actionKey == 'post 1' }
+        def post2 = net.transitions.find { it.actionKey == 'post 2' }
+        post1 != null
+        post2 != null
+
+        and:
+        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
+        mergePlace != null
+        net.incidenceMatrix.getInputWeight(mergePlace.index, post1.index) == 1
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, post2.index) == 1
+    }
+
+    def 'should compile fork diagram with another ForkNode after first fork (second fork ignored in post-fork extraction)'() {
+        given:
+        def branch1 = [new ActionNode('action 1')]
+        def branch2 = [new ActionNode('action 2')]
+        def forkNode1 = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+        def branch3 = [new ActionNode('action 3')]
+        def branch4 = [new ActionNode('action 4')]
+        def forkNode2 = new ForkNode([branch3, branch4] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode1, forkNode2])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action 1' } != null
+        net.transitions.find { it.actionKey == 'action 2' } != null
+    }
+
     def 'should compile fork with two branches and verify fork transition has 1 input and N outputs'() {
         given:
         def branch1 = [new ActionNode('a1')]

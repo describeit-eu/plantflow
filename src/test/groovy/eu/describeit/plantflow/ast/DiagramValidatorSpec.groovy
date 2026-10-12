@@ -246,6 +246,24 @@ class DiagramValidatorSpec extends Specification {
         noExceptionThrown()
     }
 
+    def 'should pass validation for conditional diagram with ActionNode alongside ConditionalNode'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withIf(true)
+            .withElse(true)
+            .withEndif(true)
+            .addNode(ValidationTestUtil.action('extra action'))
+            .addNode(ValidationTestUtil.conditional("actions['check']", ['then action'], ['else action']))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
     def 'ActionNode should store trimmed action and support equals, hashCode, and toString'() {
         given:
         def node1 = ValidationTestUtil.action('  do something  ')
@@ -608,6 +626,23 @@ class DiagramValidatorSpec extends Specification {
             .withEndMerge(true)
             .addNode(ValidationTestUtil.fork([['a'], ['b']]))
             .addNode(ValidationTestUtil.action('post merge action'))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for fork diagram with ActionNode before ForkNode'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.action('before fork'))
+            .addNode(ValidationTestUtil.fork([['a'], ['b']]))
 
         when:
         DiagramValidator.validate(diagram)

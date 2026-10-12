@@ -364,6 +364,80 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, afterMerge2.index) == 1
     }
 
+    def 'should parse fork diagram with comment lines between fork and end merge'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              'this is a comment
+              :action a;
+              'another comment
+            fork again
+              :action b;
+            end merge
+            'comment after merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
+    def 'should parse fork diagram with action before fork keyword (ignored)'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :before fork;
+            fork
+              :action a;
+            fork again
+              :action b;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
+    def 'should parse fork diagram with unrecognized line (ignored)'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action a;
+              some unrecognized line
+            fork again
+              :action b;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
     private static int[] countTransitionIO(def net, def transition) {
         int inputCount = 0
         int outputCount = 0
