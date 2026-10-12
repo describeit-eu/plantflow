@@ -867,4 +867,87 @@ class PetriNetCompilerSpec extends Specification {
         (1..5).each { i -> assert net.transitions.find { t -> t.actionKey == "a${i}" } != null }
         (1..3).each { i -> assert net.transitions.find { t -> t.actionKey == "b${i}" } != null }
     }
+
+    def 'extractActionNodes should filter only ActionNodes from mixed node list'() {
+        given: 'a diagram with ActionNodes mixed with ForkNode and ConditionalNode'
+        def action1 = new ActionNode('action 1')
+        def action2 = new ActionNode('action 2')
+        def forkNode = new ForkNode([
+            [new ActionNode('branch a')],
+            [new ActionNode('branch b')]
+        ] as List<List<ActivityNode>>)
+        def condNode = new ConditionalNode('guard', [new ActionNode('then')], [new ActionNode('else')])
+        def diagram = new ActivityDiagram(true, true, [action1, forkNode, action2, condNode])
+
+        when: 'compileLinear is called (which uses extractActionNodes internally)'
+        def net = PetriNetCompiler.compileLinear(diagram)
+
+        then: 'only ActionNodes are extracted as transitions, not ForkNode or ConditionalNode'
+        net != null
+        net.transitions.size() == 2
+        net.transitions[0].actionKey == 'action 1'
+        net.transitions[1].actionKey == 'action 2'
+    }
+
+    def 'extractActionNodes should return empty list when no ActionNodes present'() {
+        given: 'a diagram with only a ForkNode (no direct ActionNodes)'
+        def forkNode = new ForkNode([
+            [new ActionNode('branch a')],
+            [new ActionNode('branch b')]
+        ] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, [forkNode])
+
+        when:
+        PetriNetCompiler.compileLinear(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == PetriNetCompiler.ERR_NO_ACTIONS
+    }
+
+    def 'extractActionNodes should return all nodes when all are ActionNodes'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, [
+            new ActionNode('a'),
+            new ActionNode('b'),
+            new ActionNode('c')
+        ])
+
+        when:
+        def net = PetriNetCompiler.compileLinear(diagram)
+
+        then:
+        net.transitions.size() == 3
+        net.transitions.every { it.actionKey != null }
+    }
+
+    def 'assembleConditionalNet should create correct connections via builder.with closure'() {
+        given:
+        def condNode = new ConditionalNode('myGuard', [new ActionNode('then action')], [new ActionNode('else action')])
+
+        when:
+        def net = PetriNetCompiler.compileConditional(condNode)
+
+        then: 'all connections from builder.with closure are properly established'
+        net != null
+        net.places.size() == 6
+        net.transitions.size() == 6
+
+        and: 'start connects to decision'
+        def startToDecision = net.transitions.find { it.label == 'T_start_to_decision' }
+        net.incidenceMatrix.getInputWeight(0, startToDecision.index) == 1
+        net.incidenceMatrix.getOutputWeight(1, startToDecision.index) == 1
+
+        and: 'decision connects to both branches'
+        def branchYes = net.transitions.find { it.label == 'T_branch_yes' }
+        def branchNo = net.transitions.find { it.label == 'T_branch_no' }
+        net.incidenceMatrix.getInputWeight(1, branchYes.index) == 1
+        net.incidenceMatrix.getInputWeight(1, branchNo.index) == 1
+
+        and: 'endif connects to end (last connection in builder.with closure)'
+        def endifToEnd = net.transitions.find { it.label == 'T_endif_to_end' }
+        def endifPlace = net.places.find { it.label == 'P_endif' }
+        net.incidenceMatrix.getInputWeight(endifPlace.index, endifToEnd.index) == 1
+        net.incidenceMatrix.getOutputWeight(5, endifToEnd.index) == 1
+    }
 }

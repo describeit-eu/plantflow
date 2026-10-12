@@ -833,4 +833,204 @@ class DefaultPetriNetSpec extends Specification {
         expect:
         net.isEnabled(tGuarded, marking, registry, new ExecutionContext())
     }
+
+    def 'should fire transition with weighted input arc consuming exactly requiredWeight tokens'() {
+        given: 'a transition with input weight 1 (boundary: exactly 1 token needed)'
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'single', 'singleAction', null)
+
+        def inputMatrix = [[1], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('singleAction') { ExecutionContext ctx, Token tok -> tok }
+
+        def marking = new Marking(net.places.size())
+        marking.addToken(pStart, Token.of([v: 1]))
+
+        when: 'exactly 1 token present (boundary: w < 1 means loop runs once)'
+        def fired = net.fire(tAction, marking, registry, new ExecutionContext())
+
+        then:
+        fired
+        marking.isEmpty(pStart)
+        marking.getTokenCount(pEnd) == 1
+    }
+
+    def 'should fire transition with weighted input arc consuming multiple tokens (boundary: w < requiredWeight)'() {
+        given: 'a transition with input weight 3'
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tAction = new Transition(0, 'triple', 'tripleAction', null)
+
+        def inputMatrix = [[3], [0]] as int[][]
+        def outputMatrix = [[0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('tripleAction') { ExecutionContext ctx, Token tok -> tok }
+
+        def marking = new Marking(net.places.size())
+        marking.addToken(pStart, Token.of([id: 1]))
+        marking.addToken(pStart, Token.of([id: 2]))
+        marking.addToken(pStart, Token.of([id: 3]))
+
+        when: 'firing consumes all 3 tokens'
+        def fired = net.fire(tAction, marking, registry, new ExecutionContext())
+
+        then:
+        fired
+        marking.isEmpty(pStart)
+        marking.getTokenCount(pEnd) == 1
+    }
+
+    def 'should merge exactly two consumed tokens (boundary: i < consumedTokens.size())'() {
+        given: 'a join transition with exactly 2 input places each having 1 token'
+        def pA = new Place(0, 'a')
+        def pB = new Place(1, 'b')
+        def pEnd = new Place(2, 'end')
+
+        def tJoin = new Transition(0, 'join', null, null)
+
+        def inputMatrix = [[1], [1], [0]] as int[][]
+        def outputMatrix = [[0], [0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pA, pB, pEnd], [tJoin], incidenceMatrix, pA, pEnd)
+
+        def registry = new HandlerRegistry()
+        def marking = new Marking(net.places.size())
+        marking.addToken(pA, Token.of([fromA: true, shared: 'a']))
+        marking.addToken(pB, Token.of([fromB: true, shared: 'b']))
+
+        when:
+        def fired = net.fire(tJoin, marking, registry, new ExecutionContext())
+
+        then: 'exactly 2 tokens merged (loop runs for i=1, boundary at i < 2)'
+        fired
+        marking.getTokenCount(pEnd) == 1
+        def result = marking.getTokens(pEnd)[0]
+        result.payload.fromA == true
+        result.payload.fromB == true
+        result.payload.shared == 'b'
+    }
+
+    def 'should merge three consumed tokens from three input places'() {
+        given: 'a join transition with 3 input places'
+        def pA = new Place(0, 'a')
+        def pB = new Place(1, 'b')
+        def pC = new Place(2, 'c')
+        def pEnd = new Place(3, 'end')
+
+        def tJoin = new Transition(0, 'join', null, null)
+
+        def inputMatrix = [[1], [1], [1], [0]] as int[][]
+        def outputMatrix = [[0], [0], [0], [1]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new DefaultPetriNet([pA, pB, pC, pEnd], [tJoin], incidenceMatrix, pA, pEnd)
+
+        def registry = new HandlerRegistry()
+        def marking = new Marking(net.places.size())
+        marking.addToken(pA, Token.of([order: 1, common: 'a']))
+        marking.addToken(pB, Token.of([order: 2, common: 'b']))
+        marking.addToken(pC, Token.of([order: 3, common: 'c']))
+
+        when:
+        net.fire(tJoin, marking, registry, new ExecutionContext())
+
+        then:
+        marking.getTokenCount(pEnd) == 1
+        def result = marking.getTokens(pEnd)[0]
+        result.payload.order == 3
+        result.payload.common == 'c'
+    }
+
+    def 'getInputPlaces should only return places with positive input weight'() {
+        given: 'a net with places having different input weights for a transition'
+        def pStart = new Place(0, 'start')
+        def pMid = new Place(1, 'mid')
+        def pEnd = new Place(2, 'end')
+        def tAction = new Transition(0, 'action', 'action', null)
+
+        def inputMatrix = [
+            [1], // P_start: weight 1 (input)
+            [0], // P_mid: weight 0 (not input)
+            [0]  // P_end: weight 0 (not input)
+        ] as int[][]
+        def outputMatrix = [
+            [0],
+            [1],
+            [0]
+        ] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new InputPlacesTestNet([pStart, pMid, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        when:
+        def inputPlaces = net.exposeGetInputPlaces(0)
+
+        then: 'only places with weight > 0 are returned (boundary: weight == 0 excluded)'
+        inputPlaces.size() == 1
+        inputPlaces[0] == pStart
+    }
+
+    def 'getInputPlaces should return empty list when no place has positive input weight'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def tSource = new Transition(0, 'source', null, null)
+
+        def inputMatrix = [[0], [0]] as int[][]
+        def outputMatrix = [[1], [0]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new InputPlacesTestNet([pStart, pEnd], [tSource], incidenceMatrix, pStart, pEnd)
+
+        when:
+        def inputPlaces = net.exposeGetInputPlaces(0)
+
+        then:
+        inputPlaces.isEmpty()
+    }
+
+    def 'getOutputPlaces should only return places with positive output weight'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pMid = new Place(1, 'mid')
+        def pEnd = new Place(2, 'end')
+        def tAction = new Transition(0, 'action', 'action', null)
+
+        def inputMatrix = [[1], [0], [0]] as int[][]
+        def outputMatrix = [[0], [1], [0]] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def net = new OutputPlacesTestNet([pStart, pMid, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
+
+        when:
+        def outputPlaces = net.exposeGetOutputPlaces(0)
+
+        then:
+        outputPlaces.size() == 1
+        outputPlaces[0] == pMid
+    }
+
+    static class InputPlacesTestNet extends DefaultPetriNet {
+        InputPlacesTestNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end) {
+            super(places, transitions, matrix, start, end)
+        }
+
+        List<Place> exposeGetInputPlaces(int transitionIndex) {
+            return getInputPlaces(transitionIndex)
+        }
+    }
+
+    static class OutputPlacesTestNet extends DefaultPetriNet {
+        OutputPlacesTestNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end) {
+            super(places, transitions, matrix, start, end)
+        }
+
+        List<Place> exposeGetOutputPlaces(int transitionIndex) {
+            return getOutputPlaces(transitionIndex)
+        }
+    }
 }
