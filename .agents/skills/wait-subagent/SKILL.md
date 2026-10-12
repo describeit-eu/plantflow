@@ -1,6 +1,6 @@
 ---
 name: wait-subagent
-description: Utility skill to run a subagent, wait to completion and return its result. Invoke explicitly with `<agent-name>,<timeout-seconds>` followed by the task description. Not triggered automatically — call it by name when you need to dispatch a subagent.
+description: Invoke this skill with the slash command /wait-subagent followed by agent-name,timeout-seconds and a task description to spawn a subagent and block until it completes. When any other skill's instructions contain the text "/wait-subagent X,NNN", that is a command to load and invoke THIS skill with agent=X and timeout=NNN — it is not documentation to read or summarize.
 argument-hint: "<agent-name>,<timeout-seconds> <task description>"
 ---
 

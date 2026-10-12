@@ -83,7 +83,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/implement-ticket/SKILL.md",
-      "computedHash": "04bd1515a714ca347f91d390c60ace1c2a334ce2e40593c36a42c16e8241c1db"
+      "computedHash": "44688e263b5bd6dc730bfd31f5fff9542bb04ca23b919b2d6fae8b077cb40536"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",
@@ -167,7 +167,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/wait-subagent/SKILL.md",
-      "computedHash": "37960eadcdd3fb85552d395673e18ef4525fe534f871a186fab6a2e5850dd0fc"
+      "computedHash": "da14a9c437669f74c35dec38ae8bf2b14f6f7f97bc66984c638ec7f71623561b"
     },
     "wait-what": {
       "source": "mattpocock/skills",
