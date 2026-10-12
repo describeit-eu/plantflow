@@ -216,4 +216,124 @@ class TokenSpec extends Specification {
         then:
         merged.payload.key == [nested: 'value']
     }
+
+    def 'deepMerge should deep copy empty nested map from base'() {
+        given:
+        def base = Token.of([config: [:], other: 'value'])
+        def overlay = Token.of([config: [key: 'val']])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.config == [key: 'val']
+        merged.payload.other == 'value'
+    }
+
+    def 'deepMerge should preserve base nested map when overlay has empty map at same key'() {
+        given:
+        def base = Token.of([config: [host: 'localhost', port: 8080]])
+        def overlay = Token.of([config: [:]])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.config == [host: 'localhost', port: 8080]
+    }
+
+    def 'deepMerge should handle both tokens having empty nested maps at same key'() {
+        given:
+        def base = Token.of([config: [:], flat: 'base'])
+        def overlay = Token.of([config: [:], other: 'overlay'])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.config == [:]
+        merged.payload.flat == 'base'
+        merged.payload.other == 'overlay'
+    }
+
+    def 'deepMerge should deep copy nested maps with multiple empty levels'() {
+        given:
+        def base = Token.of([
+            level1: [level2: [:], keep: 'base']
+        ])
+        def overlay = Token.of([
+            level1: [level2: [key: 'val'], add: 'overlay']
+        ])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        def l1 = merged.payload.level1 as Map
+        l1.level2 == [key: 'val']
+        l1.keep == 'base'
+        l1.add == 'overlay'
+    }
+
+    def 'deepMerge should handle deeply nested empty maps in deepCopyValue'() {
+        given:
+        def base = Token.of([
+            a: [b: [c: [:]]]
+        ])
+        def overlay = Token.of([
+            a: [b: [c: [d: 'deep']]]
+        ])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        def a = merged.payload.a as Map
+        def b = a.b as Map
+        def c = b.c as Map
+        c == [d: 'deep']
+    }
+
+    def 'deepMerge should not share references between result and source tokens'() {
+        given:
+        def base = Token.of([nested: [a: 1]])
+        def overlay = Token.of([nested: [b: 2]])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.nested == [a: 1, b: 2]
+        base.payload.nested == [a: 1]
+        overlay.payload.nested == [b: 2]
+    }
+
+    def 'deepMerge should handle token with only empty payload maps'() {
+        given:
+        def base = Token.of([:])
+        def overlay = Token.of([:])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload == [:]
+        merged.id == base.id
+        merged.timestamp == base.timestamp
+    }
+
+    def 'deepMerge should copy non-map values directly without deep copy'() {
+        given:
+        def base = Token.of([list: [1, 2, 3], num: 42, str: 'hello'])
+        def overlay = Token.of([bool: true])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.list == [1, 2, 3]
+        merged.payload.num == 42
+        merged.payload.str == 'hello'
+        merged.payload.bool == true
+    }
 }

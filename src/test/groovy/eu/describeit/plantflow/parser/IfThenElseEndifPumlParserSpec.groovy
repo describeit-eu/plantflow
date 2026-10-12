@@ -243,4 +243,156 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         action3Transition != null
         action4Transition != null
     }
+
+    def 'should throw when if keyword present but if pattern does not match'() {
+        given: 'a diagram with if keyword but invalid if format (no then clause)'
+        def puml = '''
+            @startuml
+            start
+            if (invalid format without then clause
+            :some action;
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('if')
+    }
+
+    def 'should handle conditional with stop keyword instead of end'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            if (condition) then (yes)
+              :then action;
+            else (no)
+              :else action;
+            endif
+            stop
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.places.size() > 0
+        net.transitions.size() > 0
+    }
+
+    def 'should handle conditional with extra whitespace around keywords'() {
+        given:
+        def puml = '''
+            @startuml
+              start
+            if ( condition ) then ( yes )
+              :then action;
+                else ( no )
+              :else action;
+                endif
+              end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'then action' } != null
+        net.transitions.find { it.actionKey == 'else action' } != null
+    }
+
+    def 'should handle conditional with guard containing special characters'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            if (actions['process all'] == true) then (yes)
+              :process all;
+            else (no)
+              :skip;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        def branchYes = net.transitions.find { it.label == 'T_branch_yes' }
+        branchYes != null
+        branchYes.guardKey == "actions['process all'] == true"
+    }
+
+    def 'should throw when invalid if format has else but no matching if pattern'() {
+        given: 'a diagram with if keyword, invalid if format, and else clause'
+        def puml = '''
+            @startuml
+            start
+            if (invalid format without then
+            :some action;
+            else (no)
+            :else action;
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('if')
+    }
+
+    def 'should throw when invalid if format has endif but no matching if pattern'() {
+        given: 'a diagram with if keyword, invalid if format, and endif'
+        def puml = '''
+            @startuml
+            start
+            if (invalid format without then
+            :some action;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('if')
+    }
+
+    def 'should throw when invalid if format has both else and endif but no matching if pattern'() {
+        given: 'a diagram with if keyword, invalid if format, else, and endif'
+        def puml = '''
+            @startuml
+            start
+            if (invalid format without then
+            :some action;
+            else (no)
+            :else action;
+            endif
+            end
+            @enduml
+        '''
+
+        when:
+        ParserTestBase.parse(puml)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('if')
+    }
 }

@@ -130,4 +130,93 @@ class SequencePumlParserSpec extends Specification {
         'missing end or stop'        | '@startuml\nstart\n:step 1;\n@enduml' | "Diagram must contain 'end' or 'stop'"
         'missing action transitions' | '@startuml\nstart\nend\n@enduml'      | 'Diagram must contain at least one action transition'
     }
+
+    def 'should parse diagram with action containing special characters'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :process order #123 [priority: high];
+            :send email to user@example.com;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        ParserTestBase.validateNetStructure(net, 3, 2)
+        net.transitions[0].actionKey == 'process order #123 [priority: high]'
+        net.transitions[1].actionKey == 'send email to user@example.com'
+    }
+
+    def 'should parse diagram with single character action'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :a;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        ParserTestBase.validateNetStructure(net, 2, 1)
+        net.transitions[0].actionKey == 'a'
+    }
+
+    def 'should parse diagram with many actions'() {
+        given:
+        def actions = (1..10).collect { "step ${it}" }
+        def puml = ParserTestBase.createLinearPuml(actions as String[])
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        ParserTestBase.validateNetStructure(net, 11, 10)
+        actions.eachWithIndex { action, idx ->
+            assert net.transitions[idx].actionKey == action
+        }
+    }
+
+    def 'should parse diagram with action containing colon'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :action: with colon;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.size() == 1
+    }
+
+    def 'should parse diagram with leading and trailing whitespace on action lines'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+                :  spaced action  ;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions[0].actionKey == 'spaced action'
+    }
 }

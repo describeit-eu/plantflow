@@ -435,4 +435,143 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.transitions.find { it.actionKey == 'action b' } != null
     }
 
+    def 'should parse fork diagram with action after end merge as post-fork action'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :branch a;
+            fork again
+              :branch b;
+            end merge
+            :after merge;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'branch a' } != null
+        net.transitions.find { it.actionKey == 'branch b' } != null
+        net.transitions.find { it.actionKey == 'after merge' } != null
+    }
+
+    def 'should parse fork diagram with multiple actions after end merge'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :branch a;
+            fork again
+              :branch b;
+            end merge
+            :post 1;
+            :post 2;
+            :post 3;
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'post 1' } != null
+        net.transitions.find { it.actionKey == 'post 2' } != null
+        net.transitions.find { it.actionKey == 'post 3' } != null
+    }
+
+    def 'should parse fork diagram with blank lines inside branches'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action a;
+
+              :action a2;
+            fork again
+              :action b;
+
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action a2' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
+    def 'should parse fork diagram with stop keyword instead of end'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action a;
+            fork again
+              :action b;
+            end merge
+            stop
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'action a' } != null
+        net.transitions.find { it.actionKey == 'action b' } != null
+    }
+
+    def 'should parse fork diagram with deeply nested fork structures'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :outer 1;
+              fork
+                :inner 1;
+                fork
+                  :deep 1;
+                fork again
+                  :deep 2;
+                end merge
+              fork again
+                :inner 2;
+              end merge
+            fork again
+              :outer 2;
+            end merge
+            end
+            @enduml
+        '''
+
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'outer 1' } != null
+        net.transitions.find { it.actionKey == 'outer 2' } != null
+        net.transitions.find { it.actionKey == 'inner 1' } != null
+        net.transitions.find { it.actionKey == 'inner 2' } != null
+        net.transitions.find { it.actionKey == 'deep 1' } != null
+        net.transitions.find { it.actionKey == 'deep 2' } != null
+    }
+
 }

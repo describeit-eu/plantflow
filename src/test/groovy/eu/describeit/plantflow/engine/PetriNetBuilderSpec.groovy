@@ -305,4 +305,79 @@ class PetriNetBuilderSpec extends Specification {
         net.incidenceMatrix.getIncidence(p1.index, t1.index) == -1
         net.incidenceMatrix.getIncidence(p2.index, t1.index) == 1
     }
+
+    def 'should build net with places but no transitions or arcs'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def pEnd = builder.addPlace('end')
+        builder.setStartPlace(pStart).setEndPlace(pEnd)
+
+        when:
+        def net = builder.build()
+
+        then:
+        net != null
+        net.places.size() == 2
+        net.transitions.isEmpty()
+        net.startPlace == pStart
+        net.endPlace == pEnd
+        net.incidenceMatrix.getInputWeight(0, 0) == 0
+        net.incidenceMatrix.getOutputWeight(0, 0) == 0
+    }
+
+    def 'should build net with transitions but no arcs connecting them'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def pEnd = builder.addPlace('end')
+        def tAction = builder.addTransition('action', 'actionKey')
+        builder.setStartPlace(pStart).setEndPlace(pEnd)
+
+        when:
+        def net = builder.build()
+
+        then:
+        net != null
+        net.places.size() == 2
+        net.transitions.size() == 1
+        net.incidenceMatrix.getInputWeight(pStart.index, tAction.index) == 0
+        net.incidenceMatrix.getOutputWeight(pEnd.index, tAction.index) == 0
+    }
+
+    def 'should build net with only input arcs and no output arcs'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def pEnd = builder.addPlace('end')
+        def tAction = builder.addTransition('action', 'actionKey')
+        builder.setStartPlace(pStart).setEndPlace(pEnd)
+        builder.connect(pStart, tAction)
+
+        when:
+        def net = builder.build()
+
+        then:
+        net.incidenceMatrix.getInputWeight(pStart.index, tAction.index) == 1
+        net.incidenceMatrix.getOutputWeight(pStart.index, tAction.index) == 0
+        net.incidenceMatrix.getOutputWeight(pEnd.index, tAction.index) == 0
+    }
+
+    def 'should build net with only output arcs and no input arcs'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def pEnd = builder.addPlace('end')
+        def tAction = builder.addTransition('action', 'actionKey')
+        builder.setStartPlace(pStart).setEndPlace(pEnd)
+        builder.connect(tAction, pEnd)
+
+        when:
+        def net = builder.build()
+
+        then:
+        net.incidenceMatrix.getInputWeight(pEnd.index, tAction.index) == 0
+        net.incidenceMatrix.getOutputWeight(pEnd.index, tAction.index) == 1
+        net.incidenceMatrix.getInputWeight(pStart.index, tAction.index) == 0
+    }
 }

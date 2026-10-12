@@ -263,6 +263,194 @@ class PetriNetSpec extends Specification {
         'jagged columns (fewer t)' | [[1], [0], [0]]          | [[0], [1], [0]]          | 1            | 0             | 0            | 0
     }
 
+    def 'should handle IncidenceMatrix with out-of-bounds indices'() {
+        given:
+        def matrix = new IncidenceMatrix([[1, 0], [0, 1]] as int[][], [[0, 1], [1, 0]] as int[][])
+
+        expect:
+        matrix.getInputWeight(0, 0) == 1
+        matrix.getInputWeight(0, 1) == 0
+        matrix.getInputWeight(1, 0) == 0
+        matrix.getInputWeight(1, 1) == 1
+
+        and: 'out of bounds place index returns 0'
+        matrix.getInputWeight(5, 0) == 0
+        matrix.getOutputWeight(5, 0) == 0
+        matrix.getIncidence(5, 0) == 0
+
+        and: 'out of bounds transition index returns 0'
+        matrix.getInputWeight(0, 5) == 0
+        matrix.getOutputWeight(0, 5) == 0
+        matrix.getIncidence(0, 5) == 0
+
+        and: 'both out of bounds returns 0'
+        matrix.getInputWeight(5, 5) == 0
+        matrix.getOutputWeight(5, 5) == 0
+        matrix.getIncidence(5, 5) == 0
+    }
+
+    def 'should handle IncidenceMatrix with empty matrices'() {
+        given:
+        def matrix = new IncidenceMatrix([].toArray(new int[0][]) as int[][], [].toArray(new int[0][]) as int[][])
+
+        expect:
+        matrix.getInputWeight(0, 0) == 0
+        matrix.getOutputWeight(0, 0) == 0
+        matrix.getIncidence(0, 0) == 0
+    }
+
+    def 'should handle IncidenceMatrix with single element matrices'() {
+        given:
+        def matrix = new IncidenceMatrix([[5]] as int[][], [[3]] as int[][])
+
+        expect:
+        matrix.getInputWeight(0, 0) == 5
+        matrix.getOutputWeight(0, 0) == 3
+        matrix.getIncidence(0, 0) == -2
+    }
+
+    def 'should throw AssertionError for IncidenceMatrix with negative place index'() {
+        given:
+        def matrix = new IncidenceMatrix([[1, 0], [0, 1]] as int[][], [[0, 1], [1, 0]] as int[][])
+
+        when:
+        matrix.getInputWeight(-1, 0)
+
+        then:
+        thrown(AssertionError)
+    }
+
+    def 'should throw AssertionError for IncidenceMatrix with negative transition index'() {
+        given:
+        def matrix = new IncidenceMatrix([[1, 0], [0, 1]] as int[][], [[0, 1], [1, 0]] as int[][])
+
+        when:
+        matrix.getInputWeight(0, -1)
+
+        then:
+        thrown(AssertionError)
+    }
+
+    def 'should throw AssertionError for IncidenceMatrix getOutputWeight with negative indices'() {
+        given:
+        def matrix = new IncidenceMatrix([[1, 0], [0, 1]] as int[][], [[0, 1], [1, 0]] as int[][])
+
+        when:
+        matrix.getOutputWeight(-1, -1)
+
+        then:
+        thrown(AssertionError)
+    }
+
+    def 'should throw AssertionError for IncidenceMatrix getIncidence with negative indices'() {
+        given:
+        def matrix = new IncidenceMatrix([[1, 0], [0, 1]] as int[][], [[0, 1], [1, 0]] as int[][])
+
+        when:
+        matrix.getIncidence(-1, 0)
+
+        then:
+        thrown(AssertionError)
+    }
+
+    def 'should handle IncidenceMatrix getMatrixValue with null matrix via constructor'() {
+        given: 'an IncidenceMatrix created with null input matrix'
+        def matrix = new IncidenceMatrix(null, [[1, 0], [0, 1]] as int[][])
+
+        expect: 'all input weights are 0'
+        matrix.getInputWeight(0, 0) == 0
+        matrix.getInputWeight(0, 1) == 0
+        matrix.getInputWeight(1, 0) == 0
+        matrix.getInputWeight(1, 1) == 0
+
+        and: 'output weights are from the output matrix'
+        matrix.getOutputWeight(0, 0) == 1
+        matrix.getOutputWeight(1, 1) == 1
+    }
+
+    def 'should handle IncidenceMatrix with matrix having different row lengths'() {
+        given: 'matrices with jagged rows'
+        def inMatrix = [[1, 0, 1], [0], [1, 1]] as int[][]
+        def outMatrix = [[0, 1], [1, 0, 0], [0, 0]] as int[][]
+
+        when:
+        def matrix = new IncidenceMatrix(inMatrix, outMatrix)
+
+        then:
+        matrix.getInputWeight(0, 0) == 1
+        matrix.getInputWeight(0, 2) == 1
+        matrix.getInputWeight(1, 0) == 0
+        matrix.getInputWeight(2, 1) == 1
+        matrix.getOutputWeight(0, 1) == 1
+        matrix.getOutputWeight(1, 0) == 1
+    }
+
+    def 'should return true for isNetEmpty when all places are empty but places exist'() {
+        given:
+        def marking = new Marking(3)
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd)
+
+        expect:
+        net.isNetEmpty(marking)
+    }
+
+    def 'should return false for isNetEmpty when first place has token'() {
+        given:
+        def marking = new Marking(3)
+        marking.addToken(pStart, Token.of())
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd)
+
+        expect:
+        !net.isNetEmpty(marking)
+    }
+
+    def 'should return false for isNetEmpty when last place has token'() {
+        given:
+        def marking = new Marking(3)
+        marking.addToken(pEnd, Token.of())
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd)
+
+        expect:
+        !net.isNetEmpty(marking)
+    }
+
+    def 'should return false for isNetEmpty when middle place has token'() {
+        given:
+        def marking = new Marking(3)
+        marking.addToken(pMid, Token.of())
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd)
+
+        expect:
+        !net.isNetEmpty(marking)
+    }
+
+    def 'should handle seedToken with explicit token via PetriNet interface'() {
+        given:
+        def marking = new Marking(3)
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd, marking: marking)
+        def token = Token.of([seeded: true])
+
+        when:
+        net.seedToken(token)
+
+        then:
+        marking.getTokenCount(pStart) == 1
+        marking.getTokens(pStart)[0] == token
+    }
+
+    def 'should handle seedToken with null token via PetriNet interface'() {
+        given:
+        def marking = new Marking(3)
+        def net = new TestPetriNet(places: [pStart, pMid, pEnd], startPlace: pStart, endPlace: pEnd, marking: marking)
+
+        when:
+        net.seedToken(null)
+
+        then:
+        marking.getTokenCount(pStart) == 1
+        marking.getTokens(pStart)[0].payload == [:]
+    }
+
     static class TestPetriNet implements PetriNet {
         List<Place> places = []
         List<Transition> transitions = []

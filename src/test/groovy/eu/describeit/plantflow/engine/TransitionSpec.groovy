@@ -91,4 +91,43 @@ class TransitionSpec extends Specification {
         t1 != t6
         t1.toString().contains('label')
     }
+
+    def 'should trim whitespace from label in 2-arg constructor'() {
+        when:
+        def transition = new Transition(0, '  action  ')
+
+        then:
+        transition.label == 'action'
+        transition.index == 0
+    }
+
+    def 'should trim whitespace from actionKey and guardKey in 4-arg constructor'() {
+        when:
+        def transition = new Transition(0, 'action', '  act  ', '  guard  ')
+
+        then:
+        transition.label == 'action'
+        transition.actionKey == 'act'
+        transition.guardKey == 'guard'
+    }
+
+    def 'should handle null actionKey and guardKey trimming in 4-arg constructor'() {
+        when:
+        def transition = new Transition(0, 'action', null, null)
+
+        then:
+        transition.actionKey == null
+        transition.guardKey == null
+    }
+
+    def 'should trim label in 4-arg constructor'() {
+        when:
+        def transition = new Transition(5, '  my action  ', 'act', 'guard')
+
+        then:
+        transition.index == 5
+        transition.label == 'my action'
+        transition.actionKey == 'act'
+        transition.guardKey == 'guard'
+    }
 }

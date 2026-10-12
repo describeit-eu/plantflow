@@ -598,4 +598,273 @@ class PetriNetCompilerSpec extends Specification {
         'empty else actions' | { PetriNetCompiler.compileConditional(new ConditionalNode('cond', [new ActionNode('a')], [])) } | PetriNetCompiler.ERR_ELSE_EMPTY
         'conditional diagram missing conditional node' | { PetriNetCompiler.compile(new ActivityDiagram(true, true, []).withIf()) } | PetriNetCompiler.ERR_THEN_EMPTY
     }
+
+    def 'should compile linear diagram with single action'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, [new ActionNode('single action')])
+
+        when:
+        def net = PetriNetCompiler.compileLinear(diagram)
+
+        then:
+        net != null
+        net.places.size() == 2
+        net.transitions.size() == 1
+        net.transitions[0].actionKey == 'single action'
+    }
+
+    def 'should compile linear diagram with many actions'() {
+        given:
+        def actions = (1..5).collect { new ActionNode("action ${it}") }
+        def diagram = new ActivityDiagram(true, true, actions)
+
+        when:
+        def net = PetriNetCompiler.compileLinear(diagram)
+
+        then:
+        net != null
+        net.places.size() == 6
+        net.transitions.size() == 5
+        (0..4).each { i ->
+            assert net.transitions[i].actionKey == "action ${i + 1}"
+        }
+    }
+
+    def 'should compile conditional diagram with single action in each branch'() {
+        given:
+        def condNode = new ConditionalNode('isValid', [new ActionNode('then action')], [new ActionNode('else action')])
+        def diagram = new ActivityDiagram(true, true, [condNode]).withIf().withElse().withEndif()
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.places.size() == 6
+        net.transitions.size() == 6
+    }
+
+    def 'should extract post-fork actions from diagram with fork node followed by actions'() {
+        given:
+        def forkNode = new ForkNode([
+            [new ActionNode('branch 1')],
+            [new ActionNode('branch 2')]
+        ] as List<List<ActivityNode>>)
+        def postAction1 = new ActionNode('post 1')
+        def postAction2 = new ActionNode('post 2')
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode, postAction1, postAction2])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'post 1' } != null
+        net.transitions.find { it.actionKey == 'post 2' } != null
+    }
+
+    def 'should extract post-fork actions from diagram with only fork node (no post actions)'() {
+        given:
+        def forkNode = new ForkNode([
+            [new ActionNode('branch 1')],
+            [new ActionNode('branch 2')]
+        ] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.label == 'T_fork_1_to_end' } != null
+    }
+
+    def 'should handle extractPostForkActions with non-ActionNode after fork'() {
+        given: 'a diagram with fork node followed by another fork node (no ActionNode in between)'
+        def forkNode1 = new ForkNode([
+            [new ActionNode('branch 1')],
+            [new ActionNode('branch 2')]
+        ] as List<List<ActivityNode>>)
+        def forkNode2 = new ForkNode([
+            [new ActionNode('branch 3')],
+            [new ActionNode('branch 4')]
+        ] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode1, forkNode2])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'branch 1' } != null
+        net.transitions.find { it.actionKey == 'branch 2' } != null
+    }
+
+    def 'should compile fork with two-arg compileFork with empty postForkActions'() {
+        given:
+        def forkNode = new ForkNode([
+            [new ActionNode('a1')],
+            [new ActionNode('a2')]
+        ] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode, [])
+
+        then:
+        net != null
+        net.transitions.find { it.label == 'T_fork_1_to_end' } != null
+    }
+
+    def 'should compile fork with two-arg compileFork with non-empty postForkActions'() {
+        given:
+        def forkNode = new ForkNode([
+            [new ActionNode('a1')],
+            [new ActionNode('a2')]
+        ] as List<List<ActivityNode>>)
+        def postActions = [new ActionNode('post1'), new ActionNode('post2')]
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode, postActions)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'post1' } != null
+        net.transitions.find { it.actionKey == 'post2' } != null
+        net.transitions.find { it.label == 'T_fork_1_to_end' } == null
+    }
+
+    def 'should compile fork with single-arg compileFork'() {
+        given:
+        def forkNode = new ForkNode([
+            [new ActionNode('a1')],
+            [new ActionNode('a2')]
+        ] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        net.transitions.find { it.label == 'T_fork_1_to_end' } != null
+    }
+
+    def 'should handle generateActionTransitions with single action'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, [new ActionNode('only action')])
+
+        when:
+        def net = PetriNetCompiler.compileLinear(diagram)
+
+        then:
+        net.transitions.size() == 1
+        net.transitions[0].actionKey == 'only action'
+    }
+
+    def 'should compile diagram with no conditional or fork nodes as linear'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, [
+            new ActionNode('action 1'),
+            new ActionNode('action 2')
+        ])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.places.size() == 3
+        net.transitions.size() == 2
+    }
+
+    def 'should handle extractPostForkActions with ActionNode before fork node'() {
+        given: 'a diagram with ActionNode before ForkNode and ActionNode after'
+        def preAction = new ActionNode('pre action')
+        def forkNode = new ForkNode([
+            [new ActionNode('branch 1')],
+            [new ActionNode('branch 2')]
+        ] as List<List<ActivityNode>>)
+        def postAction = new ActionNode('post action')
+        def diagram = new ActivityDiagram(true, true, true, true, [preAction, forkNode, postAction])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'branch 1' } != null
+        net.transitions.find { it.actionKey == 'branch 2' } != null
+        net.transitions.find { it.actionKey == 'post action' } != null
+    }
+
+    def 'should handle extractPostForkActions with only fork node in diagram'() {
+        given: 'a diagram with only a ForkNode (no other nodes)'
+        def forkNode = new ForkNode([
+            [new ActionNode('branch 1')],
+            [new ActionNode('branch 2')]
+        ] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.label == 'T_fork_1_to_end' } != null
+    }
+
+    def 'should handle extractPostForkActions with multiple non-ActionNodes after fork'() {
+        given: 'a diagram with fork node followed by multiple fork nodes'
+        def forkNode1 = new ForkNode([
+            [new ActionNode('branch 1')],
+            [new ActionNode('branch 2')]
+        ] as List<List<ActivityNode>>)
+        def forkNode2 = new ForkNode([
+            [new ActionNode('branch 3')],
+            [new ActionNode('branch 4')]
+        ] as List<List<ActivityNode>>)
+        def forkNode3 = new ForkNode([
+            [new ActionNode('branch 5')],
+            [new ActionNode('branch 6')]
+        ] as List<List<ActivityNode>>)
+        def diagram = new ActivityDiagram(true, true, true, true, [forkNode1, forkNode2, forkNode3])
+
+        when:
+        def net = PetriNetCompiler.compile(diagram)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'branch 1' } != null
+        net.transitions.find { it.actionKey == 'branch 2' } != null
+    }
+
+    def 'should compile fork with branches containing single action each'() {
+        given:
+        def forkNode = new ForkNode([
+            [new ActionNode('only a')],
+            [new ActionNode('only b')]
+        ] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'only a' } != null
+        net.transitions.find { it.actionKey == 'only b' } != null
+    }
+
+    def 'should compile fork with branches containing many actions'() {
+        given:
+        def branch1 = (1..5).collect { new ActionNode("a${it}") }
+        def branch2 = (1..3).collect { new ActionNode("b${it}") }
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net != null
+        (1..5).each { i -> assert net.transitions.find { t -> t.actionKey == "a${i}" } != null }
+        (1..3).each { i -> assert net.transitions.find { t -> t.actionKey == "b${i}" } != null }
+    }
 }
