@@ -1,24 +1,15 @@
 package eu.describeit.plantflow.compiler
 
-import eu.describeit.plantflow.ActivityDiagramParser
 import eu.describeit.plantflow.PetriNetTestUtil
-import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.parser.ParserTestBase
 import spock.lang.Specification
 import spock.lang.Unroll
 
 class ForkEndMergePumlCompilerSpec extends Specification {
 
-    private static PetriNet parse(String puml) {
-        return new ActivityDiagramParser().parse(puml)
-    }
-
-    private static PetriNet parseFile(String filename) {
-        return new ActivityDiagramParser().parse(new File("src/test/data/puml/${filename}"))
-    }
-
     def 'should compile forkEndMerge.puml with branch actions connected to their branch places'() {
         when:
-        def net = parseFile('forkEndMerge.puml')
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         def branch1Place = net.places.find { it.label == 'P_fork_1_branch_1' }
@@ -36,7 +27,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
 
     def 'should compile forkEndMerge.puml with multi-action branch connected sequentially'() {
         when:
-        def net = parseFile('forkEndMerge.puml')
+        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         def branch3Place = net.places.find { it.label == 'P_fork_1_branch_3' }
@@ -65,10 +56,10 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         given:
         def branches = []
         (1..branchCount).each { i -> branches.add(["action ${i}"]) }
-        def puml = createForkPuml(branches)
+        def puml = ParserTestBase.createForkPumlWithBranches(branches)
 
         when:
-        def net = parse(puml)
+        def net = ParserTestBase.parse(puml)
 
         then:
         net != null
@@ -111,7 +102,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         '''
 
         when:
-        def net = parse(puml)
+        def net = ParserTestBase.parse(puml)
 
         then:
         def toEndTransition = net.transitions.find { it.label == 'T_fork_1_to_end' }
@@ -146,7 +137,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         '''
 
         when:
-        def net = parse(puml)
+        def net = ParserTestBase.parse(puml)
 
         then:
         net != null
@@ -178,7 +169,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         '''
 
         when:
-        def net = parse(puml)
+        def net = ParserTestBase.parse(puml)
 
         then:
         def a1 = net.transitions.find { it.actionKey == 'a1' }
@@ -211,24 +202,5 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(branch1Mid2.index, a2.index) == 1
         net.incidenceMatrix.getInputWeight(branch1Mid2.index, a3.index) == 1
         net.incidenceMatrix.getOutputWeight(branch1End.index, a3.index) == 1
-    }
-
-    private static String createForkPuml(List<List<String>> branches) {
-        def sb = new StringBuilder()
-        sb << '@startuml\n'
-        sb << 'start\n'
-        sb << 'fork\n'
-        branches.eachWithIndex { branchActions, index ->
-            if (index > 0) {
-                sb << 'fork again\n'
-            }
-            branchActions.each { action ->
-                sb << "  :${action};\n"
-            }
-        }
-        sb << 'end merge\n'
-        sb << 'end\n'
-        sb << '@enduml\n'
-        return sb.toString()
     }
 }

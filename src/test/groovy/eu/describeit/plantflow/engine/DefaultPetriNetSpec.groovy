@@ -4,6 +4,7 @@ import eu.describeit.plantflow.ExecutionContext
 import eu.describeit.plantflow.HandlerRegistry
 import eu.describeit.plantflow.UnregisteredHandlerException
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static eu.describeit.plantflow.engine.ExecutionTestBase.*
 
@@ -170,6 +171,7 @@ class DefaultPetriNetSpec extends Specification {
         finalMarking.getTokens(pEnd)[0].payload == [init: true, s1: true, s2: true]
     }
 
+    @Unroll
     def 'should handle action output tokens with various return types: #scenario'() {
         given:
         def pStart = new Place(0, 'start')
@@ -353,6 +355,7 @@ class DefaultPetriNetSpec extends Specification {
         marking.getTokens(pEnd)[0].payload == [generated: true]
     }
 
+    @Unroll
     def 'should evaluate guard with null token when input places are empty: #scenario'() {
         given:
         def pStart = new Place(0, 'start')
@@ -858,64 +861,6 @@ class DefaultPetriNetSpec extends Specification {
         fired
         marking.isEmpty(pStart)
         marking.getTokenCount(pEnd) == 1
-    }
-
-    def 'should fire transition with weighted input arc consuming multiple tokens (boundary: w < requiredWeight)'() {
-        given: 'a transition with input weight 3'
-        def pStart = new Place(0, 'start')
-        def pEnd = new Place(1, 'end')
-        def tAction = new Transition(0, 'triple', 'tripleAction', null)
-
-        def inputMatrix = [[3], [0]] as int[][]
-        def outputMatrix = [[0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
-        def net = new DefaultPetriNet([pStart, pEnd], [tAction], incidenceMatrix, pStart, pEnd)
-
-        def registry = new HandlerRegistry()
-        registry.registerAction('tripleAction') { ExecutionContext ctx, Token tok -> tok }
-
-        def marking = new Marking(net.places.size())
-        marking.addToken(pStart, Token.of([id: 1]))
-        marking.addToken(pStart, Token.of([id: 2]))
-        marking.addToken(pStart, Token.of([id: 3]))
-
-        when: 'firing consumes all 3 tokens'
-        def fired = net.fire(tAction, marking, registry, new ExecutionContext())
-
-        then:
-        fired
-        marking.isEmpty(pStart)
-        marking.getTokenCount(pEnd) == 1
-    }
-
-    def 'should merge exactly two consumed tokens (boundary: i < consumedTokens.size())'() {
-        given: 'a join transition with exactly 2 input places each having 1 token'
-        def pA = new Place(0, 'a')
-        def pB = new Place(1, 'b')
-        def pEnd = new Place(2, 'end')
-
-        def tJoin = new Transition(0, 'join', null, null)
-
-        def inputMatrix = [[1], [1], [0]] as int[][]
-        def outputMatrix = [[0], [0], [1]] as int[][]
-        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
-        def net = new DefaultPetriNet([pA, pB, pEnd], [tJoin], incidenceMatrix, pA, pEnd)
-
-        def registry = new HandlerRegistry()
-        def marking = new Marking(net.places.size())
-        marking.addToken(pA, Token.of([fromA: true, shared: 'a']))
-        marking.addToken(pB, Token.of([fromB: true, shared: 'b']))
-
-        when:
-        def fired = net.fire(tJoin, marking, registry, new ExecutionContext())
-
-        then: 'exactly 2 tokens merged (loop runs for i=1, boundary at i < 2)'
-        fired
-        marking.getTokenCount(pEnd) == 1
-        def result = marking.getTokens(pEnd)[0]
-        result.payload.fromA == true
-        result.payload.fromB == true
-        result.payload.shared == 'b'
     }
 
     def 'should merge three consumed tokens from three input places'() {

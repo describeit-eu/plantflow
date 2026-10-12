@@ -108,9 +108,10 @@ end
     }
 
     /**
-     * Creates a fork diagram PlantUML string with variable number of branches.
+     * Creates a fork diagram PlantUML string with variable number of branches
+     * and optional post-merge actions.
      */
-    static String createForkPumlWithBranches(List<List<String>> branches) {
+    static String createForkPumlWithBranches(List<List<String>> branches, List<String> postMergeActions = []) {
         def sb = new StringBuilder()
         sb << '@startuml\n'
         sb << 'start\n'
@@ -126,6 +127,9 @@ end
         }
         
         sb << 'end merge\n'
+        postMergeActions.each { action ->
+            sb << ":${action};\n"
+        }
         sb << 'end\n'
         sb << '@enduml\n'
         return sb.toString()

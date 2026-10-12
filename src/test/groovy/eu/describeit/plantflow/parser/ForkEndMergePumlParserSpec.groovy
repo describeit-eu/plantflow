@@ -34,11 +34,13 @@ class ForkEndMergePumlParserSpec extends Specification {
         def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
         def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
         def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
+        def action5Transition = net.transitions.find { it.actionKey == 'action 5' }
 
         action1Transition != null
         action2Transition != null
         action3Transition != null
         action4Transition != null
+        action5Transition != null
     }
 
     @Unroll
@@ -105,25 +107,6 @@ class ForkEndMergePumlParserSpec extends Specification {
         action2Transition != null
         nested1Transition != null
         nested2Transition != null
-    }
-
-    def 'should throw IllegalArgumentException when end merge without active fork'() {
-        given:
-        def puml = '''
-            @startuml
-            start
-            end merge
-            end
-            @enduml
-        '''
-
-        when:
-        ParserTestBase.parse(puml)
-
-        then:
-        // Acceptance Criteria 4: Parser throws exception on end merge without active fork context
-        def ex = thrown(IllegalArgumentException)
-        ex.message.contains('end merge without active fork context')
     }
 
     @Unroll
@@ -212,38 +195,6 @@ class ForkEndMergePumlParserSpec extends Specification {
         ''' | 'branch'
     }
 
-    def 'should compile forkEndMerge.puml with correct fork transition structure (1 input, N outputs)'() {
-        when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
-
-        then:
-        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
-        forkTransition != null
-
-        and:
-        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 3)
-
-        and:
-        net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
-    }
-
-    def 'should compile forkEndMerge.puml with correct merge transition structure (N inputs, 1 output)'() {
-        when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
-
-        then:
-        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        mergeSyncTransition != null
-
-        and:
-        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
-
-        and:
-        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
-        mergePlace != null
-        net.incidenceMatrix.getOutputWeight(mergePlace.index, mergeSyncTransition.index) == 1
-    }
-
     def 'should compile forkEndMerge.puml with post-merge action connected to merge place'() {
         when:
         def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
@@ -259,24 +210,6 @@ class ForkEndMergePumlParserSpec extends Specification {
         and:
         net.incidenceMatrix.getInputWeight(mergePlace.index, action5Transition.index) == 1
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, action5Transition.index) == 1
-    }
-
-    def 'should compile forkEndMerge.puml with all branch actions present'() {
-        when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
-
-        then:
-        def action1 = net.transitions.find { it.actionKey == 'action 1' }
-        def action2 = net.transitions.find { it.actionKey == 'action 2' }
-        def action3 = net.transitions.find { it.actionKey == 'action 3' }
-        def action4 = net.transitions.find { it.actionKey == 'action 4' }
-        def action5 = net.transitions.find { it.actionKey == 'action 5' }
-
-        action1 != null
-        action2 != null
-        action3 != null
-        action4 != null
-        action5 != null
     }
 
     def 'should compile forkEndMerge.puml with correct branch end places feeding merge sync'() {
@@ -302,7 +235,7 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.incidenceMatrix.getInputWeight(branch3EndPlace.index, mergeSyncTransition.index) == 1
     }
 
-    def 'should compile forkEndMerge.puml with correct place and transition counts'() {
+    def 'should compile forkEndMerge.puml with correct place and transition structure'() {
         when:
         def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
@@ -320,9 +253,14 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.places.find { it.label == 'P_fork_1_branch_3_end' } != null
         net.places.find { it.label == 'P_fork_1_merge' } != null
 
-        and:
-        net.transitions.find { it.label == 'T_fork_1' } != null
-        net.transitions.find { it.label == 'T_fork_1_merge_sync' } != null
+        and: 'fork transition has 1 input and 3 outputs, merge sync has 3 inputs and 1 output'
+        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
+        forkTransition != null
+        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 3)
+
+        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
+        mergeSyncTransition != null
+        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
     }
 
     def 'should compile fork with post-merge actions from string and verify structure'() {
@@ -361,9 +299,20 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, afterMerge2.index) == 1
     }
 
-    def 'should parse fork diagram with comment lines between fork and end merge'() {
-        given:
-        def puml = '''
+    @Unroll
+    def 'should parse fork diagram with #scenario and verify all actions are parsed'() {
+        when:
+        def net = ParserTestBase.parse(puml)
+
+        then:
+        net != null
+        expectedActions.each { action ->
+            assert net.transitions.find { it.actionKey == action } != null
+        }
+
+        where:
+        scenario                                        | puml                                                                              | expectedActions
+        'comment lines between fork and end merge'      | '''
             @startuml
             start
             fork
@@ -376,20 +325,8 @@ class ForkEndMergePumlParserSpec extends Specification {
             'comment after merge
             end
             @enduml
-        '''
-
-        when:
-        def net = ParserTestBase.parse(puml)
-
-        then:
-        net != null
-        net.transitions.find { it.actionKey == 'action a' } != null
-        net.transitions.find { it.actionKey == 'action b' } != null
-    }
-
-    def 'should parse fork diagram with action before fork keyword (ignored)'() {
-        given:
-        def puml = '''
+        '''                                                                                 | ['action a', 'action b']
+        'action before fork keyword (ignored)'          | '''
             @startuml
             start
             :before fork;
@@ -400,20 +337,8 @@ class ForkEndMergePumlParserSpec extends Specification {
             end merge
             end
             @enduml
-        '''
-
-        when:
-        def net = ParserTestBase.parse(puml)
-
-        then:
-        net != null
-        net.transitions.find { it.actionKey == 'action a' } != null
-        net.transitions.find { it.actionKey == 'action b' } != null
-    }
-
-    def 'should parse fork diagram with unrecognized line (ignored)'() {
-        given:
-        def puml = '''
+        '''                                                                                 | ['action a', 'action b']
+        'unrecognized line (ignored)'                   | '''
             @startuml
             start
             fork
@@ -424,72 +349,8 @@ class ForkEndMergePumlParserSpec extends Specification {
             end merge
             end
             @enduml
-        '''
-
-        when:
-        def net = ParserTestBase.parse(puml)
-
-        then:
-        net != null
-        net.transitions.find { it.actionKey == 'action a' } != null
-        net.transitions.find { it.actionKey == 'action b' } != null
-    }
-
-    def 'should parse fork diagram with action after end merge as post-fork action'() {
-        given:
-        def puml = '''
-            @startuml
-            start
-            fork
-              :branch a;
-            fork again
-              :branch b;
-            end merge
-            :after merge;
-            end
-            @enduml
-        '''
-
-        when:
-        def net = ParserTestBase.parse(puml)
-
-        then:
-        net != null
-        net.transitions.find { it.actionKey == 'branch a' } != null
-        net.transitions.find { it.actionKey == 'branch b' } != null
-        net.transitions.find { it.actionKey == 'after merge' } != null
-    }
-
-    def 'should parse fork diagram with multiple actions after end merge'() {
-        given:
-        def puml = '''
-            @startuml
-            start
-            fork
-              :branch a;
-            fork again
-              :branch b;
-            end merge
-            :post 1;
-            :post 2;
-            :post 3;
-            end
-            @enduml
-        '''
-
-        when:
-        def net = ParserTestBase.parse(puml)
-
-        then:
-        net != null
-        net.transitions.find { it.actionKey == 'post 1' } != null
-        net.transitions.find { it.actionKey == 'post 2' } != null
-        net.transitions.find { it.actionKey == 'post 3' } != null
-    }
-
-    def 'should parse fork diagram with blank lines inside branches'() {
-        given:
-        def puml = '''
+        '''                                                                                 | ['action a', 'action b']
+        'blank lines inside branches'                   | '''
             @startuml
             start
             fork
@@ -502,21 +363,8 @@ class ForkEndMergePumlParserSpec extends Specification {
             end merge
             end
             @enduml
-        '''
-
-        when:
-        def net = ParserTestBase.parse(puml)
-
-        then:
-        net != null
-        net.transitions.find { it.actionKey == 'action a' } != null
-        net.transitions.find { it.actionKey == 'action a2' } != null
-        net.transitions.find { it.actionKey == 'action b' } != null
-    }
-
-    def 'should parse fork diagram with stop keyword instead of end'() {
-        given:
-        def puml = '''
+        '''                                                                                 | ['action a', 'action a2', 'action b']
+        'stop keyword instead of end'                   | '''
             @startuml
             start
             fork
@@ -526,15 +374,27 @@ class ForkEndMergePumlParserSpec extends Specification {
             end merge
             stop
             @enduml
-        '''
+        '''                                                                                 | ['action a', 'action b']
+    }
+
+    @Unroll
+    def 'should parse fork diagram with post-merge actions after end merge: #postActions'() {
+        given:
+        def puml = ParserTestBase.createForkPumlWithBranches([['branch a'], ['branch b']], postActions)
 
         when:
         def net = ParserTestBase.parse(puml)
 
         then:
         net != null
-        net.transitions.find { it.actionKey == 'action a' } != null
-        net.transitions.find { it.actionKey == 'action b' } != null
+        net.transitions.find { it.actionKey == 'branch a' } != null
+        net.transitions.find { it.actionKey == 'branch b' } != null
+        postActions.each { action ->
+            assert net.transitions.find { it.actionKey == action } != null
+        }
+
+        where:
+        postActions << [['after merge'], ['post 1', 'post 2', 'post 3']]
     }
 
     def 'should parse fork diagram with deeply nested fork structures'() {

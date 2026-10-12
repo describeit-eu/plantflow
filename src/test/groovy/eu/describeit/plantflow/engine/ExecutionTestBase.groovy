@@ -73,6 +73,23 @@ class ExecutionTestBase {
     }
 
     /**
+     * Creates a HandlerRegistry with one action handler per action name.
+     * Each handler adds a payload flag keyed by the action name (spaces replaced
+     * by underscores) and optionally appends the action name to the execution log.
+     */
+    static HandlerRegistry registerPayloadActions(List<String> actions, List<String> executionLog = null) {
+        def registry = new HandlerRegistry()
+        actions.each { String action ->
+            registry.registerAction(action) { ExecutionContext ctx, Token tok ->
+                executionLog?.add(action)
+                def key = action.replace(' ', '_')
+                return tok.withPayload(tok.payload + [(key): true])
+            }
+        }
+        return registry
+    }
+
+    /**
      * Creates an ExecutionContext with optional initial values.
      */
     static ExecutionContext createContext(Map<String, Object> initialValues = null) {

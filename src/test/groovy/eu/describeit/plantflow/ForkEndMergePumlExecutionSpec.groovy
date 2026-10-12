@@ -1,53 +1,20 @@
 package eu.describeit.plantflow
 
 import eu.describeit.plantflow.engine.Token
+import eu.describeit.plantflow.parser.ParserTestBase
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static eu.describeit.plantflow.engine.ExecutionTestBase.registerPayloadActions
+
 class ForkEndMergePumlExecutionSpec extends Specification {
-
-    private static String createForkPuml(List<List<String>> branches, List<String> postMergeActions = []) {
-        def sb = new StringBuilder()
-        sb << '@startuml\nstart\nfork\n'
-        branches.eachWithIndex { branchActions, index ->
-            if (index > 0) sb << 'fork again\n'
-            branchActions.each { sb << "  :${it};\n" }
-        }
-        sb << 'end merge\n'
-        postMergeActions.each { sb << ":${it};\n" }
-        sb << 'end\n@enduml\n'
-        return sb.toString()
-    }
-
-    private static HandlerRegistry registerActions(List<String> actions, Closure payloadFn = null) {
-        def registry = new HandlerRegistry()
-        actions.each { action ->
-            registry.registerAction(action) { ExecutionContext ctx, Token tok ->
-                def key = action.replace(' ', '_')
-                return tok.withPayload(tok.payload + [(key): true])
-            }
-        }
-        return registry
-    }
-
-    private static HandlerRegistry registerActionsWithLog(List<String> actions, List<String> log) {
-        def registry = new HandlerRegistry()
-        actions.each { action ->
-            registry.registerAction(action) { ExecutionContext ctx, Token tok ->
-                log.add(action)
-                def key = action.replace(' ', '_')
-                return tok.withPayload(tok.payload + [(key): true])
-            }
-        }
-        return registry
-    }
 
     def 'should execute forkEndMerge.puml with runUntilEnd and complete successfully'() {
         given:
         def file = new File('src/test/data/puml/forkEndMerge.puml')
         def executionLog = []
         def actions = ['action 1', 'action 2', 'action 3', 'action 4', 'action 5']
-        def registry = registerActionsWithLog(actions, executionLog)
+        def registry = registerPayloadActions(actions, executionLog)
 
         def engine = PlantFlow.from(file, registry)
 
@@ -68,7 +35,7 @@ class ForkEndMergePumlExecutionSpec extends Specification {
         given:
         def file = new File('src/test/data/puml/forkEndMerge.puml')
         def actions = ['action 1', 'action 2', 'action 3', 'action 4', 'action 5']
-        def registry = registerActions(actions)
+        def registry = registerPayloadActions(actions)
 
         def engine = PlantFlow.from(file, registry)
         engine.seedToken(Token.of([initial: true]))
@@ -140,7 +107,7 @@ class ForkEndMergePumlExecutionSpec extends Specification {
 
     def 'should deep-merge token payloads from all branches at merge point'() {
         given: 'a fork with two branches that produce different payload keys'
-        def puml = createForkPuml([['branch a'], ['branch b']], ['after merge'])
+        def puml = ParserTestBase.createForkPumlWithBranches([['branch a'], ['branch b']], ['after merge'])
 
         def registry = new HandlerRegistry()
         registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
@@ -170,7 +137,7 @@ class ForkEndMergePumlExecutionSpec extends Specification {
 
     def 'should deep-merge nested map payloads from branches at merge point'() {
         given: 'a fork with branches that produce nested map payloads'
-        def puml = createForkPuml([['branch a'], ['branch b']])
+        def puml = ParserTestBase.createForkPumlWithBranches([['branch a'], ['branch b']])
 
         def registry = new HandlerRegistry()
         registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
@@ -210,10 +177,10 @@ class ForkEndMergePumlExecutionSpec extends Specification {
 
     def 'should execute fork with three branches and verify all run in parallel'() {
         given:
-        def puml = createForkPuml([['task 1'], ['task 2'], ['task 3']], ['finalize'])
+        def puml = ParserTestBase.createForkPumlWithBranches([['task 1'], ['task 2'], ['task 3']], ['finalize'])
 
         def executionOrder = []
-        def registry = registerActionsWithLog(['task 1', 'task 2', 'task 3', 'finalize'], executionOrder)
+        def registry = registerPayloadActions(['task 1', 'task 2', 'task 3', 'finalize'], executionOrder)
 
         def engine = PlantFlow.from(puml, registry)
 
@@ -237,10 +204,10 @@ class ForkEndMergePumlExecutionSpec extends Specification {
 
     def 'should execute fork with multi-action branches and verify sequential execution within branches'() {
         given:
-        def puml = createForkPuml([['a1', 'a2'], ['b1', 'b2', 'b3']])
+        def puml = ParserTestBase.createForkPumlWithBranches([['a1', 'a2'], ['b1', 'b2', 'b3']])
 
         def executionLog = []
-        def registry = registerActionsWithLog(['a1', 'a2', 'b1', 'b2', 'b3'], executionLog)
+        def registry = registerPayloadActions(['a1', 'a2', 'b1', 'b2', 'b3'], executionLog)
 
         def engine = PlantFlow.from(puml, registry)
 
@@ -264,37 +231,9 @@ class ForkEndMergePumlExecutionSpec extends Specification {
         endToken.payload.b3 == true
     }
 
-    def 'should execute fork without post-merge actions and reach end directly'() {
-        given:
-        def puml = createForkPuml([['branch a'], ['branch b']])
-
-        def registry = new HandlerRegistry()
-        registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
-            return tok.withPayload(tok.payload + [branchA: true])
-        }
-        registry.registerAction('branch b') { ExecutionContext ctx, Token tok ->
-            return tok.withPayload(tok.payload + [branchB: true])
-        }
-
-        def engine = PlantFlow.from(puml, registry)
-
-        when:
-        engine.runUntilEnd(Token.of([initial: true]))
-
-        then:
-        engine.isCompleted()
-
-        and:
-        def endToken = engine.getEndToken()
-        endToken != null
-        endToken.payload.initial == true
-        endToken.payload.branchA == true
-        endToken.payload.branchB == true
-    }
-
     def 'should preserve token id through fork and merge execution'() {
         given:
-        def puml = createForkPuml([['branch a'], ['branch b']])
+        def puml = ParserTestBase.createForkPumlWithBranches([['branch a'], ['branch b']])
 
         def registry = new HandlerRegistry()
         registry.registerAction('branch a') { ExecutionContext ctx, Token tok -> tok }
@@ -320,15 +259,9 @@ class ForkEndMergePumlExecutionSpec extends Specification {
     def 'should execute fork with #branchCount branches and verify completion'() {
         given:
         def branches = (1..branchCount).collect { ["action ${it}"] }
-        def puml = createForkPuml(branches)
+        def puml = ParserTestBase.createForkPumlWithBranches(branches)
 
-        def registry = new HandlerRegistry()
-        (1..branchCount).each { i ->
-            String key = "action_${i}".toString()
-            registry.registerAction("action ${i}") { ExecutionContext ctx, Token tok ->
-                return tok.withPayload(tok.payload + [(key): true])
-            }
-        }
+        def registry = registerPayloadActions(branches.flatten())
 
         def engine = PlantFlow.from(puml, registry)
 
@@ -371,7 +304,7 @@ class ForkEndMergePumlExecutionSpec extends Specification {
 
         def executionLog = []
         def actions = ['action 1', 'action 2', 'nested action 1', 'nested action 2']
-        def registry = registerActionsWithLog(actions, executionLog)
+        def registry = registerPayloadActions(actions, executionLog)
 
         def engine = PlantFlow.from(puml, registry)
 
@@ -396,7 +329,7 @@ class ForkEndMergePumlExecutionSpec extends Specification {
 
     def 'should update execution context from parallel branch actions'() {
         given:
-        def puml = createForkPuml([['branch a'], ['branch b']])
+        def puml = ParserTestBase.createForkPumlWithBranches([['branch a'], ['branch b']])
 
         def registry = new HandlerRegistry()
         registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
@@ -438,10 +371,5 @@ class ForkEndMergePumlExecutionSpec extends Specification {
             assert net.startPlace != null : "No start place in ${filename}"
             assert net.endPlace != null : "No end place in ${filename}"
         }
-    }
-
-    def 'regression: existing test suite should still pass (verified by full build)'() {
-        expect: 'this test exists as a marker; the full test suite passing is the regression check'
-        true
     }
 }

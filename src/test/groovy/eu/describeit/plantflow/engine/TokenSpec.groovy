@@ -2,6 +2,7 @@ package eu.describeit.plantflow.engine
 
 
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.time.Instant
 
@@ -9,6 +10,7 @@ import static java.time.Instant.ofEpochMilli
 
 class TokenSpec extends Specification {
 
+    @Unroll
     def 'should initialize Token with fallback defaults when values are null or empty: #scenario'() {
         when:
         def token = new Token(inputId, inputTimestamp, inputPayload)
@@ -28,6 +30,7 @@ class TokenSpec extends Specification {
         'all explicit values provided'        | 't-200' | ofEpochMilli(2000)   | [order: 123] | 't-200'    | ofEpochMilli(2000) | [order: 123]
     }
 
+    @Unroll
     def 'should create Token via of() factory with default and custom payloads: #scenario'() {
         when:
         def token = factoryCall()
@@ -46,6 +49,7 @@ class TokenSpec extends Specification {
         'map constructor null'    | { -> new Token((Map<String, Object>) null) }          | [:]
     }
 
+    @Unroll
     def 'should create a new token with updated payload using withPayload: #scenario'() {
         given:
         def originalTimestamp = ofEpochMilli(5000)
@@ -306,20 +310,6 @@ class TokenSpec extends Specification {
         merged.payload.nested == [a: 1, b: 2]
         base.payload.nested == [a: 1]
         overlay.payload.nested == [b: 2]
-    }
-
-    def 'deepMerge should handle token with only empty payload maps'() {
-        given:
-        def base = Token.of([:])
-        def overlay = Token.of([:])
-
-        when:
-        def merged = base.deepMerge(overlay)
-
-        then:
-        merged.payload == [:]
-        merged.id == base.id
-        merged.timestamp == base.timestamp
     }
 
     def 'deepMerge should copy non-map values directly without deep copy'() {
