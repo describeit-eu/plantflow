@@ -298,14 +298,14 @@ class PetriNetCompilerSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(8, 8) == 1
     }
 
-    def 'should compile ForkNode via compile(ForkNode) method'() {
+    def 'should compile ForkNode via compileFork method'() {
         given:
         def branch1 = [new ActionNode('fork_a')]
         def branch2 = [new ActionNode('fork_b')]
         def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
 
         when:
-        def net = PetriNetCompiler.compile(forkNode)
+        def net = PetriNetCompiler.compileFork(forkNode)
 
         then:
         net != null
@@ -528,21 +528,16 @@ class PetriNetCompilerSpec extends Specification {
         def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
 
         when:
-        def net = PetriNetCompiler.compile(forkNode)
+        def net = PetriNetCompiler.compileFork(forkNode)
 
         then:
         def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
         forkTransition != null
 
         and:
-        int inputCount = 0
-        int outputCount = 0
-        net.places.each { place ->
-            if (net.incidenceMatrix.getInputWeight(place.index, forkTransition.index) > 0) inputCount++
-            if (net.incidenceMatrix.getOutputWeight(place.index, forkTransition.index) > 0) outputCount++
-        }
-        inputCount == 1
-        outputCount == 2
+        def io = countTransitionIO(net, forkTransition)
+        io[0] == 1
+        io[1] == 2
 
         and:
         net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
@@ -556,21 +551,16 @@ class PetriNetCompilerSpec extends Specification {
         def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
 
         when:
-        def net = PetriNetCompiler.compile(forkNode)
+        def net = PetriNetCompiler.compileFork(forkNode)
 
         then:
         def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
         mergeSyncTransition != null
 
         and:
-        int inputCount = 0
-        int outputCount = 0
-        net.places.each { place ->
-            if (net.incidenceMatrix.getInputWeight(place.index, mergeSyncTransition.index) > 0) inputCount++
-            if (net.incidenceMatrix.getOutputWeight(place.index, mergeSyncTransition.index) > 0) outputCount++
-        }
-        inputCount == 3
-        outputCount == 1
+        def io = countTransitionIO(net, mergeSyncTransition)
+        io[0] == 3
+        io[1] == 1
 
         and:
         def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
@@ -589,12 +579,22 @@ class PetriNetCompilerSpec extends Specification {
 
         where:
         scenario | action | expectedMessage
-        'null diagram to compile' | { PetriNetCompiler.compile((ActivityDiagram) null) } | PetriNetCompiler.ERR_DIAGRAM_NULL
+        'null diagram to compile' | { PetriNetCompiler.compile(null) } | PetriNetCompiler.ERR_DIAGRAM_NULL
         'null diagram to compileLinear' | { PetriNetCompiler.compileLinear(null) } | PetriNetCompiler.ERR_DIAGRAM_NULL
         'empty linear diagram' | { PetriNetCompiler.compileLinear(new ActivityDiagram(true, true, [])) } | PetriNetCompiler.ERR_NO_ACTIONS
         'null conditional node' | { PetriNetCompiler.compileConditional(null) } | PetriNetCompiler.ERR_CONDITIONAL_NODE_NULL
         'empty then actions' | { PetriNetCompiler.compileConditional(new ConditionalNode('cond', [], [new ActionNode('a')])) } | PetriNetCompiler.ERR_THEN_EMPTY
         'empty else actions' | { PetriNetCompiler.compileConditional(new ConditionalNode('cond', [new ActionNode('a')], [])) } | PetriNetCompiler.ERR_ELSE_EMPTY
         'conditional diagram missing conditional node' | { PetriNetCompiler.compile(new ActivityDiagram(true, true, []).withIf()) } | PetriNetCompiler.ERR_THEN_EMPTY
+    }
+
+    private static int[] countTransitionIO(def net, def transition) {
+        int inputCount = 0
+        int outputCount = 0
+        net.places.each { place ->
+            if (net.incidenceMatrix.getInputWeight(place.index, transition.index) > 0) inputCount++
+            if (net.incidenceMatrix.getOutputWeight(place.index, transition.index) > 0) outputCount++
+        }
+        [inputCount, outputCount] as int[]
     }
 }

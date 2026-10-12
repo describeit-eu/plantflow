@@ -114,9 +114,12 @@ class ActivityDiagramParser {
                 continue
             }
             
-            if (handleEndMergeMatching(line, diagram, forkStack, branches)) {
+            if (handleEndMergeMatching(line, diagram, forkStack)) {
                 currentBranchIndex = -1
                 forkComplete = forkStack.isEmpty()
+                if (forkComplete) {
+                    addForkNodeToDiagram(diagram, branches)
+                }
                 continue
             }
             
@@ -153,8 +156,7 @@ class ActivityDiagramParser {
         return false
     }
 
-    private boolean handleEndMergeMatching(String line, ActivityDiagram diagram, Stack<Integer> forkStack,
-                                           List<List<ActionNode>> branches) {
+    private boolean handleEndMergeMatching(String line, ActivityDiagram diagram, Stack<Integer> forkStack) {
         Matcher endMergeMatcher = END_MERGE_PATTERN.matcher(line)
         if (endMergeMatcher.matches()) {
             if (forkStack.isEmpty()) {
@@ -162,13 +164,16 @@ class ActivityDiagramParser {
             }
             diagram.hasEndMerge = true
             forkStack.pop()
-            if (forkStack.isEmpty() && !branches.isEmpty()) {
-                List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
-                diagram.addNode(new ForkNode(branchList))
-            }
             return true
         }
         return false
+    }
+
+    private void addForkNodeToDiagram(ActivityDiagram diagram, List<List<ActionNode>> branches) {
+        if (!branches.isEmpty()) {
+            List<List<ActivityNode>> branchList = branches as List<List<ActivityNode>>
+            diagram.addNode(new ForkNode(branchList))
+        }
     }
 
     private void handleActionRecording(String line, ActivityDiagram diagram, List<List<ActionNode>> branches,

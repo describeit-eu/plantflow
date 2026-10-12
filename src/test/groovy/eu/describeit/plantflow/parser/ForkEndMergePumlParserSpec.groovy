@@ -1,6 +1,5 @@
 package eu.describeit.plantflow.parser
 
-import eu.describeit.plantflow.PetriNetCompiler
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -221,14 +220,9 @@ class ForkEndMergePumlParserSpec extends Specification {
         forkTransition != null
 
         and:
-        int inputCount = 0
-        int outputCount = 0
-        net.places.each { place ->
-            if (net.incidenceMatrix.getInputWeight(place.index, forkTransition.index) > 0) inputCount++
-            if (net.incidenceMatrix.getOutputWeight(place.index, forkTransition.index) > 0) outputCount++
-        }
-        inputCount == 1
-        outputCount == 3
+        def io = countTransitionIO(net, forkTransition)
+        io[0] == 1
+        io[1] == 3
 
         and:
         net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
@@ -243,14 +237,9 @@ class ForkEndMergePumlParserSpec extends Specification {
         mergeSyncTransition != null
 
         and:
-        int inputCount = 0
-        int outputCount = 0
-        net.places.each { place ->
-            if (net.incidenceMatrix.getInputWeight(place.index, mergeSyncTransition.index) > 0) inputCount++
-            if (net.incidenceMatrix.getOutputWeight(place.index, mergeSyncTransition.index) > 0) outputCount++
-        }
-        inputCount == 3
-        outputCount == 1
+        def io = countTransitionIO(net, mergeSyncTransition)
+        io[0] == 3
+        io[1] == 1
 
         and:
         def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
@@ -373,6 +362,16 @@ class ForkEndMergePumlParserSpec extends Specification {
 
         and:
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, afterMerge2.index) == 1
+    }
+
+    private static int[] countTransitionIO(def net, def transition) {
+        int inputCount = 0
+        int outputCount = 0
+        net.places.each { place ->
+            if (net.incidenceMatrix.getInputWeight(place.index, transition.index) > 0) inputCount++
+            if (net.incidenceMatrix.getOutputWeight(place.index, transition.index) > 0) outputCount++
+        }
+        [inputCount, outputCount] as int[]
     }
 
 }

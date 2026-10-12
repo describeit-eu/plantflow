@@ -173,7 +173,7 @@ class DiagramValidator {
         }
     }
 
-    static void validateForkBranches(List<List<ActivityNode>> branches) {
+    private static void validateForkBranches(List<List<ActivityNode>> branches) {
         if (branches == null || branches.isEmpty()) {
             throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
         }

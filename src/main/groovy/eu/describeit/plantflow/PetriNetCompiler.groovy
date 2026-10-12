@@ -36,6 +36,7 @@ class PetriNetCompiler {
     public static final String PREFIX_INTERMEDIATE_PLACE = 'P_'
     public static final String PREFIX_THEN_PLACE = 'P_then_'
     public static final String PREFIX_ELSE_PLACE = 'P_else_'
+    public static final String PLACE_FORK_POST_MERGE_SUFFIX = '_post_'
     public static final String NEGATION_PREFIX = '!('
     public static final String NEGATION_SUFFIX = ')'
 
@@ -90,10 +91,6 @@ class PetriNetCompiler {
         return assembleConditionalNet(node)
     }
 
-    static PetriNet compile(ForkNode node) {
-        return compileFork(node)
-    }
-
     static PetriNet compileFork(ForkNode node) {
         return compileFork(node, Collections.<ActionNode>emptyList())
     }
@@ -110,7 +107,7 @@ class PetriNetCompiler {
                 throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
             }
         }
-        return assembleForkNet(node, postForkActions ?: Collections.<ActionNode>emptyList())
+        return assembleForkNet(node, postForkActions)
     }
 
     private static PetriNet assembleLinearNet(List<ActionNode> actionNodes) {
@@ -304,7 +301,7 @@ class PetriNetCompiler {
             builder.connect(mergePlace, toEndTransition)
             builder.connect(toEndTransition, endPlace)
         } else {
-            connectPostForkActions(builder, mergePlace, endPlace, postForkActions)
+            connectPostForkActions(builder, mergePlace, endPlace, postForkActions, forkIndex)
         }
 
         builder.startPlace = startPlace
@@ -312,17 +309,14 @@ class PetriNetCompiler {
     }
 
     private static void connectPostForkActions(PetriNetBuilder builder, Place mergePlace,
-                                               Place endPlace, List<ActionNode> postForkActions) {
-        Place currentPlace = mergePlace
+                                               Place endPlace, List<ActionNode> postForkActions, int forkIndex) {
+        List<Place> intermediatePlaces = []
         int count = postForkActions.size()
-        for (int i = 0; i < count; i++) {
-            ActionNode actionNode = postForkActions.get(i)
-            Transition transition = builder.addTransition(actionNode.action, actionNode.action, null)
-            builder.connect(currentPlace, transition)
-            Place nextPlace = (i < count - 1) ? builder.addPlace(PREFIX_INTERMEDIATE_PLACE + 'post_' + (i + 1)) : endPlace
-            builder.connect(transition, nextPlace)
-            currentPlace = nextPlace
+        for (int i = 1; i < count; i++) {
+            intermediatePlaces.add(builder.addPlace(PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_POST_MERGE_SUFFIX + i))
         }
+        List<Place> allPlaces = [mergePlace] + intermediatePlaces + [endPlace]
+        connectLinearActions(builder, allPlaces, postForkActions)
     }
 
     private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
