@@ -564,6 +564,32 @@ class PetriNetCompilerSpec extends Specification {
         net.transitions.find { it.actionKey == 'action 2' } != null
     }
 
+    def 'should compile fork with correct branch transition and place labels'() {
+        given:
+        def branch1 = [new ActionNode('a1')]
+        def branch2 = [new ActionNode('a2')]
+        def branch3 = [new ActionNode('a3')]
+        def forkNode = new ForkNode([branch1, branch2, branch3] as List<List<ActivityNode>>)
+
+        when:
+        def net = PetriNetCompiler.compileFork(forkNode)
+
+        then:
+        net.places.find { it.label == 'P_fork_1_branch_1' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3' } != null
+
+        and:
+        net.places.find { it.label == 'P_fork_1_branch_1_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_2_end' } != null
+        net.places.find { it.label == 'P_fork_1_branch_3_end' } != null
+
+        and:
+        net.transitions.find { it.label == 'T_fork_1_branch_1' } != null
+        net.transitions.find { it.label == 'T_fork_1_branch_2' } != null
+        net.transitions.find { it.label == 'T_fork_1_branch_3' } != null
+    }
+
     def 'should compile fork with two branches and verify fork transition has 1 input and N outputs'() {
         given:
         def branch1 = [new ActionNode('a1')]
