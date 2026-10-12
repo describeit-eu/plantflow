@@ -1,20 +1,20 @@
 ---
 name: wait-subagent
-description: Invoke this skill with the slash command /wait-subagent followed by agent-name,timeout-seconds and a task description to spawn a subagent and block until it completes. When any other skill's instructions contain the text "/wait-subagent X,NNN", that is a command to load and invoke THIS skill with agent=X and timeout=NNN — it is not documentation to read or summarize.
-argument-hint: "<agent-name>,<timeout-seconds> <task description>"
+description: This is a **utility skill** — it is not triggered automatically. It contains the sequence of instructions to spawn a subagent, block until it completes and handle result or timeout. When any other skill's instructions contain the text /wait-subagent, that is a command to load and invoke THIS skill — it is not documentation to read or summarize.
+argument-hint: "`<agent-name>,<timeout-seconds>` <task description>"
 ---
 
-Dispatch a subagent, wait for it to finish, and return its result. The subagent runs in isolation; its context does not pollute yours.
+You must spawn a subagent, wait for it to finish and return its result. The subagent runs in isolation; its context does not pollute yours.
 
-This is a **utility skill** — it is not triggered automatically. Invoke it explicitly by name (`/wait-subagent`) when you or another skill needs to run a subagent to completion.
+Communication to and from subagents should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, notes and previous commits. Don't duplicate information already available via pointers.
 
 ## Steps
 
-1. Parse the first argument: split on comma to get `<agent-name>` and `<timeout-seconds>`. Everything after is the task message.
-2. Spawn a subagent named `<agent-name>` with the task message:
-   - **Mistral Vibe**: `tools.agent.spawn({ agentName: "<agent-name>", message: "<task message>" })`
-   - **OpenCode / Claude Code**: use the `task` tool with `subagent_type: "<agent-name>"` and `prompt: "<task message>"`. If resuming a previous subagent, pass its `task_id` instead.
-   - **Claude CLI**: `claude --bg --name "<descriptive name>" -- "<task message>"`, then poll with `claude agents`.
+1. Parse the first argument: split on comma to get `<agent-name>` and `<timeout-seconds>`. Everything after is the `<task description>`.
+2. Spawn a subagent named `<agent-name>` with the `<task description>`:
+   - **Mistral Vibe**: `tools.agent.spawn({ agentName: "<agent-name>", message: "<task description>" })`
+   - **OpenCode / Claude Code**: use the `task` tool with `subagent_type: "<agent-name>"` and `prompt: "<task description>"`. If resuming a previous subagent, pass its `task_id` instead.
+   - **Claude CLI**: `claude --bg --name "<descriptive name>" -- "<task description>"`, then poll with `claude agents`.
    - **Other platforms**: use the platform's subagent or background-agent mechanism. If none exists, tell the user the platform does not support subagents and stop.
 3. Wait for the subagent to complete, up to `<timeout-seconds>`:
    - **Mistral Vibe**: `tools.agent.wait({ agentName: "<agent-name>", timeoutSec: <timeout> })`

@@ -3,8 +3,6 @@ name: implement-ticket
 description: "Implement one ticket without user intervention."
 ---
 
-Communication to and from subagents should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, notes and previous commits. Don't duplicate information already available via pointers.
-
 ## Steps
 Do not deviate from this sequence.
 
