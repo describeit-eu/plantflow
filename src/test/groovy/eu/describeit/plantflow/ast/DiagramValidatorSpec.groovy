@@ -599,6 +599,66 @@ class DiagramValidatorSpec extends Specification {
         'branches with multiple actions' | [['a1', 'a2'], ['b1', 'b2', 'b3']]
     }
 
+    def 'should pass validation for fork diagram with post-merge actions'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([['a'], ['b']]))
+            .addNode(ValidationTestUtil.action('post merge action'))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for fork with three branches and varying action counts'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(ValidationTestUtil.fork([
+                [ValidationTestUtil.action('a1')],
+                [ValidationTestUtil.action('a2')],
+                [ValidationTestUtil.action('a3'), ValidationTestUtil.action('a4')]
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for fork branch with empty action list at position #position'() {
+        given:
+        def branches = [[ValidationTestUtil.action('a')], [ValidationTestUtil.action('b')]]
+        branches[position] = []
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(new ForkNode(branches as List<List<ActivityNode>>))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == DiagramValidator.ERR_BRANCH_EMPTY
+
+        where:
+        position << [0, 1]
+    }
+
     def 'ActivityDiagram addNode should handle null node'() {
         given:
         def diagram = new ActivityDiagram()

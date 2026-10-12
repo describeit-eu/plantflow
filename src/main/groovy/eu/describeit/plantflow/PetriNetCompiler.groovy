@@ -57,7 +57,8 @@ class PetriNetCompiler {
         }
         ForkNode forkNode = findForkNode(diagram)
         if (forkNode != null) {
-            return compileFork(forkNode)
+            List<ActionNode> postForkActions = extractPostForkActions(diagram, forkNode)
+            return compileFork(forkNode, postForkActions)
         }
         if (diagram.isConditional()) {
             throw new IllegalArgumentException(ERR_THEN_EMPTY)
@@ -89,7 +90,15 @@ class PetriNetCompiler {
         return assembleConditionalNet(node)
     }
 
+    static PetriNet compile(ForkNode node) {
+        return compileFork(node)
+    }
+
     static PetriNet compileFork(ForkNode node) {
+        return compileFork(node, Collections.<ActionNode>emptyList())
+    }
+
+    static PetriNet compileFork(ForkNode node, List<ActionNode> postForkActions) {
         if (node == null) {
             throw new IllegalArgumentException(ERR_FORK_NODE_NULL)
         }
@@ -101,7 +110,7 @@ class PetriNetCompiler {
                 throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
             }
         }
-        return assembleForkNet(node)
+        return assembleForkNet(node, postForkActions ?: Collections.<ActionNode>emptyList())
     }
 
     private static PetriNet assembleLinearNet(List<ActionNode> actionNodes) {
@@ -218,17 +227,17 @@ class PetriNetCompiler {
         }
     }
 
-    private static PetriNet assembleForkNet(ForkNode node) {
+    private static PetriNet assembleForkNet(ForkNode node, List<ActionNode> postForkActions) {
         PetriNetBuilder builder = new PetriNetBuilder()
         int forkIndex = 1
-        
+
         Place startPlace = builder.addPlace(PLACE_START)
         Transition forkTransition = addForkTransition(builder, forkIndex)
-        
+
         List<Place> branchEndPlaces = processForkBranches(builder, node, forkIndex, forkTransition)
-        
-        connectForkComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex)
-        
+
+        connectForkComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex, postForkActions)
+
         return builder.build()
     }
 
@@ -277,23 +286,43 @@ class PetriNetCompiler {
         return currentPlace
     }
 
-    private static void connectForkComponents(PetriNetBuilder builder, Place startPlace, 
-                                              Transition forkTransition, List<Place> branchEndPlaces, int forkIndex) {
+    private static void connectForkComponents(PetriNetBuilder builder, Place startPlace,
+                                              Transition forkTransition, List<Place> branchEndPlaces,
+                                              int forkIndex, List<ActionNode> postForkActions) {
         builder.connect(startPlace, forkTransition)
-        
+
         Place mergePlace = builder.addPlace(PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_MERGE_SUFFIX)
         Transition mergeSyncTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC)
-        
+
         branchEndPlaces.each { Place branchEnd -> builder.connect(branchEnd, mergeSyncTransition) }
         builder.connect(mergeSyncTransition, mergePlace)
-        
-        Transition toEndTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END)
+
         Place endPlace = builder.addPlace(PLACE_END)
-        
-        builder.connect(mergePlace, toEndTransition)
-        builder.connect(toEndTransition, endPlace)
+
+        if (postForkActions.isEmpty()) {
+            Transition toEndTransition = builder.addTransition(TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_TO_END)
+            builder.connect(mergePlace, toEndTransition)
+            builder.connect(toEndTransition, endPlace)
+        } else {
+            connectPostForkActions(builder, mergePlace, endPlace, postForkActions)
+        }
+
         builder.startPlace = startPlace
         builder.endPlace = endPlace
+    }
+
+    private static void connectPostForkActions(PetriNetBuilder builder, Place mergePlace,
+                                               Place endPlace, List<ActionNode> postForkActions) {
+        Place currentPlace = mergePlace
+        int count = postForkActions.size()
+        for (int i = 0; i < count; i++) {
+            ActionNode actionNode = postForkActions.get(i)
+            Transition transition = builder.addTransition(actionNode.action, actionNode.action, null)
+            builder.connect(currentPlace, transition)
+            Place nextPlace = (i < count - 1) ? builder.addPlace(PREFIX_INTERMEDIATE_PLACE + 'post_' + (i + 1)) : endPlace
+            builder.connect(transition, nextPlace)
+            currentPlace = nextPlace
+        }
     }
 
     private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
@@ -302,6 +331,21 @@ class PetriNetCompiler {
 
     private static ForkNode findForkNode(ActivityDiagram diagram) {
         diagram.nodes.find { ActivityNode node -> node instanceof ForkNode } as ForkNode
+    }
+
+    private static List<ActionNode> extractPostForkActions(ActivityDiagram diagram, ForkNode forkNode) {
+        boolean forkFound = false
+        List<ActionNode> postForkActions = []
+        for (ActivityNode node : diagram.nodes) {
+            if (node.is(forkNode)) {
+                forkFound = true
+                continue
+            }
+            if (forkFound && node instanceof ActionNode) {
+                postForkActions.add((ActionNode) node)
+            }
+        }
+        return postForkActions
     }
 
     private static List<ActionNode> extractActionNodes(ActivityDiagram diagram) {
