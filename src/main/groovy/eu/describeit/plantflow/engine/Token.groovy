@@ -38,7 +38,10 @@ record Token(String id, Instant timestamp, Map<String, Object> payload) {
     }
 
     private static Map<String, Object> deepMergeMaps(Map<String, Object> base, Map<String, Object> overlay) {
-        Map<String, Object> result = new LinkedHashMap<>(base)
+        Map<String, Object> result = new LinkedHashMap<>()
+        for (Map.Entry<String, Object> entry : base.entrySet()) {
+            result.put(entry.getKey(), deepCopyValue(entry.getValue()))
+        }
         for (Map.Entry<String, Object> entry : overlay.entrySet()) {
             String key = entry.getKey()
             Object overlayValue = entry.getValue()
@@ -48,9 +51,21 @@ record Token(String id, Instant timestamp, Map<String, Object> payload) {
                 Map<String, Object> nested = deepMergeMaps((Map) baseValue, (Map) overlayValue)
                 result.put(key, nested)
             } else {
-                result.put(key, overlayValue)
+                result.put(key, deepCopyValue(overlayValue))
             }
         }
         return result
+    }
+
+    @SuppressWarnings(['unchecked', 'rawtypes'])
+    private static Object deepCopyValue(Object value) {
+        if (value instanceof Map) {
+            Map<String, Object> copy = new LinkedHashMap<>()
+            for (Map.Entry<String, Object> entry : ((Map) value).entrySet()) {
+                copy.put(entry.getKey(), deepCopyValue(entry.getValue()))
+            }
+            return copy
+        }
+        return value
     }
 }

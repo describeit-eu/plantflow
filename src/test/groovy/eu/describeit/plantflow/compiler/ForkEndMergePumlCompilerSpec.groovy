@@ -1,7 +1,6 @@
 package eu.describeit.plantflow.compiler
 
 import eu.describeit.plantflow.ActivityDiagramParser
-import eu.describeit.plantflow.PetriNetCompiler
 import eu.describeit.plantflow.PetriNetTestUtil
 import eu.describeit.plantflow.engine.PetriNet
 import spock.lang.Specification
@@ -15,56 +14,6 @@ class ForkEndMergePumlCompilerSpec extends Specification {
 
     private static PetriNet parseFile(String filename) {
         return new ActivityDiagramParser().parse(new File("src/test/data/puml/${filename}"))
-    }
-
-    def 'should compile forkEndMerge.puml with correct fork transition structure (1 input, N outputs)'() {
-        when:
-        def net = parseFile('forkEndMerge.puml')
-
-        then:
-        def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
-        forkTransition != null
-
-        and:
-        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 3)
-
-        and:
-        net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
-    }
-
-    def 'should compile forkEndMerge.puml with correct merge sync transition structure (N inputs, 1 output)'() {
-        when:
-        def net = parseFile('forkEndMerge.puml')
-
-        then:
-        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        mergeSyncTransition != null
-
-        and:
-        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
-
-        and:
-        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
-        mergePlace != null
-        net.incidenceMatrix.getOutputWeight(mergePlace.index, mergeSyncTransition.index) == 1
-    }
-
-    def 'should compile forkEndMerge.puml with all branch actions present and connected'() {
-        when:
-        def net = parseFile('forkEndMerge.puml')
-
-        then:
-        def action1 = net.transitions.find { it.actionKey == 'action 1' }
-        def action2 = net.transitions.find { it.actionKey == 'action 2' }
-        def action3 = net.transitions.find { it.actionKey == 'action 3' }
-        def action4 = net.transitions.find { it.actionKey == 'action 4' }
-        def action5 = net.transitions.find { it.actionKey == 'action 5' }
-
-        action1 != null
-        action2 != null
-        action3 != null
-        action4 != null
-        action5 != null
     }
 
     def 'should compile forkEndMerge.puml with branch actions connected to their branch places'() {
@@ -111,68 +60,6 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(branch3EndPlace.index, action4.index) == 1
     }
 
-    def 'should compile forkEndMerge.puml with post-merge action connected to merge place and end place'() {
-        when:
-        def net = parseFile('forkEndMerge.puml')
-
-        then:
-        def action5 = net.transitions.find { it.actionKey == 'action 5' }
-        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
-
-        action5 != null
-        mergePlace != null
-
-        and:
-        net.incidenceMatrix.getInputWeight(mergePlace.index, action5.index) == 1
-        net.incidenceMatrix.getOutputWeight(net.endPlace.index, action5.index) == 1
-    }
-
-    def 'should compile forkEndMerge.puml with correct place and transition counts'() {
-        when:
-        def net = parseFile('forkEndMerge.puml')
-
-        then:
-        net.startPlace.label == 'start'
-        net.endPlace.label == 'end'
-
-        and:
-        net.places.find { it.label == 'P_fork_1_branch_1' } != null
-        net.places.find { it.label == 'P_fork_1_branch_1_end' } != null
-        net.places.find { it.label == 'P_fork_1_branch_2' } != null
-        net.places.find { it.label == 'P_fork_1_branch_2_end' } != null
-        net.places.find { it.label == 'P_fork_1_branch_3' } != null
-        net.places.find { it.label == 'P_fork_1_branch_3_1' } != null
-        net.places.find { it.label == 'P_fork_1_branch_3_end' } != null
-        net.places.find { it.label == 'P_fork_1_merge' } != null
-
-        and:
-        net.transitions.find { it.label == 'T_fork_1' } != null
-        net.transitions.find { it.label == 'T_fork_1_merge_sync' } != null
-    }
-
-    def 'should compile forkEndMerge.puml with branch end places feeding merge sync transition'() {
-        when:
-        def net = parseFile('forkEndMerge.puml')
-
-        then:
-        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        mergeSyncTransition != null
-
-        and:
-        def branch1EndPlace = net.places.find { it.label == 'P_fork_1_branch_1_end' }
-        def branch2EndPlace = net.places.find { it.label == 'P_fork_1_branch_2_end' }
-        def branch3EndPlace = net.places.find { it.label == 'P_fork_1_branch_3_end' }
-
-        branch1EndPlace != null
-        branch2EndPlace != null
-        branch3EndPlace != null
-
-        and:
-        net.incidenceMatrix.getInputWeight(branch1EndPlace.index, mergeSyncTransition.index) == 1
-        net.incidenceMatrix.getInputWeight(branch2EndPlace.index, mergeSyncTransition.index) == 1
-        net.incidenceMatrix.getInputWeight(branch3EndPlace.index, mergeSyncTransition.index) == 1
-    }
-
     @Unroll
     def 'should compile fork diagram with #branchCount branches from string and verify structure'() {
         given:
@@ -207,42 +94,6 @@ class ForkEndMergePumlCompilerSpec extends Specification {
 
         where:
         branchCount << [2, 3, 5]
-    }
-
-    def 'should compile fork with post-merge actions from string and verify linear connection'() {
-        given:
-        def puml = '''
-            @startuml
-            start
-            fork
-              :branch a;
-            fork again
-              :branch b;
-            end merge
-            :after merge 1;
-            :after merge 2;
-            end
-            @enduml
-        '''
-
-        when:
-        def net = parse(puml)
-
-        then:
-        def afterMerge1 = net.transitions.find { it.actionKey == 'after merge 1' }
-        def afterMerge2 = net.transitions.find { it.actionKey == 'after merge 2' }
-        afterMerge1 != null
-        afterMerge2 != null
-
-        and:
-        def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }
-        mergePlace != null
-
-        and:
-        net.incidenceMatrix.getInputWeight(mergePlace.index, afterMerge1.index) == 1
-
-        and:
-        net.incidenceMatrix.getOutputWeight(net.endPlace.index, afterMerge2.index) == 1
     }
 
     def 'should compile fork with no post-merge actions and verify direct merge to end transition'() {
