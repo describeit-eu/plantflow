@@ -93,6 +93,17 @@ class DefaultPetriNet implements PetriNet {
         return true
     }
 
+    private static Token mergeConsumedTokens(List<Token> consumedTokens) {
+        if (consumedTokens.isEmpty()) {
+            return Token.of()
+        }
+        Token merged = consumedTokens.get(0)
+        for (int i = 1; i < consumedTokens.size(); i++) {
+            merged = merged.deepMerge(consumedTokens.get(i))
+        }
+        return merged
+    }
+
     protected List<Place> getInputPlaces(int transitionIndex) {
         List<Place> result = []
         for (Place p : places) {
@@ -162,16 +173,5 @@ class DefaultPetriNet implements PetriNet {
             }
         }
         return baseToken
-    }
-
-    private static Token mergeConsumedTokens(List<Token> consumedTokens) {
-        if (consumedTokens.isEmpty()) {
-            return Token.of()
-        }
-        Token merged = consumedTokens.get(0)
-        for (int i = 1; i < consumedTokens.size(); i++) {
-            merged = merged.deepMerge(consumedTokens.get(i))
-        }
-        return merged
     }
 }
