@@ -149,18 +149,29 @@ class DefaultPetriNet implements PetriNet {
     }
 
     private Token getActionOutputToken(List<Token> consumedTokens, Transition transition, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
-        Token emptyToken = consumedTokens.isEmpty() ? Token.of() : consumedTokens.get(0)
+        Token baseToken = mergeConsumedTokens(consumedTokens)
 
         if (transition.actionKey) {
             ActionHandler actionHandler = handlerRegistry.getAction(transition.actionKey)
-            Object result = actionHandler.execute(executionContext, emptyToken)
+            Object result = actionHandler.execute(executionContext, baseToken)
 
             if (result instanceof Token tokenResult) {
                 return tokenResult
             } else if (result instanceof Map mapResult) {
-                return emptyToken.withPayload(mapResult)
+                return baseToken.withPayload(mapResult)
             }
         }
-        return emptyToken
+        return baseToken
+    }
+
+    private static Token mergeConsumedTokens(List<Token> consumedTokens) {
+        if (consumedTokens.isEmpty()) {
+            return Token.of()
+        }
+        Token merged = consumedTokens.get(0)
+        for (int i = 1; i < consumedTokens.size(); i++) {
+            merged = merged.deepMerge(consumedTokens.get(i))
+        }
+        return merged
     }
 }

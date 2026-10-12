@@ -92,4 +92,128 @@ class TokenSpec extends Specification {
         token1.toString().contains('tok-1')
         token1.toString().contains('x=10') || token1.toString().contains('x:10')
     }
+
+    def 'deepMerge should return same token when other is null'() {
+        given:
+        def token = new Token('tok-1', ofEpochMilli(1000), [a: 1])
+
+        when:
+        def merged = token.deepMerge(null)
+
+        then:
+        merged.is(token)
+    }
+
+    def 'deepMerge should merge flat payloads with overlay winning on conflicts'() {
+        given:
+        def base = new Token('tok-1', ofEpochMilli(1000), [a: 1, b: 2, shared: 'base'])
+        def overlay = new Token('tok-2', ofEpochMilli(2000), [c: 3, shared: 'overlay'])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.id == 'tok-1'
+        merged.timestamp == ofEpochMilli(1000)
+        merged.payload == [a: 1, b: 2, shared: 'overlay', c: 3]
+    }
+
+    def 'deepMerge should recursively merge nested maps'() {
+        given:
+        def base = new Token('tok-1', ofEpochMilli(1000), [
+            config: [host: 'localhost', port: 8080],
+            flat: 'base'
+        ])
+        def overlay = new Token('tok-2', ofEpochMilli(2000), [
+            config: [port: 9090, ssl: true],
+            extra: 'overlay'
+        ])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.config == [host: 'localhost', port: 9090, ssl: true]
+        merged.payload.flat == 'base'
+        merged.payload.extra == 'overlay'
+    }
+
+    def 'deepMerge should handle empty payloads'() {
+        given:
+        def empty = Token.of()
+        def withData = Token.of([key: 'value'])
+
+        expect:
+        empty.deepMerge(withData).payload == [key: 'value']
+        withData.deepMerge(empty).payload == [key: 'value']
+        empty.deepMerge(Token.of()).payload == [:]
+    }
+
+    def 'deepMerge should preserve base token id and timestamp'() {
+        given:
+        def baseTs = ofEpochMilli(1000)
+        def overlayTs = ofEpochMilli(2000)
+        def base = new Token('base-id', baseTs, [a: 1])
+        def overlay = new Token('overlay-id', overlayTs, [b: 2])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.id == 'base-id'
+        merged.timestamp == baseTs
+    }
+
+    def 'deepMerge should handle deeply nested maps with multiple levels'() {
+        given:
+        def base = Token.of([
+            level1: [
+                level2: [
+                    level3: [a: 1, b: 2],
+                    other: 'base'
+                ]
+            ]
+        ])
+        def overlay = Token.of([
+            level1: [
+                level2: [
+                    level3: [b: 99, c: 3]
+                ]
+            ]
+        ])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        def l1 = merged.payload.level1 as Map
+        def l2 = l1.level2 as Map
+        def l3 = l2.level3 as Map
+        l3 == [a: 1, b: 99, c: 3]
+        l2.other == 'base'
+    }
+
+    def 'deepMerge should not merge when overlay value is not a map but base is'() {
+        given:
+        def base = Token.of([key: [nested: 'value']])
+        def overlay = Token.of([key: 'flat'])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.key == 'flat'
+    }
+
+    def 'deepMerge should not merge when base value is not a map but overlay is'() {
+        given:
+        def base = Token.of([key: 'flat'])
+        def overlay = Token.of([key: [nested: 'value']])
+
+        when:
+        def merged = base.deepMerge(overlay)
+
+        then:
+        merged.payload.key == [nested: 'value']
+    }
 }

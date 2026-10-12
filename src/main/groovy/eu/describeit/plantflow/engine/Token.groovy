@@ -28,4 +28,29 @@ record Token(String id, Instant timestamp, Map<String, Object> payload) {
     Token withPayload(Map<String, Object> newPayload) {
         return new Token(this.id, this.timestamp, newPayload)
     }
+
+    Token deepMerge(Token other) {
+        if (other == null) {
+            return this
+        }
+        Map<String, Object> merged = deepMergeMaps(this.payload, other.payload)
+        return new Token(this.id, this.timestamp, merged)
+    }
+
+    private static Map<String, Object> deepMergeMaps(Map<String, Object> base, Map<String, Object> overlay) {
+        Map<String, Object> result = new LinkedHashMap<>(base)
+        for (Map.Entry<String, Object> entry : overlay.entrySet()) {
+            String key = entry.getKey()
+            Object overlayValue = entry.getValue()
+            Object baseValue = result.get(key)
+            if (baseValue instanceof Map && overlayValue instanceof Map) {
+                @SuppressWarnings(['unchecked', 'rawtypes'])
+                Map<String, Object> nested = deepMergeMaps((Map) baseValue, (Map) overlayValue)
+                result.put(key, nested)
+            } else {
+                result.put(key, overlayValue)
+            }
+        }
+        return result
+    }
 }
