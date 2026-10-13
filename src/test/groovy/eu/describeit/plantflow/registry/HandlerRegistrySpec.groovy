@@ -144,4 +144,60 @@ class HandlerRegistrySpec extends Specification {
         then:
         ex.message == 'Missing handler: x'
     }
+
+    def 'registerGuard with closure should return this for chaining'() {
+        given:
+        def registry = new HandlerRegistry()
+
+        when:
+        def result = registry.registerGuard('guard1') { ctx, tok -> true }
+
+        then:
+        result.is(registry)
+    }
+
+    def 'registerGuard with closure should support method chaining'() {
+        given:
+        def registry = new HandlerRegistry()
+
+        when:
+        def result = registry
+            .registerGuard('guard1') { ctx, tok -> true }
+            .registerGuard('guard2') { ctx, tok -> false }
+            .registerAction('action1') { ctx, tok -> tok }
+
+        then:
+        result.is(registry)
+        registry.getGuard('guard1') != null
+        registry.getGuard('guard2') != null
+        registry.getAction('action1') != null
+    }
+
+    def 'registerAction with closure should return this for chaining'() {
+        given:
+        def registry = new HandlerRegistry()
+
+        when:
+        def result = registry.registerAction('action1') { ctx, tok -> tok }
+
+        then:
+        result.is(registry)
+    }
+
+    def 'registerAction with closure should support method chaining'() {
+        given:
+        def registry = new HandlerRegistry()
+
+        when:
+        def result = registry
+            .registerAction('action1') { ctx, tok -> tok }
+            .registerAction('action2') { ctx, tok -> tok }
+            .registerGuard('guard1') { ctx, tok -> true }
+
+        then:
+        result.is(registry)
+        registry.getAction('action1') != null
+        registry.getAction('action2') != null
+        registry.getGuard('guard1') != null
+    }
 }

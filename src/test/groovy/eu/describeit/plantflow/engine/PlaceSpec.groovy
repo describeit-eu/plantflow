@@ -44,4 +44,29 @@ class PlaceSpec extends Specification {
         p1.toString().contains('index:0') || p1.toString().contains('index=0')
         p1.toString().contains('label:p1') || p1.toString().contains('label=p1')
     }
+
+    def 'should trim whitespace from label'() {
+        when:
+        def place = new Place(0, '  hello world  ')
+
+        then:
+        place.label == 'hello world'
+        place.index == 0
+    }
+
+    def 'should trim tab and newline characters from label'() {
+        when:
+        def place = new Place(1, '\thello\n')
+
+        then:
+        place.label == 'hello'
+    }
+
+    def 'should accept label with internal whitespace'() {
+        when:
+        def place = new Place(0, 'hello world foo')
+
+        then:
+        place.label == 'hello world foo'
+    }
 }
