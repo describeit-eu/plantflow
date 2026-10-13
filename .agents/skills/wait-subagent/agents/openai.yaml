@@ -1,3 +1,0 @@
-interface:
-  display_name: "Wait Subagent"
-  short_description: "Run a subagent to completion and return its result"
