@@ -59,7 +59,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/groovy-developer/SKILL.md",
-      "computedHash": "4c732f7a7420c6d183458dd2ad7ddd30f7ecc95bdad7ec10d83a85a9f282ceb2"
+      "computedHash": "c4915cdc299c669eb10930c80252ef7e084322ca1fa78707d899920d4294f7a7"
     },
     "handoff": {
       "source": "mattpocock/skills",
@@ -73,6 +73,12 @@
       "skillPath": "skills/engineering/implement/SKILL.md",
       "computedHash": "b6371a0a6723bad551f3adc721e3729a6a97acfc3670dc2bdea198bbe78408c0"
     },
+    "implement-loop": {
+      "source": "cristal-ise/skills",
+      "sourceType": "github",
+      "skillPath": "skills/implement-loop/SKILL.md",
+      "computedHash": "5465e4dde89e157568cc980e0747a16079ab9fbfcfbbce59521abc2e37fdff19"
+    },
     "implement-spec": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -83,7 +89,7 @@
       "source": "cristal-ise/skills",
       "sourceType": "github",
       "skillPath": "skills/implement-ticket/SKILL.md",
-      "computedHash": "9b2379868abc87d50d9b1c2b5578bf71ccacb30746266e2a6bd0c4156c266abc"
+      "computedHash": "1929ce05892b5064fe0003e5585c582762f42ed2fddacc8d1499142ba49610e2"
     },
     "improve-codebase-architecture": {
       "source": "mattpocock/skills",

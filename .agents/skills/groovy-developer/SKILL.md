@@ -72,41 +72,9 @@ Choose the right paradigm for each responsibility:
 
 **Leading word: relentless** — be relentless about proper error handling.
 
-### Groovy-Specific Error Handling
-
-- Use **`try/catch/finally`** with specific exception types rather than catching `Exception` or `Throwable` — catch the most specific type first.
-- Use **`?.` safe navigation** to avoid `NullPointerException` when traversing optional object chains: `user?.address?.city`.
-- Prefer returning **`Optional.empty()`** or a **null-object pattern** over returning `null` from public methods that may not produce a result.
-- Use Groovy's **`multicatch`** syntax (`catch (IOException | SQLException e)`) to handle multiple exception types with shared recovery logic.
-- **Log exceptions** with full stack traces using `log.error('Operation failed', e)` rather than `e.printStackTrace()` for consistent log formatting.
-- Use **`@Throws(IOException)`** annotations on methods that throw checked exceptions to maintain Java interoperability in mixed codebases.
-- Implement service-layer methods with a **result wrapper object** (`Result.success(value)` / `Result.failure(error)`) to make error paths explicit in the return type.
-- Use Groovy's **`withCloseable {}`** and **`withStream {}`** patterns for resource management instead of explicit `try/finally` close blocks.
-- Define **domain-specific exception hierarchies** (`AppException`, `ValidationException`, `ServiceException`) rather than reusing generic Java exceptions.
-- Use **`@EqualsAndHashCode`** on exception classes when they need to be compared in test assertions or used as Map keys.
-- Wrap **external API calls** in a `try/catch` that rethrows as a domain exception — this decouples callers from third-party exception hierarchies.
-- Use **`Thread.setDefaultUncaughtExceptionHandler`** in long-running Groovy services to log unhandled exceptions from background threads.
-
-### Error Handling Strategy
-
-- **Combine exceptions** for unexpected failures with **Result/Either types** for expected business errors.
-- Use **exceptions** for infrastructure failures (network, I/O, OOM) and **result types** for domain validation errors.
-- **Never swallow exceptions silently** — always log or propagate with context.
-- Use **exceptions for truly exceptional conditions** (infrastructure failures, programming errors) and **Result/Either/Option types** for expected business failures (validation, not-found, permission denied).
-- **Wrap third-party library exceptions** at module boundaries into your own domain-specific error types.
-- **Always attach context** (operation name, input values, timestamps) when re-throwing or wrapping errors.
-- Use a **centralized error handler** for cross-cutting concerns (logging, monitoring, user-facing messages).
-- Prefer **typed error enums** or **union types** over generic error strings for pattern matching and exhaustiveness checks.
-- **Never use exceptions for control flow** — reserve them for truly unexpected states.
-- Define an **error taxonomy**: separate **Recoverable** (retry, fallback) from **Fatal** (crash, alert) from **Expected** (return to caller) errors.
-- **Wrap third-party exceptions** at module boundaries — translate external errors into domain-specific error types that callers can pattern-match on.
-- Attach **structured context** to all errors: operation name, relevant input IDs, timestamp, and correlation/trace ID for distributed tracing.
-- Implement a **centralized error handler middleware** for cross-cutting concerns: structured logging, metrics emission, and user-friendly message formatting.
-- Use **typed error enums** or **discriminated unions** over generic strings — this enables exhaustiveness checks at compile time and prevents unhandled error paths.
-- **Never swallow exceptions silently**. At minimum log them; prefer propagating to a handler that can decide the correct recovery strategy.
-- For **async operations**, ensure errors propagate correctly through promise chains — unhandled rejections should crash the process in production rather than silently failing.
-- In **retry logic**, distinguish transient errors (network timeout, 503) from permanent errors (400, 404) — only retry transient failures with exponential backoff and a maximum retry count.
-- **Document error contracts** at API boundaries: which errors each function can return and what callers should do about them.
+See [error-handling.md](error-handling.md) for Groovy error-handling mechanics and strategy, including:
+- Catching, wrapping, and structuring errors (specific catch types, multi-catch, result wrappers, domain exception hierarchies)
+- Error channel policy (exceptions vs Result/Either, error taxonomy, retry logic, error contracts)
 
 ## Testing with Spock
 
@@ -160,7 +128,7 @@ Mock vs Stub:
 
 ### Full Spock Reference
 
-See [testing/spock.md](testing/spock.md) for complete Spock testing guidelines including:
+See [testing-spock.md](testing-spock.md) for complete Spock testing guidelines including:
 - Data-driven testing patterns
 - Common mistakes and how to avoid them
 - Testing strategy (integration vs unit)
@@ -172,11 +140,11 @@ See [testing/spock.md](testing/spock.md) for complete Spock testing guidelines i
 
 Choose your architecture type and follow the corresponding rules:
 
-| Architecture | File                                                 | When to Use                        |
-|--------------|------------------------------------------------------|------------------------------------|
-| **Library**  | [architectures/library.md](architectures/library.md) | Building reusable Groovy libraries |
-| **CLI**      | [architectures/cli.md](architectures/cli.md)         | Command-line applications          |
-| **REST API** | [architectures/restapi.md](architectures/restapi.md) | HTTP API services                  |
-| **WebApp**   | [architectures/webapp.md](architectures/webapp.md)   | Web applications with UI           |
+| Architecture | File                                               | When to Use                        |
+|--------------|----------------------------------------------------|------------------------------------|
+| **Library**  | [architecture-library.md](architecture-library.md) | Building reusable Groovy libraries |
+| **CLI**      | [architecture-cli.md](architecture-cli.md)         | Command-line applications          |
+| **REST API** | [architecture-restapi.md](architecture-restapi.md) | HTTP API services                  |
+| **WebApp**   | [architecture-webapp.md](architecture-webapp.md)   | Web applications with UI           |
 
 Each architecture file contains rules specific to that project type. The common rules above apply to all Groovy projects regardless of architecture.
