@@ -23,28 +23,6 @@ class PlantFlowTestKit {
     // ==================== Net Builders ====================
 
     /**
-     * Creates a linear Petri net from the given action names.
-     * Equivalent to parsing a linear PlantUML diagram.
-     */
-    static PetriNetStructure linearNet(String... actions) {
-        return parse(linearPuml(actions))
-    }
-
-    /**
-     * Creates a conditional Petri net from the given guard and branch actions.
-     */
-    static PetriNetStructure conditionalNet(String guard, List<String> thenActions, List<String> elseActions) {
-        return parse(conditionalPuml(guard, thenActions as String[], elseActions as String[]))
-    }
-
-    /**
-     * Creates a fork Petri net from the given branches and post-merge actions.
-     */
-    static PetriNetStructure forkNet(List<List<String>> branches, List<String> postMergeActions = []) {
-        return parse(forkPuml(branches, postMergeActions))
-    }
-
-    /**
      * Creates a simple linear Petri net with start -> transition -> end.
      */
     static DefaultPetriNet simpleLinearNet(
@@ -65,28 +43,6 @@ class PlantFlowTestKit {
         return new DefaultPetriNet([pStart, pEnd], [t], incidenceMatrix, pStart, pEnd)
     }
 
-    /**
-     * Creates a multi-place Petri net with the given structure.
-     */
-    static DefaultPetriNet multiPlaceNet(
-        List<String> placeLabels,
-        List<String> transitionLabels,
-        List<String> actionKeys,
-        List<String> guardKeys,
-        int[][] inputMatrix,
-        int[][] outputMatrix
-    ) {
-        def places = []
-        placeLabels.eachWithIndex { label, idx -> places.add(new Place(idx, label)) }
-        def transitions = []
-        transitionLabels.eachWithIndex { label, idx ->
-            transitions.add(new Transition(idx, label, actionKeys ? actionKeys[idx] : null, guardKeys ? guardKeys[idx] : null))
-        }
-
-        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
-        return new DefaultPetriNet(places, transitions, incidenceMatrix, places[0], places[placeLabels.size() - 1])
-    }
-
     // ==================== Component Factories ====================
 
     /**
@@ -97,28 +53,9 @@ class PlantFlowTestKit {
     }
 
     /**
-     * Creates a Place with the given index and label (with defaults).
-     */
-    static Place createPlace(int index = 0, String label = 'TestPlace') {
-        return new Place(index, label)
-    }
-
-    /**
      * Creates a Transition with the given parameters.
      */
     static Transition transition(int index, String label, String actionKey = null, String guardKey = null) {
-        return new Transition(index, label, actionKey, guardKey)
-    }
-
-    /**
-     * Creates a Transition with the given parameters (with defaults).
-     */
-    static Transition createTransition(
-        int index = 0,
-        String label = 'TestTransition',
-        String actionKey = null,
-        String guardKey = null
-    ) {
         return new Transition(index, label, actionKey, guardKey)
     }
 
@@ -137,23 +74,6 @@ class PlantFlowTestKit {
     }
 
     /**
-     * Creates a Token with the given id and payload (legacy createToken signature).
-     */
-    static Token createToken(String id = null, Map<String, Object> payload = null) {
-        if (id) {
-            return new Token(id, null, payload ?: [:])
-        }
-        return Token.of(payload ?: [:])
-    }
-
-    /**
-     * Creates a Token with the given payload (legacy createToken signature with Map only).
-     */
-    static Token createToken(Map<String, Object> payload) {
-        return Token.of(payload ?: [:])
-    }
-
-    /**
      * Creates a Marking with the given number of places.
      */
     static Marking marking(int placeCount) {
@@ -161,61 +81,9 @@ class PlantFlowTestKit {
     }
 
     /**
-     * Creates a Marking with the given number of places (with default).
-     */
-    static Marking createMarking(int placeCount = 1) {
-        return new Marking(placeCount)
-    }
-
-    /**
-     * Creates a Marking and adds a token to the specified place.
-     */
-    static Marking markingWithToken(int placeCount, Place place, Token token) {
-        def marking = new Marking(placeCount)
-        marking.addToken(place, token)
-        return marking
-    }
-
-    /**
-     * Creates a Marking and adds a token to the start place of the given net.
-     */
-    static Marking markingWithStartToken(PetriNetStructure net, Token token = null) {
-        def marking = new Marking(net.places.size())
-        marking.addToken(net.startPlace, token ?: Token.of())
-        return marking
-    }
-
-    /**
      * Creates an IncidenceMatrix with the given matrices.
      */
     static IncidenceMatrix incidenceMatrix(int[][] inputMatrix, int[][] outputMatrix) {
-        return new IncidenceMatrix(inputMatrix, outputMatrix)
-    }
-
-    /**
-     * Creates an IncidenceMatrix with the given matrices (with defaults).
-     */
-    static IncidenceMatrix createIncidenceMatrix(int[][] inputMatrix = null, int[][] outputMatrix = null) {
-        return new IncidenceMatrix(inputMatrix, outputMatrix)
-    }
-
-    /**
-     * Creates a test IncidenceMatrix with a 2x2 structure.
-     */
-    static IncidenceMatrix create2x2Matrix(
-        int p0t0Input = 1, int p0t1Input = 0,
-        int p1t0Input = 0, int p1t1Input = 0,
-        int p0t0Output = 0, int p0t1Output = 0,
-        int p1t0Output = 0, int p1t1Output = 1
-    ) {
-        def inputMatrix = [
-            [p0t0Input, p0t1Input],
-            [p1t0Input, p1t1Input]
-        ] as int[][]
-        def outputMatrix = [
-            [p0t0Output, p0t1Output],
-            [p1t0Output, p1t1Output]
-        ] as int[][]
         return new IncidenceMatrix(inputMatrix, outputMatrix)
     }
 
@@ -231,31 +99,6 @@ class PlantFlowTestKit {
             configurator.call(registry)
         }
         return registry
-    }
-
-    /**
-     * Creates a HandlerRegistry with optional configuration closure (legacy name).
-     */
-    static HandlerRegistry createRegistry(Closure<HandlerRegistry> configurator = null) {
-        return registry(configurator)
-    }
-
-    /**
-     * Creates a simple HandlerRegistry with pass-through action handlers.
-     */
-    static HandlerRegistry passThroughRegistry(String... actionKeys) {
-        def registry = new HandlerRegistry()
-        actionKeys.each { String key ->
-            registry.registerAction(key) { ExecutionContext ctx, Token tok -> tok }
-        }
-        return registry
-    }
-
-    /**
-     * Creates a simple HandlerRegistry with a single pass-through action handler.
-     */
-    static HandlerRegistry simpleRegistry(String actionKey = 'action') {
-        return passThroughRegistry(actionKey)
     }
 
     /**
@@ -275,26 +118,12 @@ class PlantFlowTestKit {
         return registry
     }
 
-    /**
-     * Creates a HandlerRegistry with payload actions (legacy name).
-     */
-    static HandlerRegistry registerPayloadActions(List<String> actions, List<String> executionLog = null) {
-        return payloadRegistry(actions, executionLog)
-    }
-
     // ==================== Context Factory ====================
 
     /**
      * Creates an ExecutionContext with optional initial values.
      */
     static ExecutionContext context(Map<String, Object> initialValues = null) {
-        return new ExecutionContext(initialValues)
-    }
-
-    /**
-     * Creates an ExecutionContext with optional initial values (legacy name).
-     */
-    static ExecutionContext createContext(Map<String, Object> initialValues = null) {
         return new ExecutionContext(initialValues)
     }
 
@@ -313,13 +142,6 @@ class PlantFlowTestKit {
         sb << 'end\n'
         sb << '@enduml\n'
         return sb.toString()
-    }
-
-    /**
-     * Creates a simple linear diagram PlantUML string (legacy name).
-     */
-    static String createLinearPuml(String... actions) {
-        return linearPuml(actions)
     }
 
     /**
@@ -357,20 +179,6 @@ end
         sb << 'end\n'
         sb << '@enduml\n'
         return sb.toString()
-    }
-
-    /**
-     * Creates a conditional diagram PlantUML string (legacy name, single action version).
-     */
-    static String createConditionalPuml(String guard, String thenAction, String elseAction) {
-        return conditionalPuml(guard, thenAction, elseAction)
-    }
-
-    /**
-     * Creates a conditional diagram PlantUML string (legacy name, array version).
-     */
-    static String createConditionalPuml(String guard, String[] thenActions, String[] elseActions) {
-        return conditionalPuml(guard, thenActions, elseActions)
     }
 
     /**
@@ -418,48 +226,20 @@ end
         return forkPuml(branches, [])
     }
 
-    /**
-     * Creates a fork diagram PlantUML string (legacy name, three branches).
-     */
-    static String createForkPuml(List<String> branch1Actions, List<String> branch2Actions, List<String> branch3Actions) {
-        return forkPuml(branch1Actions, branch2Actions, branch3Actions)
-    }
-
-    /**
-     * Creates a fork diagram PlantUML string (legacy name, variable branches).
-     */
-    static String createForkPumlWithBranches(List<List<String>> branches, List<String> postMergeActions = []) {
-        return forkPuml(branches, postMergeActions)
-    }
-
-    /**
-     * Creates a fork diagram PlantUML string (legacy name, branch count).
-     */
-    static String createForkPumlWithBranchCount(int branchCount) {
-        return forkPuml(branchCount)
-    }
-
     // ==================== Parser Helpers ====================
-
-    /**
-     * Creates a new ActivityDiagramParser instance.
-     */
-    static ActivityDiagramParser createParser() {
-        return new ActivityDiagramParser()
-    }
 
     /**
      * Parses PlantUML content from a string.
      */
     static PetriNetStructure parse(String pumlContent) {
-        return createParser().parse(pumlContent)
+        return new ActivityDiagramParser().parse(pumlContent)
     }
 
     /**
      * Parses PlantUML content from a file.
      */
     static PetriNetStructure parse(File file) {
-        return createParser().parse(file)
+        return new ActivityDiagramParser().parse(file)
     }
 
     // ==================== AST Factories ====================
@@ -523,57 +303,41 @@ end
         return diagram
     }
 
-    // ==================== Marshaller Helpers ====================
+    // ==================== PlantFlow Execution Helpers ====================
 
     /**
-     * Serializes an object to JSON string.
+     * Creates a PlantFlow from a linear PUML and runs it until completion.
      */
-    static String toJson(Object obj, boolean pretty = false) {
-        return Marshaller.toJson(obj, pretty)
+    static PlantFlow runLinearFlow(List<String> actions, HandlerRegistry registry, Token token = null, ExecutionContext ctx = null) {
+        def engine = PlantFlow.from(linearPuml(actions as String[]), registry)
+        engine.runUntilEnd(token, ctx)
+        return engine
     }
 
     /**
-     * Deserializes a JSON string to an object of the specified type.
+     * Creates a PlantFlow from PUML content and runs it until completion.
      */
-    static <T> T fromJson(String json, Class<T> type) {
-        return Marshaller.fromJson(json, type)
+    static PlantFlow runFlow(String puml, HandlerRegistry registry, Token token = null, ExecutionContext ctx = null) {
+        def engine = PlantFlow.from(puml, registry)
+        engine.runUntilEnd(token, ctx)
+        return engine
     }
 
     /**
-     * Serializes and deserializes an object, verifying round-trip produces non-null result.
+     * Verifies that a workflow has completed with an end token.
      */
-    static <T> T roundTrip(T obj, Class<T> type) {
-        def json = Marshaller.toJson(obj)
-        def deserialized = Marshaller.fromJson(json, type)
-        assert deserialized != null : "Deserialization returned null"
-        return deserialized
+    static void verifyCompleted(PlantFlow engine) {
+        assert engine.isCompleted() : "Expected workflow to be completed"
+        assert engine.getEndToken() != null : "Expected end token to exist"
     }
 
     /**
-     * Serializes an object to JSON and verifies it contains the expected substring.
+     * Verifies the end token payload matches the expected map.
      */
-    static String serializeAndVerify(Object obj, String expectedSubstring) {
-        def json = Marshaller.toJson(obj)
-        assert json.contains(expectedSubstring) : "Expected JSON to contain '$expectedSubstring' but was: $json"
-        return json
-    }
-
-    /**
-     * Verifies that JSON contains all expected fields.
-     */
-    static void verifyJsonContainsFields(String json, List<String> expectedFields) {
-        expectedFields.each { field ->
-            assert json.contains(field) : "Expected JSON to contain field '$field' but was: $json"
-        }
-    }
-
-    /**
-     * Verifies that JSON does NOT contain specified fields.
-     */
-    static void verifyJsonExcludesFields(String json, List<String> excludedFields) {
-        excludedFields.each { field ->
-            assert !json.contains(field) : "Expected JSON to NOT contain field '$field' but was: $json"
-        }
+    static void verifyEndTokenPayload(PlantFlow engine, Map<String, Object> expectedPayload) {
+        def token = engine.getEndToken()
+        assert token != null : "Expected end token"
+        assert token.payload == expectedPayload : "Expected payload ${expectedPayload} but got ${token.payload}"
     }
 
     // ==================== Net Assertion Helpers ====================
@@ -714,7 +478,17 @@ end
     }
 
     /**
-     * Verifies incidence matrix connections for a transition.
+     * Verifies that a transition consumes from the expected input place and produces to the expected output place.
+     */
+    static void verifyTransitionConnection(PetriNetStructure net, Transition transition, Place inputPlace, Place outputPlace) {
+        assert net.incidenceMatrix.getInputWeight(inputPlace.index, transition.index) == 1 : \
+            "Transition ${transition.label} should consume from place ${inputPlace.label}"
+        assert net.incidenceMatrix.getOutputWeight(outputPlace.index, transition.index) == 1 : \
+            "Transition ${transition.label} should produce to place ${outputPlace.label}"
+    }
+
+    /**
+     * Verifies incidence matrix connections for a transition by indices.
      */
     static void verifyTransitionConnection(PetriNetStructure net, int transitionIndex, int inputPlaceIndex, int outputPlaceIndex) {
         def t = net.transitions[transitionIndex]
@@ -722,104 +496,5 @@ end
             "Transition ${t.label} should consume from place ${inputPlaceIndex}"
         assert net.incidenceMatrix.getOutputWeight(outputPlaceIndex, t.index) == 1 : \
             "Transition ${t.label} should produce to place ${outputPlaceIndex}"
-    }
-
-    // ==================== Component Assertions ====================
-
-    /**
-     * Validates that a component has the expected index.
-     */
-    static void assertIndex(Object component, int expectedIndex) {
-        assert component.index == expectedIndex : "Expected index ${expectedIndex} but got ${component.index}"
-    }
-
-    /**
-     * Validates that a component has the expected label.
-     */
-    static void assertLabel(Object component, String expectedLabel) {
-        assert component.label == expectedLabel : "Expected label '${expectedLabel}' but got '${component.label}'"
-    }
-
-    /**
-     * Validates that two components are equal.
-     */
-    static void assertEqualComponents(Object component1, Object component2) {
-        assert component1 == component2 : "Expected components to be equal"
-        assert component1.hashCode() == component2.hashCode() : "Expected hashCodes to be equal"
-    }
-
-    /**
-     * Validates that two components are not equal.
-     */
-    static void assertNotEqualComponents(Object component1, Object component2) {
-        assert component1 != component2 : "Expected components to be not equal"
-    }
-
-    /**
-     * Validates that toString contains the expected substring.
-     */
-    static void assertToStringContains(Object component, String expectedSubstring) {
-        assert component.toString().contains(expectedSubstring) : \
-            "Expected toString to contain '${expectedSubstring}' but was: ${component.toString()}"
-    }
-
-    /**
-     * Validates that creating a component with null label throws IllegalArgumentException.
-     */
-    static void assertNullLabelThrows(Closure<Object> factory) {
-        try {
-            factory.call()
-            assert false : "Expected IllegalArgumentException for null label"
-        } catch (IllegalArgumentException expected) {
-            // expected
-        }
-    }
-
-    /**
-     * Validates that creating a component with blank label throws IllegalArgumentException.
-     */
-    static void assertBlankLabelThrows(Closure<Object> factory, String blankLabel) {
-        try {
-            factory.call(blankLabel)
-            assert false : "Expected IllegalArgumentException for blank label '${blankLabel}'"
-        } catch (IllegalArgumentException expected) {
-            // expected
-        }
-    }
-
-    /**
-     * Validates that creating a component with null index throws IllegalArgumentException.
-     */
-    static void assertNullIndexThrows(Closure<Object> factory) {
-        try {
-            factory.call()
-            assert false : "Expected IllegalArgumentException for null index"
-        } catch (IllegalArgumentException expected) {
-            // expected
-        }
-    }
-
-    // ==================== Standard Fixtures ====================
-
-    /**
-     * Creates a standard set of test places.
-     */
-    static List<Place> createStandardPlaces() {
-        return [
-            new Place(0, 'start'),
-            new Place(1, 'mid'),
-            new Place(2, 'end')
-        ]
-    }
-
-    /**
-     * Creates a standard set of test transitions.
-     */
-    static List<Transition> createStandardTransitions() {
-        return [
-            new Transition(0, 't1', 'action1', null),
-            new Transition(1, 't2', 'action2', null),
-            new Transition(2, 't3', 'action3', null)
-        ]
     }
 }

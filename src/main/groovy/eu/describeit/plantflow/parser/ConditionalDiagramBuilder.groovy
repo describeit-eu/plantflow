@@ -2,6 +2,7 @@ package eu.describeit.plantflow.parser
 
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
+import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import groovy.transform.CompileStatic
 
@@ -63,16 +64,20 @@ class ConditionalDiagramBuilder implements DiagramBuilder {
     }
 
     private static ActivityDiagram buildDiagram(DiagramState state) {
-        ActivityDiagram diagram = new ActivityDiagram(state.hasStart, state.hasEnd, [])
-        diagram.hasIf = state.hasIf
-        diagram.hasElse = state.hasElse
-        diagram.hasEndif = state.hasEndif
+        List<ActivityNode> nodes = []
         if (state.guard != null) {
-            diagram.addNode(new ConditionalNode(state.guard, state.thenActions, state.elseActions))
-        } else if (!state.hasElse && !state.hasEndif) {
-            diagram.hasEndif = true
+            nodes.add(new ConditionalNode(state.guard, state.thenActions, state.elseActions))
         }
-        return diagram
+
+        boolean effectiveHasEndif = state.hasEndif
+        if (state.guard == null && !state.hasElse && !state.hasEndif) {
+            effectiveHasEndif = true
+        }
+
+        return new ActivityDiagram(state.hasStart, state.hasEnd, nodes)
+            .withIf(state.hasIf)
+            .withElse(state.hasElse)
+            .withEndif(effectiveHasEndif)
     }
 
     private static class DiagramState {

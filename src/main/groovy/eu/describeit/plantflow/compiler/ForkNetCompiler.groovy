@@ -112,15 +112,6 @@ class ForkNetCompiler {
             intermediatePlaces.add(builder.addPlace(NetLabeling.postMergePlace(forkIndex, i)))
         }
         List<Place> allPlaces = [mergePlace] + intermediatePlaces + [endPlace]
-        connectLinearActions(builder, allPlaces, postForkActions)
-    }
-
-    private static void connectLinearActions(PetriNetBuilder builder, List<Place> places, List<ActionNode> actionNodes) {
-        for (int i = 0; i < actionNodes.size(); i++) {
-            ActionNode node = actionNodes.get(i)
-            Transition transition = builder.addTransition(node.action, node.action, null)
-            builder.connect(places.get(i), transition)
-            builder.connect(transition, places.get(i + 1))
-        }
+        LinearChainHelper.connectLinearActions(builder, allPlaces, postForkActions)
     }
 }

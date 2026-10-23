@@ -57,8 +57,16 @@ class StatefulExecution {
         return engine.getEnabledTransitions(structure, marking, registry, context)
     }
 
+    List<Transition> getEnabledTransitions(Marking customMarking, HandlerRegistry registry, ExecutionContext context) {
+        return engine.getEnabledTransitions(structure, customMarking, registry, context)
+    }
+
     boolean fire(Transition transition, HandlerRegistry registry, ExecutionContext context) {
         return engine.fire(structure, transition, marking, registry, context)
+    }
+
+    boolean fire(Marking customMarking, Transition transition, HandlerRegistry registry, ExecutionContext context) {
+        return engine.fire(structure, transition, customMarking, registry, context)
     }
 
     boolean step(HandlerRegistry registry, ExecutionContext context) {

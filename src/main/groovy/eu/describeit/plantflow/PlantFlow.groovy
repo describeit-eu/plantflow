@@ -65,7 +65,7 @@ class PlantFlow {
     }
 
     List<Transition> getEnabledTransitions(Marking marking, ExecutionContext context) {
-        return petriNet.engine.getEnabledTransitions(petriNet.structure, marking, handlerRegistry, context)
+        return petriNet.getEnabledTransitions(marking, handlerRegistry, context)
     }
 
     boolean fire(Transition transition) {
@@ -73,12 +73,15 @@ class PlantFlow {
     }
 
     Marking fire(Transition transition, Marking marking, ExecutionContext context) {
-        petriNet.engine.fire(petriNet.structure, transition, marking, handlerRegistry, context)
+        petriNet.fire(marking, transition, handlerRegistry, context)
         return marking
     }
 
     boolean step() {
-        return petriNet.step(handlerRegistry, executionContext)
+        List<Transition> enabledTransitions = getEnabledTransitions()
+        log.info('step() - enabledTransitions:{}', enabledTransitions)
+        if (enabledTransitions) return fire(enabledTransitions.get(0))
+        return false
     }
 
     PlantFlow runUntilEnd(Token token = null, ExecutionContext context = null) {

@@ -35,7 +35,7 @@ class DefaultPetriNetEngineSpec extends Specification {
         def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [tGuard, tAction], incidenceMatrix, pStart, pEnd)
 
-        def registry = createRegistry { reg ->
+        def registry = registry { reg ->
             reg.registerGuard('checkCondition') { ExecutionContext ctx, Token tok ->
                 return tok.payload.valid == true
             }
@@ -43,8 +43,8 @@ class DefaultPetriNetEngineSpec extends Specification {
             reg.registerAction('action2') { ExecutionContext ctx, Token tok -> tok }
         }
 
-        def marking = createMarking(net.places.size())
-        def context = createContext()
+        def marking = marking(net.places.size())
+        def context = context()
 
         expect:
         !engine.isEnabled(net, null, marking, registry, context)
@@ -77,14 +77,14 @@ class DefaultPetriNetEngineSpec extends Specification {
         def pEnd = net.endPlace
         def tAction = net.transitions[0]
 
-        def registry = createRegistry { reg ->
+        def registry = registry { reg ->
             reg.registerAction('transformAction') { ExecutionContext ctx, Token tok ->
                 return [result: 'success']
             }
         }
 
-        def marking = createMarking(net.places.size())
-        def context = createContext()
+        def marking = marking(net.places.size())
+        def context = context()
 
         when: 'firing when not enabled'
         def firedWithoutToken = engine.fire(net, tAction, marking, registry, context)
@@ -124,8 +124,8 @@ class DefaultPetriNetEngineSpec extends Specification {
             }
         }
 
-        def marking = createMarking(net.places.size())
-        def initialToken = createToken([source: 'input'])
+        def marking = marking(net.places.size())
+        def initialToken = token([source: 'input'])
         marking.addToken(pStart, initialToken)
 
         when:
@@ -508,7 +508,7 @@ class DefaultPetriNetEngineSpec extends Specification {
         def registry = new HandlerRegistry()
         registry.registerAction('transformAction') { ExecutionContext ctx, Token tok -> customToken }
 
-        def marking = createMarking(net.places.size())
+        def marking = marking(net.places.size())
         marking.addToken(pStart, Token.of([input: 'data']))
 
         when:
@@ -548,8 +548,8 @@ class DefaultPetriNetEngineSpec extends Specification {
         registry.registerAction('action1') { ExecutionContext ctx, Token tok -> tok }
         registry.registerAction('action2') { ExecutionContext ctx, Token tok -> tok }
 
-        def marking = createMarking(net.places.size())
-        def context = createContext()
+        def marking = marking(net.places.size())
+        def context = context()
 
         when: 'no tokens - no transitions enabled'
         def enabledEmpty = engine.getEnabledTransitions(net, marking, registry, context)
