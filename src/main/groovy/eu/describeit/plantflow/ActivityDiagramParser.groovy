@@ -5,6 +5,7 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.compiler.DiagramCompiler
 import eu.describeit.plantflow.engine.PetriNet
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
@@ -31,7 +32,7 @@ class ActivityDiagramParser {
     private static final String STARTUML = '@startuml', ENDUML = '@enduml', COMMENT = '\''
     private static final List<String> IGNORED = [COMMENT, STARTUML, ENDUML]
 
-    private final PetriNetCompiler compiler = new PetriNetCompiler()
+    private final DiagramCompiler compiler = new DiagramCompiler()
 
     PetriNet parse(File file) {
         DiagramValidator.validateFile(file)
