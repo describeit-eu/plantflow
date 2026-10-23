@@ -1,8 +1,8 @@
 package eu.describeit.plantflow.compiler
 
 import eu.describeit.plantflow.ast.ActionNode
-import eu.describeit.plantflow.engine.PetriNet
 import eu.describeit.plantflow.engine.PetriNetBuilder
+import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
@@ -12,7 +12,7 @@ class LinearNetCompiler {
 
     private static final String ERR_NO_ACTIONS = 'Diagram must contain at least one action transition'
 
-    PetriNet compile(List<ActionNode> actions) {
+    PetriNetStructure compile(List<ActionNode> actions) {
         if (actions == null || actions.isEmpty()) {
             throw new IllegalArgumentException(ERR_NO_ACTIONS)
         }

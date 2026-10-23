@@ -2,8 +2,8 @@ package eu.describeit.plantflow.compiler
 
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ConditionalNode
-import eu.describeit.plantflow.engine.PetriNet
 import eu.describeit.plantflow.engine.PetriNetBuilder
+import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
@@ -15,7 +15,7 @@ class ConditionalNetCompiler {
     private static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
     private static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
 
-    PetriNet compile(ConditionalNode node) {
+    PetriNetStructure compile(ConditionalNode node) {
         validate(node)
         return assembleNet(node)
     }
@@ -32,7 +32,7 @@ class ConditionalNetCompiler {
         }
     }
 
-    private static PetriNet assembleNet(ConditionalNode node) {
+    private static PetriNetStructure assembleNet(ConditionalNode node) {
         PetriNetBuilder builder = new PetriNetBuilder()
         Place startPlace = builder.addPlace(NetLabeling.PLACE_START)
         Place decisionPlace = builder.addPlace(NetLabeling.PLACE_IF_DECISION)

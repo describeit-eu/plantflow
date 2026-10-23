@@ -6,7 +6,7 @@ import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.compiler.DiagramCompiler
-import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.PetriNetStructure
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
@@ -34,12 +34,12 @@ class ActivityDiagramParser {
 
     private final DiagramCompiler compiler = new DiagramCompiler()
 
-    PetriNet parse(File file) {
+    PetriNetStructure parse(File file) {
         DiagramValidator.validateFile(file)
         return parse(file.getText(StandardCharsets.UTF_8.name()))
     }
 
-    PetriNet parse(String pumlContent) {
+    PetriNetStructure parse(String pumlContent) {
         DiagramValidator.validateContent(pumlContent)
         List<String> lines = pumlContent.readLines()
         ActivityDiagram diagram

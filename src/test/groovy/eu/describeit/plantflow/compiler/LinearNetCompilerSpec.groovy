@@ -9,7 +9,7 @@ class LinearNetCompilerSpec extends Specification {
 
     def compiler = new LinearNetCompiler()
 
-    def 'should compile single action into PetriNet with start and end places'() {
+    def 'should compile single action into PetriNetStructure with start and end places'() {
         given:
         def actions = actions('process order')
 
@@ -24,7 +24,7 @@ class LinearNetCompilerSpec extends Specification {
         net.transitions[0].guardKey == null
     }
 
-    def 'should compile two actions into PetriNet with intermediate place'() {
+    def 'should compile two actions into PetriNetStructure with intermediate place'() {
         given:
         def actions = actions('Hello world', 'groovy goodness')
 
