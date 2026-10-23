@@ -6,13 +6,13 @@ import eu.describeit.plantflow.UnregisteredHandlerException
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static eu.describeit.plantflow.engine.ExecutionTestBase.*
+import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class DefaultPetriNetSpec extends Specification {
 
     def 'should create DefaultPetriNetSpec with places, transitions and incidence matrix'() {
         given:
-        def net = createLinearNet('start', 'end', 'process order', 'process order', null)
+        def net = simpleLinearNet('start', 'end', 'process order', 'process order', null)
         def pStart = net.startPlace
         def pEnd = net.endPlace
         def tAction = net.transitions[0]
@@ -91,7 +91,7 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should fire transition: consume tokens, execute action handler, and produce tokens'() {
         given:
-        def net = createLinearNet('start', 'end', 'transform', 'transformAction', null)
+        def net = simpleLinearNet('start', 'end', 'transform', 'transformAction', null)
         def pStart = net.startPlace
         def pEnd = net.endPlace
         def tAction = net.transitions[0]
@@ -666,7 +666,7 @@ class DefaultPetriNetSpec extends Specification {
 
     def 'should return Token directly from action handler without modification'() {
         given:
-        def net = createLinearNet('start', 'end', 'transform', 'transformAction', null)
+        def net = simpleLinearNet('start', 'end', 'transform', 'transformAction', null)
         def pStart = net.startPlace
         def pEnd = net.endPlace
         def tAction = net.transitions[0]

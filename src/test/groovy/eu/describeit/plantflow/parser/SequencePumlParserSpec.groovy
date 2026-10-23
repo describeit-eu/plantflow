@@ -2,57 +2,59 @@ package eu.describeit.plantflow.parser
 
 import spock.lang.Specification
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
 class SequencePumlParserSpec extends Specification {
 
     def 'should parse single action linear activity diagram into PetriNet'() {
         when:
-        def net = ParserTestBase.parse(ParserTestBase.createLinearPuml('process order'))
+        def net = parse(linearPuml('process order'))
 
         then:
-        ParserTestBase.validateNetStructure(net, 2, 1)
-        ParserTestBase.validatePlaceLabels(net, ['start', 'end'])
-        ParserTestBase.validateTransitionLabels(net, ['process order'])
-        ParserTestBase.validateTransitionAction(net, 'process order', 0)
+        validateNetStructure(net, 2, 1)
+        validatePlaceLabels(net, ['start', 'end'])
+        validateTransitionLabels(net, ['process order'])
+        validateTransitionAction(net, 'process order', 0)
 
         and:
-        ParserTestBase.verifyTransitionConnection(net, 0, 0, 1)
+        verifyTransitionConnection(net, 0, 0, 1)
     }
 
     def 'should parse multi-action linear activity diagram into PetriNet'() {
         when:
-        def net = ParserTestBase.parse(ParserTestBase.createLinearPuml('Hello world', 'groovy goodness'))
+        def net = parse(linearPuml('Hello world', 'groovy goodness'))
 
         then:
-        ParserTestBase.validateNetStructure(net, 3, 2)
-        ParserTestBase.validatePlaceLabels(net, ['start', 'P_1', 'end'])
-        ParserTestBase.validateTransitionLabels(net, ['Hello world', 'groovy goodness'])
+        validateNetStructure(net, 3, 2)
+        validatePlaceLabels(net, ['start', 'P_1', 'end'])
+        validateTransitionLabels(net, ['Hello world', 'groovy goodness'])
 
         and:
         // T_0: consumes from P_start (0), produces to P_1 (1)
-        ParserTestBase.verifyTransitionConnection(net, 0, 0, 1)
+        verifyTransitionConnection(net, 0, 0, 1)
 
         // T_1: consumes from P_1 (1), produces to P_end (2)
-        ParserTestBase.verifyTransitionConnection(net, 1, 1, 2)
+        verifyTransitionConnection(net, 1, 1, 2)
     }
 
     def 'should parse sequence.puml from file'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/sequence.puml'))
+        def net = parse(new File('src/test/data/puml/sequence.puml'))
 
         then:
-        ParserTestBase.validateNetStructure(net, 3, 2)
-        ParserTestBase.validateTransitionLabels(net, ['Hello world', 'groovy goodness'])
+        validateNetStructure(net, 3, 2)
+        validateTransitionLabels(net, ['Hello world', 'groovy goodness'])
     }
 
     def 'should parse activity diagram terminated with stop keyword'() {
         when:
-        def net = ParserTestBase.parse(ParserTestBase.createLinearPuml('step one', 'step two').replace('end', 'stop'))
+        def net = parse(linearPuml('step one', 'step two').replace('end', 'stop'))
 
         then:
-        ParserTestBase.validateNetStructure(net, 3, 2)
+        validateNetStructure(net, 3, 2)
         net.startPlace.label == 'start'
         net.endPlace.label == 'end'
-        ParserTestBase.validateTransitionLabels(net, ['step one', 'step two'])
+        validateTransitionLabels(net, ['step one', 'step two'])
     }
 
     def 'should ignore non-action unrecognized lines inside diagram'() {
@@ -68,11 +70,11 @@ class SequencePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
-        ParserTestBase.validateNetStructure(net, 3, 2)
-        ParserTestBase.validateTransitionLabels(net, ['step one', 'step two'])
+        validateNetStructure(net, 3, 2)
+        validateTransitionLabels(net, ['step one', 'step two'])
     }
 
     def 'should skip comments, blank lines, and whitespace lines throughout diagram'() {
@@ -97,11 +99,11 @@ class SequencePumlParserSpec extends Specification {
         """
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
-        ParserTestBase.validateNetStructure(net, 3, 2)
-        ParserTestBase.validateTransitionLabels(net, ['step one', 'step two'])
+        validateNetStructure(net, 3, 2)
+        validateTransitionLabels(net, ['step one', 'step two'])
     }
 
     def 'should throw IllegalArgumentException when parsing null file'() {
@@ -143,10 +145,10 @@ class SequencePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
-        ParserTestBase.validateNetStructure(net, 3, 2)
+        validateNetStructure(net, 3, 2)
         net.transitions[0].actionKey == 'process order #123 [priority: high]'
         net.transitions[1].actionKey == 'send email to user@example.com'
     }
@@ -162,23 +164,23 @@ class SequencePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
-        ParserTestBase.validateNetStructure(net, 2, 1)
+        validateNetStructure(net, 2, 1)
         net.transitions[0].actionKey == 'a'
     }
 
     def 'should parse diagram with many actions'() {
         given:
         def actions = (1..10).collect { "step ${it}" }
-        def puml = ParserTestBase.createLinearPuml(actions as String[])
+        def puml = linearPuml(actions as String[])
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
-        ParserTestBase.validateNetStructure(net, 11, 10)
+        validateNetStructure(net, 11, 10)
         actions.eachWithIndex { action, idx ->
             assert net.transitions[idx].actionKey == action
         }
@@ -195,7 +197,7 @@ class SequencePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -213,7 +215,7 @@ class SequencePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null

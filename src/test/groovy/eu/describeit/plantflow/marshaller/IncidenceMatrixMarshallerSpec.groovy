@@ -7,11 +7,13 @@ import eu.describeit.plantflow.engine.Transition
 import groovy.util.logging.Slf4j
 import spock.lang.Specification
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
 @Slf4j
 class IncidenceMatrixMarshallerSpec extends Specification {
     def 'Marshaller should serialize and deserialize Place'() {
         given:
-        def place = MarshallerTestBase.createPlace(0, 'Start')
+        def place = createPlace(0, 'Start')
 
         when:
         def json = Marshaller.toJson(place)
@@ -30,7 +32,7 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize Transition'() {
         given:
-        def transition = MarshallerTestBase.createTransition(0, 'Action')
+        def transition = createTransition(0, 'Action')
 
         when:
         def json = Marshaller.toJson(transition)
@@ -51,7 +53,7 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should serialize and deserialize Transition with actionKey and guardKey'() {
         given:
-        def transition = MarshallerTestBase.createTransition(0, 'Action1', 'actionKey1', 'guardKey1')
+        def transition = createTransition(0, 'Action1', 'actionKey1', 'guardKey1')
 
         when:
         def json = Marshaller.toJson(transition)
@@ -85,12 +87,12 @@ class IncidenceMatrixMarshallerSpec extends Specification {
         def inputMatrix = [[1], [0]] as int[][]
         def outputMatrix = [[0], [1]] as int[][]
 
-        def matrix = MarshallerTestBase.createIncidenceMatrix(inputMatrix, outputMatrix)
+        def matrix = createIncidenceMatrix(inputMatrix, outputMatrix)
 
         when:
         def json = Marshaller.toJson(matrix)
         def deserialized = Marshaller.fromJson(json, IncidenceMatrix)
-        
+
         log.info('IncidenceMatrix JSON: {}', json)
 
         then:
@@ -111,12 +113,12 @@ class IncidenceMatrixMarshallerSpec extends Specification {
         // Output matrix: T1 -> P2 (1), T2 -> P3 (1)
         def outputMatrix = [[0, 0], [1, 0], [0, 1]] as int[][]
 
-        def matrix = MarshallerTestBase.createIncidenceMatrix(inputMatrix, outputMatrix)
+        def matrix = createIncidenceMatrix(inputMatrix, outputMatrix)
 
         when:
         def json = Marshaller.toJson(matrix, true)
         def deserialized = Marshaller.fromJson(json, IncidenceMatrix)
-        
+
         log.info('Complex IncidenceMatrix JSON(pretty): {}', json)
 
         then:
@@ -147,7 +149,7 @@ class IncidenceMatrixMarshallerSpec extends Specification {
 
     def 'Marshaller should handle null input and output matrices'() {
         given:
-        def matrix = MarshallerTestBase.createIncidenceMatrix(null, null)
+        def matrix = createIncidenceMatrix(null, null)
 
         when:
         def json = Marshaller.toJson(matrix)

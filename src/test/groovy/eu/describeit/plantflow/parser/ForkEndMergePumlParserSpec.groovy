@@ -1,14 +1,15 @@
 package eu.describeit.plantflow.parser
 
-import eu.describeit.plantflow.PetriNetTestUtil
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class ForkEndMergePumlParserSpec extends Specification {
 
     def 'should parse forkEndMerge.puml from file and verify all acceptance criteria'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+        def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         net != null
@@ -48,16 +49,16 @@ class ForkEndMergePumlParserSpec extends Specification {
         given:
         def branches = []
         (1..branchCount).each { i -> branches.add(["action ${i}"]) }
-        def puml = ParserTestBase.createForkPumlWithBranches(branches)
+        def puml = forkPuml(branches)
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+
         and:
         // Verify all actions are parsed
         (1..branchCount).each { i ->
@@ -89,20 +90,20 @@ class ForkEndMergePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+
         and:
         // Acceptance Criteria 2: Parser uses stack-based tracking to handle nested fork contexts
         def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
         def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
         def nested1Transition = net.transitions.find { it.actionKey == 'nested action 1' }
         def nested2Transition = net.transitions.find { it.actionKey == 'nested action 2' }
-        
+
         action1Transition != null
         action2Transition != null
         nested1Transition != null
@@ -112,7 +113,7 @@ class ForkEndMergePumlParserSpec extends Specification {
     @Unroll
     def 'should throw IllegalArgumentException for invalid fork structure: #scenario'() {
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -159,7 +160,7 @@ class ForkEndMergePumlParserSpec extends Specification {
     @Unroll
     def 'should throw IllegalArgumentException for invalid branch structure: #scenario'() {
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -197,7 +198,7 @@ class ForkEndMergePumlParserSpec extends Specification {
 
     def 'should compile forkEndMerge.puml with post-merge action connected to merge place'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+        def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         def action5Transition = net.transitions.find { it.actionKey == 'action 5' }
@@ -214,7 +215,7 @@ class ForkEndMergePumlParserSpec extends Specification {
 
     def 'should compile forkEndMerge.puml with correct branch end places feeding merge sync'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+        def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
@@ -237,7 +238,7 @@ class ForkEndMergePumlParserSpec extends Specification {
 
     def 'should compile forkEndMerge.puml with correct place and transition structure'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+        def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         net.startPlace.label == 'start'
@@ -256,11 +257,11 @@ class ForkEndMergePumlParserSpec extends Specification {
         and: 'fork transition has 1 input and 3 outputs, merge sync has 3 inputs and 1 output'
         def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
         forkTransition != null
-        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 3)
+        verifyTransitionIO(net, forkTransition, 1, 3)
 
         def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
         mergeSyncTransition != null
-        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
+        verifyTransitionIO(net, mergeSyncTransition, 3, 1)
     }
 
     def 'should compile fork with post-merge actions from string and verify structure'() {
@@ -280,7 +281,7 @@ class ForkEndMergePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         def afterMerge1 = net.transitions.find { it.actionKey == 'after merge 1' }
@@ -302,7 +303,7 @@ class ForkEndMergePumlParserSpec extends Specification {
     @Unroll
     def 'should parse fork diagram with #scenario and verify all actions are parsed'() {
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -380,10 +381,10 @@ class ForkEndMergePumlParserSpec extends Specification {
     @Unroll
     def 'should parse fork diagram with post-merge actions after end merge: #postActions'() {
         given:
-        def puml = ParserTestBase.createForkPumlWithBranches([['branch a'], ['branch b']], postActions)
+        def puml = forkPuml([['branch a'], ['branch b']], postActions)
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -422,7 +423,7 @@ class ForkEndMergePumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
