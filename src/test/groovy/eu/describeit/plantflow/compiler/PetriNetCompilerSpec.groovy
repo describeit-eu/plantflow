@@ -1,15 +1,15 @@
 package eu.describeit.plantflow.compiler
 
 import eu.describeit.plantflow.PetriNetCompiler
-import eu.describeit.plantflow.PetriNetTestUtil
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
-import eu.describeit.plantflow.ast.ValidationTestUtil
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class PetriNetCompilerSpec extends Specification {
 
@@ -550,7 +550,7 @@ class PetriNetCompilerSpec extends Specification {
         forkTransition != null
 
         and:
-        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, 2)
+        verifyTransitionIO(net, forkTransition, 1, 2)
 
         and:
         net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
@@ -571,7 +571,7 @@ class PetriNetCompilerSpec extends Specification {
         mergeSyncTransition != null
 
         and:
-        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, 3, 1)
+        verifyTransitionIO(net, mergeSyncTransition, 3, 1)
 
         and:
         def mergePlace = net.places.find { it.label == 'P_fork_1_merge' }

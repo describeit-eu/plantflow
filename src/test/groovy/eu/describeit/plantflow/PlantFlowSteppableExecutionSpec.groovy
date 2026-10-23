@@ -5,6 +5,12 @@ import spock.lang.Specification
 
 import java.time.Instant
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
+/**
+ * Stateless/steppable execution tests for PlantFlow.
+ * Tests the steppable API: getEnabledTransitions(marking, context) and fire(transition, marking, context).
+ */
 class PlantFlowSteppableExecutionSpec extends Specification {
 
     def 'getEnabledTransitions(marking, context) returns transitions enabled for custom marking'() {
