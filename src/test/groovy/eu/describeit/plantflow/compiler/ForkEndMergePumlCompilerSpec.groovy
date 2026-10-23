@@ -1,15 +1,15 @@
 package eu.describeit.plantflow.compiler
 
-import eu.describeit.plantflow.PetriNetTestUtil
-import eu.describeit.plantflow.parser.ParserTestBase
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class ForkEndMergePumlCompilerSpec extends Specification {
 
     def 'should compile forkEndMerge.puml with branch actions connected to their branch places'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+        def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         def branch1Place = net.places.find { it.label == 'P_fork_1_branch_1' }
@@ -27,7 +27,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
 
     def 'should compile forkEndMerge.puml with multi-action branch connected sequentially'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/forkEndMerge.puml'))
+        def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
         def branch3Place = net.places.find { it.label == 'P_fork_1_branch_3' }
@@ -56,10 +56,10 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         given:
         def branches = []
         (1..branchCount).each { i -> branches.add(["action ${i}"]) }
-        def puml = ParserTestBase.createForkPumlWithBranches(branches)
+        def puml = forkPuml(branches)
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -69,12 +69,12 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         and:
         def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
         forkTransition != null
-        PetriNetTestUtil.verifyTransitionIO(net, forkTransition, 1, branchCount)
+        verifyTransitionIO(net, forkTransition, 1, branchCount)
 
         and:
         def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
         mergeSyncTransition != null
-        PetriNetTestUtil.verifyTransitionIO(net, mergeSyncTransition, branchCount, 1)
+        verifyTransitionIO(net, mergeSyncTransition, branchCount, 1)
 
         and:
         (1..branchCount).each { i ->
@@ -102,7 +102,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         def toEndTransition = net.transitions.find { it.label == 'T_fork_1_to_end' }
@@ -137,7 +137,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -169,7 +169,7 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         def a1 = net.transitions.find { it.actionKey == 'a1' }

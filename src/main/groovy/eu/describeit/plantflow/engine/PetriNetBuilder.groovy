@@ -94,7 +94,7 @@ class PetriNetBuilder {
         return endPlace
     }
 
-    DefaultPetriNet build() {
+    PetriNetStructure build() {
         if (startPlace == null) {
             throw new IllegalStateException(ERR_START_PLACE_MISSING)
         }
