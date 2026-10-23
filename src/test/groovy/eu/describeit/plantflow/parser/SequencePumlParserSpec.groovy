@@ -6,7 +6,7 @@ import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class SequencePumlParserSpec extends Specification {
 
-    def 'should parse single action linear activity diagram into PetriNet'() {
+    def 'should parse single action linear activity diagram into PetriNetStructure'() {
         when:
         def net = parse(linearPuml('process order'))
 
@@ -20,7 +20,7 @@ class SequencePumlParserSpec extends Specification {
         verifyTransitionConnection(net, 0, 0, 1)
     }
 
-    def 'should parse multi-action linear activity diagram into PetriNet'() {
+    def 'should parse multi-action linear activity diagram into PetriNetStructure'() {
         when:
         def net = parse(linearPuml('Hello world', 'groovy goodness'))
 

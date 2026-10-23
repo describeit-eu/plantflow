@@ -25,18 +25,18 @@ class PlantFlowExecutionSpec extends Specification {
         flowInstance.executionContext != null
 
         where:
-        scenario                        | flowInstance
-        'PetriNet only'                 | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'))
-        'PetriNet + registry'           | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry())
-        'PetriNet + registry + context' | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry(), new ExecutionContext([k: 'v']))
-        'String only'                   | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml')
-        'String + registry'             | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml', new HandlerRegistry())
-        'String + registry + context'   | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml', new HandlerRegistry(), new ExecutionContext([k: 'v']))
-        'File only'                     | new PlantFlow(new File('src/test/data/puml/sequence.puml'))
-        'File + registry'               | new PlantFlow(new File('src/test/data/puml/sequence.puml'), new HandlerRegistry())
-        'File + registry + context'     | new PlantFlow(new File('src/test/data/puml/sequence.puml'), new HandlerRegistry(), new ExecutionContext([k: 'v']))
-        'from(File) overload'           | PlantFlow.from(new File('src/test/data/puml/sequence.puml'))
-        'from(String) overload'         | PlantFlow.from('@startuml\nstart\n:a;\nend\n@enduml')
+        scenario                            | flowInstance
+        'PetriNetStructure only'            | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'))
+        'PetriNetStructure + registry'      | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry())
+        'PetriNetStructure + registry + ctx'| new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry(), new ExecutionContext([k: 'v']))
+        'String only'                       | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml')
+        'String + registry'                 | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml', new HandlerRegistry())
+        'String + registry + context'       | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml', new HandlerRegistry(), new ExecutionContext([k: 'v']))
+        'File only'                         | new PlantFlow(new File('src/test/data/puml/sequence.puml'))
+        'File + registry'                   | new PlantFlow(new File('src/test/data/puml/sequence.puml'), new HandlerRegistry())
+        'File + registry + context'         | new PlantFlow(new File('src/test/data/puml/sequence.puml'), new HandlerRegistry(), new ExecutionContext([k: 'v']))
+        'from(File) overload'               | PlantFlow.from(new File('src/test/data/puml/sequence.puml'))
+        'from(String) overload'             | PlantFlow.from('@startuml\nstart\n:a;\nend\n@enduml')
     }
 
     def 'should throw IllegalArgumentException when constructor receives null argument: #scenario'() {
@@ -49,7 +49,7 @@ class PlantFlowExecutionSpec extends Specification {
 
         where:
         scenario                  | constructorCall                                                                                                                             | expectedParam
-        'null PetriNet'           | { new PlantFlow((PetriNet) null) }                                                                                                          | 'petriNet'
+        'null PetriNetStructure'  | { new PlantFlow((PetriNetStructure) null) }                                                                                                 | 'structure'
         'null HandlerRegistry'    | { new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), (HandlerRegistry) null) }                         | 'handlerRegistry'
         'null ExecutionContext'   | { new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry(), (ExecutionContext) null) } | 'executionContext'
     }
@@ -584,9 +584,9 @@ class PlantFlowExecutionSpec extends Specification {
         def pEnd = new Place(1, 'end')
         def t1 = new Transition(0, 'step', 'act', null)
         def matrix = new IncidenceMatrix([[1], [0]] as int[][], [[0], [1]] as int[][])
-        def net = new FailingFirePetriNet([pStart, pEnd], [t1], matrix, pStart, pEnd)
+        def net = new DefaultPetriNet([pStart, pEnd], [t1], matrix, pStart, pEnd)
         def registry = new HandlerRegistry().registerAction('act') { ctx, tok -> tok }
-        def engine = new PlantFlow(net, registry)
+        def engine = new PlantFlow(net, new FailingFireEngine(), registry)
         engine.seedToken()
 
         expect:
@@ -1283,13 +1283,9 @@ class PlantFlowExecutionSpec extends Specification {
 
     // ==================== Helper Classes ====================
 
-    static class FailingFirePetriNet extends DefaultPetriNet {
-        FailingFirePetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end) {
-            super(places, transitions, matrix, start, end)
-        }
-
+    static class FailingFireEngine extends DefaultPetriNetEngine {
         @Override
-        boolean fire(Transition t, Marking m, HandlerRegistry r, ExecutionContext c) {
+        boolean fire(PetriNetStructure net, Transition t, Marking m, HandlerRegistry r, ExecutionContext c) {
             return false
         }
     }

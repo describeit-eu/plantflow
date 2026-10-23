@@ -3,8 +3,8 @@ package eu.describeit.plantflow.compiler
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ForkNode
-import eu.describeit.plantflow.engine.PetriNet
 import eu.describeit.plantflow.engine.PetriNetBuilder
+import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
@@ -15,7 +15,7 @@ class ForkNetCompiler {
     private static final String ERR_FORK_NODE_NULL = 'ForkNode cannot be null'
     private static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one action'
 
-    PetriNet compile(ForkNode node, List<ActionNode> postForkActions = Collections.<ActionNode>emptyList()) {
+    PetriNetStructure compile(ForkNode node, List<ActionNode> postForkActions = Collections.<ActionNode>emptyList()) {
         if (node == null) {
             throw new IllegalArgumentException(ERR_FORK_NODE_NULL)
         }

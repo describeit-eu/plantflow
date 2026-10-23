@@ -8,7 +8,7 @@ import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.engine.DefaultPetriNet
 import eu.describeit.plantflow.engine.IncidenceMatrix
 import eu.describeit.plantflow.engine.Marking
-import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
 import eu.describeit.plantflow.engine.Token
 import eu.describeit.plantflow.engine.Transition
@@ -26,21 +26,21 @@ class PlantFlowTestKit {
      * Creates a linear Petri net from the given action names.
      * Equivalent to parsing a linear PlantUML diagram.
      */
-    static PetriNet linearNet(String... actions) {
+    static PetriNetStructure linearNet(String... actions) {
         return parse(linearPuml(actions))
     }
 
     /**
      * Creates a conditional Petri net from the given guard and branch actions.
      */
-    static PetriNet conditionalNet(String guard, List<String> thenActions, List<String> elseActions) {
+    static PetriNetStructure conditionalNet(String guard, List<String> thenActions, List<String> elseActions) {
         return parse(conditionalPuml(guard, thenActions as String[], elseActions as String[]))
     }
 
     /**
      * Creates a fork Petri net from the given branches and post-merge actions.
      */
-    static PetriNet forkNet(List<List<String>> branches, List<String> postMergeActions = []) {
+    static PetriNetStructure forkNet(List<List<String>> branches, List<String> postMergeActions = []) {
         return parse(forkPuml(branches, postMergeActions))
     }
 
@@ -179,7 +179,7 @@ class PlantFlowTestKit {
     /**
      * Creates a Marking and adds a token to the start place of the given net.
      */
-    static Marking markingWithStartToken(PetriNet net, Token token = null) {
+    static Marking markingWithStartToken(PetriNetStructure net, Token token = null) {
         def marking = new Marking(net.places.size())
         marking.addToken(net.startPlace, token ?: Token.of())
         return marking
@@ -451,14 +451,14 @@ end
     /**
      * Parses PlantUML content from a string.
      */
-    static PetriNet parse(String pumlContent) {
+    static PetriNetStructure parse(String pumlContent) {
         return createParser().parse(pumlContent)
     }
 
     /**
      * Parses PlantUML content from a file.
      */
-    static PetriNet parse(File file) {
+    static PetriNetStructure parse(File file) {
         return createParser().parse(file)
     }
 
@@ -582,7 +582,7 @@ end
      * Counts the number of input and output places for a transition.
      * Returns [inputCount, outputCount].
      */
-    static int[] countTransitionIO(PetriNet net, Transition transition) {
+    static int[] countTransitionIO(PetriNetStructure net, Transition transition) {
         int inputCount = 0
         int outputCount = 0
         net.places.each { place ->
@@ -595,7 +595,7 @@ end
     /**
      * Verifies that a transition has exactly the expected number of inputs and outputs.
      */
-    static void verifyTransitionIO(PetriNet net, Transition transition, int expectedInputs, int expectedOutputs) {
+    static void verifyTransitionIO(PetriNetStructure net, Transition transition, int expectedInputs, int expectedOutputs) {
         def io = countTransitionIO(net, transition)
         assert io[0] == expectedInputs : "Expected ${expectedInputs} inputs but got ${io[0]} for transition ${transition.label}"
         assert io[1] == expectedOutputs : "Expected ${expectedOutputs} outputs but got ${io[1]} for transition ${transition.label}"
@@ -604,28 +604,28 @@ end
     /**
      * Finds a transition by its label.
      */
-    static Transition findTransitionByLabel(PetriNet net, String label) {
+    static Transition findTransitionByLabel(PetriNetStructure net, String label) {
         net.transitions.find { it.label == label }
     }
 
     /**
      * Finds a transition by its action key.
      */
-    static Transition findTransitionByAction(PetriNet net, String actionKey) {
+    static Transition findTransitionByAction(PetriNetStructure net, String actionKey) {
         net.transitions.find { it.actionKey == actionKey }
     }
 
     /**
      * Finds a place by its label.
      */
-    static Place findPlaceByLabel(PetriNet net, String label) {
+    static Place findPlaceByLabel(PetriNetStructure net, String label) {
         net.places.find { it.label == label }
     }
 
     /**
      * Verifies that a net contains a linear chain of actions in order.
      */
-    static void verifyLinearChain(PetriNet net, List<String> expectedActions) {
+    static void verifyLinearChain(PetriNetStructure net, List<String> expectedActions) {
         assert net.transitions.size() == expectedActions.size() : \
             "Expected ${expectedActions.size()} transitions but got ${net.transitions.size()}"
         expectedActions.eachWithIndex { action, idx ->
@@ -637,7 +637,7 @@ end
     /**
      * Verifies fork structure: checks that the net has a fork transition with the expected branch count.
      */
-    static void verifyForkStructure(PetriNet net, int branchCount) {
+    static void verifyForkStructure(PetriNetStructure net, int branchCount) {
         def forkTransition = net.transitions.find { it.label.startsWith('T_fork') && !it.label.contains('branch') && !it.label.contains('merge') && !it.label.contains('to_end') }
         assert forkTransition != null : "Expected a fork transition in the net"
         verifyTransitionIO(net, forkTransition, 1, branchCount)
@@ -650,7 +650,7 @@ end
     /**
      * Verifies conditional structure: checks that the net has the expected guard on branch transitions.
      */
-    static void verifyConditionalStructure(PetriNet net, String guard) {
+    static void verifyConditionalStructure(PetriNetStructure net, String guard) {
         def branchYes = net.transitions.find { it.label == 'T_branch_yes' }
         assert branchYes != null : "Expected T_branch_yes transition"
         assert branchYes.guardKey == guard : "Expected guard '${guard}' but got '${branchYes.guardKey}'"
@@ -661,10 +661,10 @@ end
     }
 
     /**
-     * Validates that a parsed PetriNet has the expected structure.
+     * Validates that a parsed PetriNetStructure has the expected structure.
      */
-    static void validateNetStructure(PetriNet net, int expectedPlaceCount, int expectedTransitionCount) {
-        assert net != null : "Parsed PetriNet should not be null"
+    static void validateNetStructure(PetriNetStructure net, int expectedPlaceCount, int expectedTransitionCount) {
+        assert net != null : "Parsed PetriNetStructure should not be null"
         assert net.places.size() == expectedPlaceCount : "Expected ${expectedPlaceCount} places but got ${net.places.size()}"
         assert net.transitions.size() == expectedTransitionCount : "Expected ${expectedTransitionCount} transitions but got ${net.transitions.size()}"
         assert net.startPlace != null : "Start place should not be null"
@@ -674,7 +674,7 @@ end
     /**
      * Validates that places have the expected labels.
      */
-    static void validatePlaceLabels(PetriNet net, List<String> expectedLabels) {
+    static void validatePlaceLabels(PetriNetStructure net, List<String> expectedLabels) {
         assert net.places.size() == expectedLabels.size() : \
             "Expected ${expectedLabels.size()} places but got ${net.places.size()}"
         expectedLabels.eachWithIndex { label, idx ->
@@ -686,7 +686,7 @@ end
     /**
      * Validates that transitions have the expected labels.
      */
-    static void validateTransitionLabels(PetriNet net, List<String> expectedLabels) {
+    static void validateTransitionLabels(PetriNetStructure net, List<String> expectedLabels) {
         assert net.transitions.size() == expectedLabels.size() : \
             "Expected ${expectedLabels.size()} transitions but got ${net.transitions.size()}"
         expectedLabels.eachWithIndex { label, idx ->
@@ -698,7 +698,7 @@ end
     /**
      * Validates that a transition has the expected action key.
      */
-    static void validateTransitionAction(PetriNet net, String expectedAction, int transitionIndex = 0) {
+    static void validateTransitionAction(PetriNetStructure net, String expectedAction, int transitionIndex = 0) {
         assert net.transitions.size() > transitionIndex : "Not enough transitions"
         assert net.transitions[transitionIndex].actionKey == expectedAction : \
             "Expected action key '${expectedAction}' but got '${net.transitions[transitionIndex].actionKey}'"
@@ -707,7 +707,7 @@ end
     /**
      * Validates that a transition has the expected guard key.
      */
-    static void validateTransitionGuard(PetriNet net, String expectedGuard, int transitionIndex = 0) {
+    static void validateTransitionGuard(PetriNetStructure net, String expectedGuard, int transitionIndex = 0) {
         assert net.transitions.size() > transitionIndex : "Not enough transitions"
         assert net.transitions[transitionIndex].guardKey == expectedGuard : \
             "Expected guard key '${expectedGuard}' but got '${net.transitions[transitionIndex].guardKey}'"
@@ -716,7 +716,7 @@ end
     /**
      * Verifies incidence matrix connections for a transition.
      */
-    static void verifyTransitionConnection(PetriNet net, int transitionIndex, int inputPlaceIndex, int outputPlaceIndex) {
+    static void verifyTransitionConnection(PetriNetStructure net, int transitionIndex, int inputPlaceIndex, int outputPlaceIndex) {
         def t = net.transitions[transitionIndex]
         assert net.incidenceMatrix.getInputWeight(inputPlaceIndex, t.index) == 1 : \
             "Transition ${t.label} should consume from place ${inputPlaceIndex}"
