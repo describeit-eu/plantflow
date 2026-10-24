@@ -1,12 +1,235 @@
 package eu.describeit.plantflow
 
-
 import eu.describeit.plantflow.engine.*
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.time.Instant
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
+/**
+ * Stateful execution tests for PlantFlow.
+ * Tests the stateful API: runUntilEnd, step, seedToken, fire, isEnabled, isCompleted.
+ * Consolidated from: PlantFlowExecutionSpec, PlantFlowSpec, PlantFlowErrorHandlingSpec,
+ * PlantFlowConstructorSpec, PlantFlowParsingSpec, ForkEndMergePumlExecutionSpec.
+ */
 class PlantFlowExecutionSpec extends Specification {
+
+    // ==================== Constructor Tests (from PlantFlowConstructorSpec) ====================
+
+    def 'should instantiate PlantFlow using various constructor and factory overloads: #scenario'() {
+        expect:
+        flowInstance.petriNet != null
+        flowInstance.handlerRegistry != null
+        flowInstance.executionContext != null
+
+        where:
+        scenario                            | flowInstance
+        'PetriNetStructure only'            | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'))
+        'PetriNetStructure + registry'      | new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry())
+        'PetriNetStructure + registry + ctx'| new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry(), new ExecutionContext([k: 'v']))
+        'String only'                       | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml')
+        'String + registry'                 | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml', new HandlerRegistry())
+        'String + registry + context'       | new PlantFlow('@startuml\nstart\n:a;\nend\n@enduml', new HandlerRegistry(), new ExecutionContext([k: 'v']))
+        'File only'                         | new PlantFlow(new File('src/test/data/puml/sequence.puml'))
+        'File + registry'                   | new PlantFlow(new File('src/test/data/puml/sequence.puml'), new HandlerRegistry())
+        'File + registry + context'         | new PlantFlow(new File('src/test/data/puml/sequence.puml'), new HandlerRegistry(), new ExecutionContext([k: 'v']))
+        'from(File) overload'               | PlantFlow.from(new File('src/test/data/puml/sequence.puml'))
+        'from(String) overload'             | PlantFlow.from('@startuml\nstart\n:a;\nend\n@enduml')
+    }
+
+    def 'should throw IllegalArgumentException when constructor receives null argument: #scenario'() {
+        when:
+        constructorCall.call()
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains(expectedParam)
+
+        where:
+        scenario                  | constructorCall                                                                                                                             | expectedParam
+        'null PetriNetStructure'  | { new PlantFlow((PetriNetStructure) null) }                                                                                                 | 'structure'
+        'null HandlerRegistry'    | { new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), (HandlerRegistry) null) }                         | 'handlerRegistry'
+        'null ExecutionContext'   | { new PlantFlow(new ActivityDiagramParser().parse('@startuml\nstart\n:a;\nend\n@enduml'), new HandlerRegistry(), (ExecutionContext) null) } | 'executionContext'
+    }
+
+    // ==================== End-to-End Integration Tests (from PlantFlowSpec) ====================
+
+    def 'should execute end-to-end workflow from PlantUML string'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :process order;
+            :validate order;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        registry.registerAction('process order') { ExecutionContext ctx, Token tok ->
+            ctx['status'] = 'PROCESSED'
+            return tok.withPayload(tok.payload + [processed: true])
+        }
+        registry.registerAction('validate order') { ExecutionContext ctx, Token tok ->
+            ctx['valid'] = true
+            return tok.withPayload(tok.payload + [validated: true])
+        }
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([orderId: 'ORD-123']))
+
+        then:
+        engine.isCompleted()
+        engine.getEndToken() != null
+        engine.getEndToken().payload == [orderId: 'ORD-123', processed: true, validated: true]
+        engine.executionContext['status'] == 'PROCESSED'
+        engine.executionContext['valid'] == true
+    }
+
+    def 'should execute end-to-end workflow from file'() {
+        given:
+        def file = new File('src/test/data/puml/sequence.puml')
+        def registry = new HandlerRegistry()
+        registry.registerAction('Hello world') { ExecutionContext ctx, Token tok ->
+            return tok.withPayload([greeting: 'Hello, World!'])
+        }
+        registry.registerAction('groovy goodness') { ExecutionContext ctx, Token tok ->
+            return tok.withPayload(tok.payload + [goodness: true])
+        }
+
+        def engine = PlantFlow.from(file, registry)
+
+        when:
+        engine.runUntilEnd(Token.of())
+
+        then:
+        engine.isCompleted()
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload == [greeting: 'Hello, World!', goodness: true]
+    }
+
+    def 'should execute end-to-end conditional workflow from file'() {
+        given:
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+        def registry = new HandlerRegistry()
+        registry.registerGuard("actions['process all']") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == true
+        }
+        registry.registerGuard("!(actions['process all'])") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == false
+        }
+        registry.registerAction('process all') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'then branch'
+            return tok.withPayload(tok.payload + [branch: 'then'])
+        }
+        registry.registerAction('process none') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'else branch'
+            return tok.withPayload(tok.payload + [branch: 'else'])
+        }
+
+        and: 'context with guard evaluating to true'
+        def context = new ExecutionContext([actions: ['process all': true]])
+
+        def engine = new PlantFlow(file, registry, context)
+
+        when:
+        engine.runUntilEnd(Token.of())
+
+        then:
+        engine.isCompleted()
+        engine.executionContext['result'] == 'then branch'
+        engine.getEndToken().payload['branch'] == 'then'
+    }
+
+    // ==================== Parsing + Execution Tests (from PlantFlowParsingSpec) ====================
+
+    def 'should execute if-then-else workflow with guard evaluating to true'() {
+        given: 'a conditional activity diagram'
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+
+        and: 'a handler registry with registered guard and actions'
+        def registry = new HandlerRegistry()
+        registry.registerGuard("actions['process all']") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == true
+        }
+        registry.registerGuard("!(actions['process all'])") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == false
+        }
+        registry.registerAction('process all') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'then branch executed'
+            return tok.withPayload(tok.payload + [branch: 'then'])
+        }
+        registry.registerAction('process none') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'else branch executed'
+            return tok.withPayload(tok.payload + [branch: 'else'])
+        }
+
+        and: 'an execution context where guard evaluates to true'
+        def context = new ExecutionContext([actions: ['process all': true]])
+
+        when: 'the workflow engine is instantiated and executed'
+        def engine = new PlantFlow(file, registry, context)
+        def finalEngine = engine.runUntilEnd()
+
+        then: 'the workflow completes successfully'
+        finalEngine == engine
+        engine.isCompleted()
+
+        and: 'the then branch was executed'
+        context['result'] == 'then branch executed'
+
+        and: 'the token in P_end has the branch information'
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload['branch'] == 'then'
+    }
+
+    def 'should execute if-then-else workflow with guard evaluating to false'() {
+        given: 'a conditional activity diagram'
+        def file = new File('src/test/data/puml/ifThenElseEndif.puml')
+
+        and: 'a handler registry with registered guard and actions'
+        def registry = new HandlerRegistry()
+        registry.registerGuard("actions['process all']") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == true
+        }
+        registry.registerGuard("!(actions['process all'])") { ExecutionContext ctx, Token tok ->
+            return ctx['actions']?['process all'] == false
+        }
+        registry.registerAction('process all') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'then branch executed'
+            return tok.withPayload(tok.payload + [branch: 'then'])
+        }
+        registry.registerAction('process none') { ExecutionContext ctx, Token tok ->
+            ctx['result'] = 'else branch executed'
+            return tok.withPayload(tok.payload + [branch: 'else'])
+        }
+
+        and: 'an execution context where guard evaluates to false'
+        def context = new ExecutionContext([actions: ['process all': false]])
+
+        when: 'the workflow engine is instantiated and executed'
+        def engine = new PlantFlow(file, registry, context)
+        def finalEngine = engine.runUntilEnd()
+
+        then: 'the workflow completes successfully'
+        finalEngine == engine
+        engine.isCompleted()
+
+        and: 'the else branch was executed'
+        context['result'] == 'else branch executed'
+
+        and: 'the token in P_end has the branch information'
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload['branch'] == 'else'
+    }
+
+    // ==================== Stateful Execution Tests (from PlantFlowExecutionSpec) ====================
 
     def 'should execute straight-line activity workflow tracer bullet'() {
         given: 'a linear activity diagram'
@@ -361,9 +584,9 @@ class PlantFlowExecutionSpec extends Specification {
         def pEnd = new Place(1, 'end')
         def t1 = new Transition(0, 'step', 'act', null)
         def matrix = new IncidenceMatrix([[1], [0]] as int[][], [[0], [1]] as int[][])
-        def net = new FailingFirePetriNet([pStart, pEnd], [t1], matrix, pStart, pEnd)
+        def net = new DefaultPetriNet([pStart, pEnd], [t1], matrix, pStart, pEnd)
         def registry = new HandlerRegistry().registerAction('act') { ctx, tok -> tok }
-        def engine = new PlantFlow(net, registry)
+        def engine = new PlantFlow(net, new FailingFireEngine(), registry)
         engine.seedToken()
 
         expect:
@@ -446,15 +669,624 @@ class PlantFlowExecutionSpec extends Specification {
         enabled.size() >= 1
     }
 
-    static class FailingFirePetriNet extends DefaultPetriNet {
-        FailingFirePetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix matrix, Place start, Place end) {
-            super(places, transitions, matrix, start, end)
+    // ==================== Error Handling Tests (from PlantFlowErrorHandlingSpec) ====================
+
+    def 'should throw UnregisteredHandlerException when action handler is missing during execution'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            :unregistered step;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+
+        when:
+        engine.runUntilEnd(Token.of([key: 'val']))
+
+        then:
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered step')
+    }
+
+    def 'should throw UnregisteredHandlerException when evaluating isEnabled for unregistered action handler'() {
+        given: 'a workflow with an unregistered action step and a seeded token'
+        def puml = '''
+            @startuml
+            start
+            :unregistered step;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+        engine.seedToken(Token.of())
+        def transition = engine.petriNet.transitions[0]
+
+        when: 'checking if the transition is enabled'
+        engine.isEnabled(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered step')
+    }
+
+    def 'should throw UnregisteredHandlerException when evaluating getEnabledTransitions with unregistered action handler'() {
+        given: 'a workflow with an unregistered action step and a seeded token'
+        def puml = '''
+            @startuml
+            start
+            :unregistered step;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+        engine.seedToken(Token.of())
+
+        when: 'querying enabled transitions'
+        engine.getEnabledTransitions()
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered step')
+    }
+
+    def 'should throw UnregisteredHandlerException when evaluating isEnabled for unregistered guard handler'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        // Register the actions but NOT the guard
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        engine.seedToken(Token.of())
+
+        // First, fire the initial transition to get token to decision place
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        engine.fire(startTransition)
+
+        def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
+
+        when: 'checking if the transition is enabled'
+        engine.isEnabled(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when evaluating getEnabledTransitions with unregistered guard handler'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        // Register the actions but NOT the guard
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        engine.seedToken(Token.of())
+
+        // First, fire the initial transition to get token to decision place
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        engine.fire(startTransition)
+
+        when: 'querying enabled transitions'
+        engine.getEnabledTransitions()
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when firing transition with unregistered guard'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        // Register the actions but NOT the guard
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        engine.seedToken(Token.of())
+
+        // First, fire the initial transition to get token to decision place
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        engine.fire(startTransition)
+
+        def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
+
+        when: 'firing the transition'
+        engine.fire(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+    }
+
+    def 'should throw UnregisteredHandlerException when firing transition with unregistered action handler'() {
+        given: 'a workflow with an unregistered action step and a seeded token'
+        def puml = '''
+            @startuml
+            start
+            :unregistered action;
+            end
+            @enduml
+        '''
+        def engine = PlantFlow.from(puml, new HandlerRegistry())
+        engine.seedToken(Token.of())
+        def transition = engine.petriNet.transitions[0]
+
+        when: 'firing the transition'
+        engine.fire(transition)
+
+        then: 'it immediately raises UnregisteredHandlerException'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered action')
+    }
+
+    def 'should fail fast with UnregisteredHandlerException during runUntilEnd with unregistered action'() {
+        given: 'a workflow with an unregistered action step'
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            :unregistered step;
+            :step three;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('step three') { ExecutionContext ctx, Token tok -> tok }
+        // step two is NOT registered
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when: 'running until end'
+        engine.runUntilEnd(Token.of([init: true]))
+
+        then: 'it immediately raises UnregisteredHandlerException without completing'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered step')
+        !engine.isCompleted()
+    }
+
+    def 'should fail fast with UnregisteredHandlerException during runUntilEnd with unregistered guard'() {
+        given: 'a workflow with an unregistered guard condition'
+        def puml = '''
+            @startuml
+            start
+            :step one;
+            if ( unregistered guard ) then (yes)
+              :action then;
+            else (no)
+              :action else;
+            endif
+            :step three;
+            end
+            @enduml
+        '''
+        def registry = new HandlerRegistry()
+        registry.registerAction('step one') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action then') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('action else') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('step three') { ExecutionContext ctx, Token tok -> tok }
+        // guard is NOT registered
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when: 'running until end'
+        engine.runUntilEnd(Token.of([init: true]))
+
+        then: 'it immediately raises UnregisteredHandlerException without completing'
+        def ex = thrown(UnregisteredHandlerException)
+        ex.message.contains('unregistered guard')
+        !engine.isCompleted()
+    }
+
+    // ==================== Fork Execution Tests (from ForkEndMergePumlExecutionSpec) ====================
+
+    def 'should execute forkEndMerge.puml with runUntilEnd and complete successfully'() {
+        given:
+        def file = new File('src/test/data/puml/forkEndMerge.puml')
+        def executionLog = []
+        def actions = ['action 1', 'action 2', 'action 3', 'action 4', 'action 5']
+        def registry = payloadRegistry(actions, executionLog)
+
+        def engine = PlantFlow.from(file, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([initial: true]))
+
+        then:
+        engine.isCompleted()
+        engine.petriNet.isEmpty(engine.petriNet.startPlace)
+        !engine.petriNet.isEmpty(engine.petriNet.endPlace)
+
+        and:
+        executionLog.size() == 5
+        executionLog.containsAll(actions)
+    }
+
+    def 'should execute forkEndMerge.puml step by step and verify intermediate states'() {
+        given:
+        def file = new File('src/test/data/puml/forkEndMerge.puml')
+        def actions = ['action 1', 'action 2', 'action 3', 'action 4', 'action 5']
+        def registry = payloadRegistry(actions)
+
+        def engine = PlantFlow.from(file, registry)
+        engine.seedToken(Token.of([initial: true]))
+
+        when: 'step 1: fire fork transition'
+        def stepped1 = engine.step()
+
+        then:
+        stepped1
+        engine.petriNet.isEmpty(engine.petriNet.startPlace)
+
+        and: 'tokens are in all three branch start places'
+        def branch1Place = engine.petriNet.places.find { it.label == 'P_fork_1_branch_1' }
+        def branch2Place = engine.petriNet.places.find { it.label == 'P_fork_1_branch_2' }
+        def branch3Place = engine.petriNet.places.find { it.label == 'P_fork_1_branch_3' }
+        engine.petriNet.getTokenCount(branch1Place) == 1
+        engine.petriNet.getTokenCount(branch2Place) == 1
+        engine.petriNet.getTokenCount(branch3Place) == 1
+
+        when: 'step 2: fire action 1 (branch 1)'
+        engine.step()
+
+        then: 'branch 1 end place has token'
+        def branch1EndPlace = engine.petriNet.places.find { it.label == 'P_fork_1_branch_1_end' }
+        engine.petriNet.getTokenCount(branch1EndPlace) == 1
+
+        when: 'step 3: fire action 2 (branch 2)'
+        engine.step()
+
+        then: 'branch 2 end place has token'
+        def branch2EndPlace = engine.petriNet.places.find { it.label == 'P_fork_1_branch_2_end' }
+        engine.petriNet.getTokenCount(branch2EndPlace) == 1
+
+        when: 'step 4: fire action 3 (branch 3, first action)'
+        engine.step()
+
+        then: 'branch 3 intermediate place has token'
+        def branch3Mid = engine.petriNet.places.find { it.label == 'P_fork_1_branch_3_1' }
+        engine.petriNet.getTokenCount(branch3Mid) == 1
+
+        when: 'step 5: fire action 4 (branch 3, second action)'
+        engine.step()
+
+        then: 'branch 3 end place has token'
+        def branch3EndPlace = engine.petriNet.places.find { it.label == 'P_fork_1_branch_3_end' }
+        engine.petriNet.getTokenCount(branch3EndPlace) == 1
+
+        when: 'step 6: fire merge sync transition'
+        engine.step()
+
+        then: 'merge place has token'
+        def mergePlace = engine.petriNet.places.find { it.label == 'P_fork_1_merge' }
+        engine.petriNet.getTokenCount(mergePlace) == 1
+
+        when: 'step 7: fire action 5 (post-merge)'
+        def stepped7 = engine.step()
+
+        then:
+        stepped7
+        engine.isCompleted()
+        !engine.petriNet.isEmpty(engine.petriNet.endPlace)
+
+        when: 'step 8: no more transitions enabled'
+        def stepped8 = engine.step()
+
+        then:
+        !stepped8
+    }
+
+    def 'should deep-merge token payloads from all branches at merge point'() {
+        given: 'a fork with two branches that produce different payload keys'
+        def puml = forkPuml([['branch a'], ['branch b']], ['after merge'])
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
+            return tok.withPayload(tok.payload + [fromA: 'value-a', shared: 'from-a'])
+        }
+        registry.registerAction('branch b') { ExecutionContext ctx, Token tok ->
+            return tok.withPayload(tok.payload + [fromB: 'value-b', shared: 'from-b'])
+        }
+        registry.registerAction('after merge') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([initial: true]))
+
+        then:
+        engine.isCompleted()
+
+        and: 'the end token has merged payload from both branches'
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload.initial == true
+        endToken.payload.fromA == 'value-a'
+        endToken.payload.fromB == 'value-b'
+        endToken.payload.shared == 'from-b'
+    }
+
+    def 'should deep-merge nested map payloads from branches at merge point'() {
+        given: 'a fork with branches that produce nested map payloads'
+        def puml = forkPuml([['branch a'], ['branch b']])
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
+            return tok.withPayload(tok.payload + [
+                config: [host: 'localhost', port: 8080],
+                branchA: true
+            ])
+        }
+        registry.registerAction('branch b') { ExecutionContext ctx, Token tok ->
+            return tok.withPayload(tok.payload + [
+                config: [port: 9090, ssl: true],
+                branchB: true
+            ])
         }
 
-        @Override
-        boolean fire(Transition t, Marking m, HandlerRegistry r, ExecutionContext c) {
-            return false
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([initial: true]))
+
+        then:
+        engine.isCompleted()
+
+        and: 'nested maps are deep-merged correctly'
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload.initial == true
+        endToken.payload.branchA == true
+        endToken.payload.branchB == true
+
+        and: 'nested config map is merged with overlay winning on conflicts'
+        def config = endToken.payload.config as Map
+        config.host == 'localhost'
+        config.port == 9090
+        config.ssl == true
+    }
+
+    def 'should execute fork with three branches and verify all run in parallel'() {
+        given:
+        def puml = forkPuml([['task 1'], ['task 2'], ['task 3']], ['finalize'])
+
+        def executionOrder = []
+        def registry = payloadRegistry(['task 1', 'task 2', 'task 3', 'finalize'], executionOrder)
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of())
+
+        then:
+        engine.isCompleted()
+
+        and: 'all three tasks executed before finalize'
+        executionOrder.size() == 4
+        executionOrder.containsAll(['task 1', 'task 2', 'task 3'])
+        executionOrder.last() == 'finalize'
+
+        and: 'end token has all task payloads merged'
+        def endToken = engine.getEndToken()
+        endToken.payload.task_1 == true
+        endToken.payload.task_2 == true
+        endToken.payload.task_3 == true
+    }
+
+    def 'should execute fork with multi-action branches and verify sequential execution within branches'() {
+        given:
+        def puml = forkPuml([['a1', 'a2'], ['b1', 'b2', 'b3']])
+
+        def executionLog = []
+        def registry = payloadRegistry(['a1', 'a2', 'b1', 'b2', 'b3'], executionLog)
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([start: true]))
+
+        then:
+        engine.isCompleted()
+
+        and: 'all actions executed'
+        executionLog.size() == 5
+        executionLog.containsAll(['a1', 'a2', 'b1', 'b2', 'b3'])
+
+        and: 'end token has all payloads merged'
+        def endToken = engine.getEndToken()
+        endToken.payload.start == true
+        endToken.payload.a1 == true
+        endToken.payload.a2 == true
+        endToken.payload.b1 == true
+        endToken.payload.b2 == true
+        endToken.payload.b3 == true
+    }
+
+    def 'should preserve token id through fork and merge execution'() {
+        given:
+        def puml = forkPuml([['branch a'], ['branch b']])
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('branch a') { ExecutionContext ctx, Token tok -> tok }
+        registry.registerAction('branch b') { ExecutionContext ctx, Token tok -> tok }
+
+        def engine = PlantFlow.from(puml, registry)
+        def seedToken = Token.of([original: true])
+
+        when:
+        engine.runUntilEnd(seedToken)
+
+        then:
+        engine.isCompleted()
+
+        and:
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.id == seedToken.id
+        endToken.payload.original == true
+    }
+
+    @Unroll
+    def 'should execute fork with #branchCount branches and verify completion'() {
+        given:
+        def branches = (1..branchCount).collect { ["action ${it}"] }
+        def puml = forkPuml(branches)
+
+        def registry = payloadRegistry(branches.flatten())
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([initial: true]))
+
+        then:
+        engine.isCompleted()
+
+        and:
+        def endToken = engine.getEndToken()
+        endToken != null
+        endToken.payload.initial == true
+        (1..branchCount).each { i ->
+            assert endToken.payload["action_${i}".toString()] == true
+        }
+
+        where:
+        branchCount << [2, 3, 5]
+    }
+
+    def 'should execute nested fork structure correctly'() {
+        given:
+        def puml = '''
+            @startuml
+            start
+            fork
+              :action 1;
+              fork
+                :nested action 1;
+              fork again
+                :nested action 2;
+              end merge
+            fork again
+              :action 2;
+            end merge
+            end
+            @enduml
+        '''
+
+        def executionLog = []
+        def actions = ['action 1', 'action 2', 'nested action 1', 'nested action 2']
+        def registry = payloadRegistry(actions, executionLog)
+
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of([initial: true]))
+
+        then:
+        engine.isCompleted()
+
+        and:
+        executionLog.size() == 4
+        executionLog.containsAll(actions)
+
+        and:
+        def endToken = engine.getEndToken()
+        endToken.payload.initial == true
+        endToken.payload.action_1 == true
+        endToken.payload.action_2 == true
+        endToken.payload.nested_action_1 == true
+        endToken.payload.nested_action_2 == true
+    }
+
+    def 'should update execution context from parallel branch actions'() {
+        given:
+        def puml = forkPuml([['branch a'], ['branch b']])
+
+        def registry = new HandlerRegistry()
+        registry.registerAction('branch a') { ExecutionContext ctx, Token tok ->
+            ctx['branchAExecuted'] = true
+            return tok.withPayload(tok.payload + [a: true])
+        }
+        registry.registerAction('branch b') { ExecutionContext ctx, Token tok ->
+            ctx['branchBExecuted'] = true
+            return tok.withPayload(tok.payload + [b: true])
+        }
+
+        def context = new ExecutionContext()
+        def engine = PlantFlow.from(puml, registry)
+
+        when:
+        engine.runUntilEnd(Token.of(), context)
+
+        then:
+        engine.isCompleted()
+        context['branchAExecuted'] == true
+        context['branchBExecuted'] == true
+    }
+
+    def 'regression: supported puml files should parse and compile without errors'() {
+        given: 'puml files that the parser supports (linear, if-then-else-endif, fork-end merge)'
+        def pumlFiles = [
+            'sequence.puml',
+            'ifThenElseEndif.puml',
+            'forkEndMerge.puml'
+        ]
+
+        expect:
+        pumlFiles.each { filename ->
+            def file = new File("src/test/data/puml/${filename}")
+            def net = new ActivityDiagramParser().parse(file)
+            assert net != null : "Failed to parse ${filename}"
+            assert net.places.size() > 0 : "No places in ${filename}"
+            assert net.transitions.size() > 0 : "No transitions in ${filename}"
+            assert net.startPlace != null : "No start place in ${filename}"
+            assert net.endPlace != null : "No end place in ${filename}"
         }
     }
 
+    // ==================== Helper Classes ====================
+
+    static class FailingFireEngine extends DefaultPetriNetEngine {
+        @Override
+        boolean fire(PetriNetStructure net, Transition t, Marking m, HandlerRegistry r, ExecutionContext c) {
+            return false
+        }
+    }
 }

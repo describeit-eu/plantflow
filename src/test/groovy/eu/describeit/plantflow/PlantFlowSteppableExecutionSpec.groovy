@@ -5,6 +5,12 @@ import spock.lang.Specification
 
 import java.time.Instant
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
+/**
+ * Stateless/steppable execution tests for PlantFlow.
+ * Tests the steppable API: getEnabledTransitions(marking, context) and fire(transition, marking, context).
+ */
 class PlantFlowSteppableExecutionSpec extends Specification {
 
     def 'getEnabledTransitions(marking, context) returns transitions enabled for custom marking'() {
@@ -45,7 +51,7 @@ class PlantFlowSteppableExecutionSpec extends Specification {
         marking.getTokens(engine.petriNet.startPlace)[0].payload == [init: true]
     }
 
-    def 'fire(transition, marking, context) returns new Marking without modifying original'() {
+    def 'fire(transition, marking, context) fires directly on the provided marking and returns it'() {
         given: 'a simple linear workflow'
         def puml = '''
             @startuml
@@ -76,22 +82,18 @@ class PlantFlowSteppableExecutionSpec extends Specification {
         def transition = engine.petriNet.transitions.find { it.label == 'process step' }
 
         when: 'firing the transition with custom marking and context'
-        def newMarking = engine.fire(transition, marking, context)
+        def resultMarking = engine.fire(transition, marking, context)
 
-        then: 'a new marking is returned'
-        newMarking != null
-        newMarking !== marking
+        then: 'the same marking reference is returned (no silent copy)'
+        resultMarking != null
+        resultMarking.is(marking)
 
-        and: 'the original marking is unchanged'
-        marking.getTokenCount(engine.petriNet.startPlace) == 1
-        marking.getTokens(engine.petriNet.startPlace)[0] == originalToken
-
-        and: 'the new marking has token consumed from start and produced at end'
-        newMarking.getTokenCount(engine.petriNet.startPlace) == 0
-        newMarking.getTokenCount(engine.petriNet.endPlace) == 1
+        and: 'the provided marking is mutated directly'
+        marking.getTokenCount(engine.petriNet.startPlace) == 0
+        marking.getTokenCount(engine.petriNet.endPlace) == 1
 
         and: 'the token in end place has the processed payload'
-        def endToken = newMarking.getTokens(engine.petriNet.endPlace)[0]
+        def endToken = marking.getTokens(engine.petriNet.endPlace)[0]
         endToken.payload == [init: true, processed: true]
     }
 
