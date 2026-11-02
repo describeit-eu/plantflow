@@ -1,7 +1,10 @@
 package eu.describeit.plantflow
 
+import eu.describeit.plantflow.engine.DefaultPetriNetEngine
 import eu.describeit.plantflow.engine.Marking
-import eu.describeit.plantflow.engine.PetriNet
+import eu.describeit.plantflow.engine.PetriNetEngine
+import eu.describeit.plantflow.engine.PetriNetStructure
+import eu.describeit.plantflow.engine.StatefulExecution
 import eu.describeit.plantflow.engine.Token
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
@@ -12,13 +15,18 @@ import groovy.util.logging.Slf4j
 @CompileStatic
 class PlantFlow {
 
-    final PetriNet petriNet
+    final StatefulExecution petriNet
     final HandlerRegistry handlerRegistry
     ExecutionContext executionContext
 
     @NullCheck
-    PlantFlow(PetriNet petriNet, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
-        this.petriNet = petriNet
+    PlantFlow(PetriNetStructure structure, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
+        this(structure, new DefaultPetriNetEngine(), handlerRegistry, executionContext)
+    }
+
+    @NullCheck
+    PlantFlow(PetriNetStructure structure, PetriNetEngine engine, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
+        this.petriNet = new StatefulExecution(structure, engine)
         this.handlerRegistry = handlerRegistry
         this.executionContext = executionContext
     }
@@ -65,18 +73,14 @@ class PlantFlow {
     }
 
     Marking fire(Transition transition, Marking marking, ExecutionContext context) {
-        Marking newMarking = marking.copy()
-        petriNet.fire(transition, newMarking, handlerRegistry, context)
-        return newMarking
+        petriNet.fire(marking, transition, handlerRegistry, context)
+        return marking
     }
 
     boolean step() {
         List<Transition> enabledTransitions = getEnabledTransitions()
-
         log.info('step() - enabledTransitions:{}', enabledTransitions)
-        
         if (enabledTransitions) return fire(enabledTransitions.get(0))
-
         return false
     }
 

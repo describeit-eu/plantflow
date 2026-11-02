@@ -6,11 +6,11 @@ description: "Implement one ticket without user intervention."
 Communication to and from subagents should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, research notes, and previous commits. Don't duplicate information already available via pointers.
 
 ## Steps
-Do not deviate from this sequence.
+You must not deviate from this sequence and the instructions of each step because it is designed to control the context of the current agent and its subagent. Also, for the request 'Spawn a subagent named `agenName`' use the agent type you think is best suited for the task and start it with a fresh context window.
 
 1. Check the current branch and stop in case anything is changed or new and ask the user to resolve it.
-2. Check if the current branch is named after the ticket being implemented. Stop and ask the user to switch to the correct branch.
-3. Spawn a subagent named `tdd-developer` to implement the given ticket. Use /tdd where possible, at pre-agreed seams. Run typechecking and tests regularly.
+2. Check if the current branch is named after the ticket being implemented. Stop in case of a wrong branch and ask the user to switch to the correct branch.
+3. Spawn a subagent named `tdd-developer` to implement the given ticket. Use /tdd at pre-agreed seams. Run typechecking and tests regularly.
 4. Wait for `tdd-developer` to complete before continuing, then commit changes.
 5. /code-review changes of the last commit save it to docs/reviews
 6. Spawn a subagent named `review-developer` to implement all the findings of code-review using /tdd.

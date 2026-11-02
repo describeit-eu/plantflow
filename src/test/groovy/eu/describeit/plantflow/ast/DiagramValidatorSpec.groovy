@@ -4,6 +4,8 @@ import eu.describeit.plantflow.DiagramValidator
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
 class DiagramValidatorSpec extends Specification {
 
     @Unroll
@@ -88,10 +90,10 @@ class DiagramValidatorSpec extends Specification {
 
         where:
         scenario             | thenActions                | elseActions                | expectedMessage
-        'null thenActions'   | null                       | [ValidationTestUtil.action('else1')]  | DiagramValidator.ERR_THEN_EMPTY
-        'empty thenActions'  | []                         | [ValidationTestUtil.action('else1')]  | DiagramValidator.ERR_THEN_EMPTY
-        'null elseActions'   | [ValidationTestUtil.action('then1')]  | null                       | DiagramValidator.ERR_ELSE_EMPTY
-        'empty elseActions'  | [ValidationTestUtil.action('then1')]  | []                         | DiagramValidator.ERR_ELSE_EMPTY
+        'null thenActions'   | null                       | [action('else1')]  | DiagramValidator.ERR_THEN_EMPTY
+        'empty thenActions'  | []                         | [action('else1')]  | DiagramValidator.ERR_THEN_EMPTY
+        'null elseActions'   | [action('then1')]  | null                       | DiagramValidator.ERR_ELSE_EMPTY
+        'empty elseActions'  | [action('then1')]  | []                         | DiagramValidator.ERR_ELSE_EMPTY
     }
 
     @Unroll
@@ -114,8 +116,8 @@ class DiagramValidatorSpec extends Specification {
     def 'should pass validateBranchActions when both branches have actions'() {
         when:
         DiagramValidator.validateBranchActions(
-            [ValidationTestUtil.action('a')], 
-            [ValidationTestUtil.action('b')]
+            [action('a')], 
+            [action('b')]
         )
 
         then:
@@ -159,7 +161,7 @@ class DiagramValidatorSpec extends Specification {
     @Unroll
     def 'should throw IllegalArgumentException when validating linear diagram: #scenario'() {
         given:
-        def diagram = ValidationTestUtil.diagram(hasStart, hasEnd, nodes)
+        def diagram = diagram(hasStart, hasEnd, nodes)
 
         when:
         DiagramValidator.validate(diagram)
@@ -170,14 +172,14 @@ class DiagramValidatorSpec extends Specification {
 
         where:
         scenario                     | hasStart | hasEnd | nodes                              | expectedMessage
-        'missing start'              | false    | true   | [ValidationTestUtil.action('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_START
-        'missing end'                | true     | false  | [ValidationTestUtil.action('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_END
+        'missing start'              | false    | true   | [action('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_START
+        'missing end'                | true     | false  | [action('a1')]   | DiagramValidator.ERR_MUST_CONTAIN_END
         'empty action transitions'   | true     | true   | []                                   | DiagramValidator.ERR_MUST_CONTAIN_ACTION
     }
 
     def 'should pass validation for valid linear ActivityDiagram'() {
         given:
-        def diagram = ValidationTestUtil.diagram(true, true, [ValidationTestUtil.action('process order')])
+        def diagram = diagram(true, true, [action('process order')])
 
         when:
         DiagramValidator.validate(diagram)
@@ -206,13 +208,13 @@ class DiagramValidatorSpec extends Specification {
 
         where:
         scenario          | hasIf | hasElse | hasEndif | hasStart | hasEnd | nodes                                                                                     | expectedMessage
-        'missing if'      | false | true    | true     | true     | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_IF
-        'missing else'    | true  | false   | true     | true     | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_ELSE
-        'missing endif'   | true  | true    | false    | true     | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_ENDIF
-        'missing start'   | true  | true    | true     | false    | true   | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_MUST_CONTAIN_START
-        'missing end'     | true  | true    | true     | true     | false  | [ValidationTestUtil.conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_MUST_CONTAIN_END
-        'empty then block'| true  | true    | true     | true     | true   | [ValidationTestUtil.conditional('c', [], ['b'])]                                 | DiagramValidator.ERR_THEN_EMPTY
-        'empty else block'| true  | true    | true     | true     | true   | [ValidationTestUtil.conditional('c', ['a'], [])]                                 | DiagramValidator.ERR_ELSE_EMPTY
+        'missing if'      | false | true    | true     | true     | true   | [conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_IF
+        'missing else'    | true  | false   | true     | true     | true   | [conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_ELSE
+        'missing endif'   | true  | true    | false    | true     | true   | [conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_NO_ENDIF
+        'missing start'   | true  | true    | true     | false    | true   | [conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_MUST_CONTAIN_START
+        'missing end'     | true  | true    | true     | true     | false  | [conditional('c', ['a'], ['b'])]                              | DiagramValidator.ERR_MUST_CONTAIN_END
+        'empty then block'| true  | true    | true     | true     | true   | [conditional('c', [], ['b'])]                                 | DiagramValidator.ERR_THEN_EMPTY
+        'empty else block'| true  | true    | true     | true     | true   | [conditional('c', ['a'], [])]                                 | DiagramValidator.ERR_ELSE_EMPTY
         'empty nodes'     | true  | true    | true     | true     | true   | []                                                                                        | DiagramValidator.ERR_THEN_EMPTY
     }
 
@@ -224,7 +226,7 @@ class DiagramValidatorSpec extends Specification {
             .withIf(true)
             .withElse(true)
             .withEndif(true)
-            .addNode(ValidationTestUtil.conditional("actions['check']", ['then action'], ['else action']))
+            .addNode(conditional("actions['check']", ['then action'], ['else action']))
 
         when:
         DiagramValidator.validate(diagram)
@@ -235,8 +237,8 @@ class DiagramValidatorSpec extends Specification {
 
     def 'should pass validation for valid conditional ActivityDiagram constructed without flags'() {
         given:
-        def diagram = ValidationTestUtil.diagram(true, true, [
-            ValidationTestUtil.conditional("actions['check']", ['then action'], ['else action'])
+        def diagram = diagram(true, true, [
+            conditional("actions['check']", ['then action'], ['else action'])
         ])
 
         when:
@@ -254,8 +256,8 @@ class DiagramValidatorSpec extends Specification {
             .withIf(true)
             .withElse(true)
             .withEndif(true)
-            .addNode(ValidationTestUtil.action('extra action'))
-            .addNode(ValidationTestUtil.conditional("actions['check']", ['then action'], ['else action']))
+            .addNode(action('extra action'))
+            .addNode(conditional("actions['check']", ['then action'], ['else action']))
 
         when:
         DiagramValidator.validate(diagram)
@@ -266,9 +268,9 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ActionNode should store trimmed action and support equals, hashCode, and toString'() {
         given:
-        def node1 = ValidationTestUtil.action('  do something  ')
-        def node2 = ValidationTestUtil.action('do something')
-        def node3 = ValidationTestUtil.action('other')
+        def node1 = action('  do something  ')
+        def node2 = action('do something')
+        def node3 = action('other')
 
         expect:
         node1.action == 'do something'
@@ -293,12 +295,12 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ConditionalNode should store safe unmodifiable copies of actions'() {
         given:
-        def thenList = [ValidationTestUtil.action('then1')]
-        def elseList = [ValidationTestUtil.action('else1')]
-        def node = ValidationTestUtil.conditional('x > 0', thenList, elseList)
+        def thenList = [action('then1')]
+        def elseList = [action('else1')]
+        def node = conditional('x > 0', thenList, elseList)
 
         when:
-        thenList.add(ValidationTestUtil.action('then2'))
+        thenList.add(action('then2'))
 
         then:
         node.thenActions.size() == 1
@@ -308,13 +310,13 @@ class DiagramValidatorSpec extends Specification {
         node.guardCondition == 'x > 0'
 
         when:
-        node.thenActions.add(ValidationTestUtil.action('fail'))
+        node.thenActions.add(action('fail'))
 
         then:
         thrown(UnsupportedOperationException)
 
         when:
-        node.elseActions.add(ValidationTestUtil.action('fail'))
+        node.elseActions.add(action('fail'))
 
         then:
         thrown(UnsupportedOperationException)
@@ -322,7 +324,7 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ConditionalNode should safely handle null action lists'() {
         when:
-        def node = ValidationTestUtil.conditional('guard', null, null)
+        def node = conditional('guard', null, null)
 
         then:
         node.thenActions != null
@@ -333,9 +335,9 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ConditionalNode should implement equals, hashCode, and toString'() {
         given:
-        def node1 = ValidationTestUtil.conditional('c', ['t'], ['e'])
-        def node2 = ValidationTestUtil.conditional('c', ['t'], ['e'])
-        def node3 = ValidationTestUtil.conditional('other', ['t'], ['e'])
+        def node1 = conditional('c', ['t'], ['e'])
+        def node2 = conditional('c', ['t'], ['e'])
+        def node3 = conditional('other', ['t'], ['e'])
 
         expect:
         node1 == node2
@@ -352,8 +354,8 @@ class DiagramValidatorSpec extends Specification {
             .withIf(true)
             .withElse(true)
             .withEndif(true)
-        def action = ValidationTestUtil.action('step 1')
-        diagram.addNode(action)
+        def actionNode = action('step 1')
+        diagram.addNode(actionNode)
 
         expect:
         diagram.hasStart
@@ -363,10 +365,10 @@ class DiagramValidatorSpec extends Specification {
         diagram.hasEndif
         diagram.isConditional()
         diagram.nodes.size() == 1
-        diagram.nodes[0] == action
+        diagram.nodes[0] == actionNode
 
         when:
-        diagram.nodes.add(ValidationTestUtil.action('step 2'))
+        diagram.nodes.add(action('step 2'))
 
         then:
         thrown(UnsupportedOperationException)
@@ -378,17 +380,17 @@ class DiagramValidatorSpec extends Specification {
         new ActivityDiagram().withIf().isConditional()
         new ActivityDiagram().withElse().isConditional()
         new ActivityDiagram().withEndif().isConditional()
-        new ActivityDiagram(true, true, [ValidationTestUtil.conditional('c', [], [])]).isConditional()
-        !ValidationTestUtil.diagram(true, true, [ValidationTestUtil.action('a')]).isConditional()
+        new ActivityDiagram(true, true, [conditional('c', [], [])]).isConditional()
+        !diagram(true, true, [action('a')]).isConditional()
     }
 
     def 'ForkNode should store safe unmodifiable copies of branches'() {
         given:
-        def branchList = [ValidationTestUtil.action('branch1'), ValidationTestUtil.action('branch2')]
-        def node = ValidationTestUtil.fork(branchList)
+        def branchList = [action('branch1'), action('branch2')]
+        def node = fork(branchList)
 
         when:
-        branchList.add(ValidationTestUtil.action('branch3'))
+        branchList.add(action('branch3'))
 
         then:
         node.branches.size() == 2
@@ -396,7 +398,7 @@ class DiagramValidatorSpec extends Specification {
         node.branches[1].action == 'branch2'
 
         when:
-        node.branches.add(ValidationTestUtil.action('fail'))
+        node.branches.add(action('fail'))
 
         then:
         thrown(UnsupportedOperationException)
@@ -404,7 +406,7 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ForkNode should safely handle null branches list'() {
         when:
-        def node = ValidationTestUtil.fork(null)
+        def node = fork(null)
 
         then:
         node.branches != null
@@ -413,9 +415,9 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ForkNode should implement equals, hashCode, and toString'() {
         given:
-        def node1 = ValidationTestUtil.fork([ValidationTestUtil.action('a'), ValidationTestUtil.action('b')])
-        def node2 = ValidationTestUtil.fork([ValidationTestUtil.action('a'), ValidationTestUtil.action('b')])
-        def node3 = ValidationTestUtil.fork([ValidationTestUtil.action('c')])
+        def node1 = fork([action('a'), action('b')])
+        def node2 = fork([action('a'), action('b')])
+        def node3 = fork([action('c')])
 
         expect:
         node1 == node2
@@ -527,12 +529,12 @@ class DiagramValidatorSpec extends Specification {
 
         where:
         scenario | hasStart | hasEnd | hasFork | hasEndMerge | nodes | expectedMessage
-        'fork without end merge' | true | true | true | false | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_NO_END_MERGE
-        'end merge without fork' | true | true | false | true | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_NO_FORK
-        'fork without start' | false | true | true | true | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_MUST_CONTAIN_START
-        'fork without end' | true | false | true | true | [ValidationTestUtil.fork([['a'], ['b']])] | DiagramValidator.ERR_MUST_CONTAIN_END
-        'fork with single branch' | true | true | true | true | [ValidationTestUtil.fork([['a']])] | DiagramValidator.ERR_MIN_BRANCHES
-        'fork with empty branches' | true | true | true | true | [ValidationTestUtil.fork([])] | DiagramValidator.ERR_BRANCH_EMPTY
+        'fork without end merge' | true | true | true | false | [fork([['a'], ['b']])] | DiagramValidator.ERR_NO_END_MERGE
+        'end merge without fork' | true | true | false | true | [fork([['a'], ['b']])] | DiagramValidator.ERR_NO_FORK
+        'fork without start' | false | true | true | true | [fork([['a'], ['b']])] | DiagramValidator.ERR_MUST_CONTAIN_START
+        'fork without end' | true | false | true | true | [fork([['a'], ['b']])] | DiagramValidator.ERR_MUST_CONTAIN_END
+        'fork with single branch' | true | true | true | true | [fork([['a']])] | DiagramValidator.ERR_MIN_BRANCHES
+        'fork with empty branches' | true | true | true | true | [fork([])] | DiagramValidator.ERR_BRANCH_EMPTY
          'fork with null branches' | true | true | true | true | [new ForkNode(null)] | DiagramValidator.ERR_BRANCH_EMPTY
          'fork with empty nodes and no fork node' | true | true | true | true | [] | DiagramValidator.ERR_BRANCH_EMPTY
     }
@@ -544,7 +546,7 @@ class DiagramValidatorSpec extends Specification {
             .withEnd(true)
             .withFork(true)
             .withEndMerge(true)
-            .addNode(ValidationTestUtil.fork([['a'], ['b']]))
+            .addNode(fork([['a'], ['b']]))
 
         when:
         DiagramValidator.validate(diagram)
@@ -555,8 +557,8 @@ class DiagramValidatorSpec extends Specification {
 
     def 'should pass validation for valid fork ActivityDiagram constructed without flags'() {
         given:
-        def diagram = ValidationTestUtil.diagram(true, true, [
-            ValidationTestUtil.fork([['a'], ['b']])
+        def diagram = diagram(true, true, [
+            fork([['a'], ['b']])
         ])
 
         when:
@@ -573,9 +575,9 @@ class DiagramValidatorSpec extends Specification {
             .withEnd(true)
             .withFork(true)
             .withEndMerge(true)
-            .addNode(ValidationTestUtil.fork([
-                [ValidationTestUtil.action('branch1 action1'), ValidationTestUtil.action('branch1 action2')],
-                [ValidationTestUtil.action('branch2 action1'), ValidationTestUtil.action('branch2 action2')]
+            .addNode(fork([
+                [action('branch1 action1'), action('branch1 action2')],
+                [action('branch2 action1'), action('branch2 action2')]
             ]))
 
         when:
@@ -624,8 +626,8 @@ class DiagramValidatorSpec extends Specification {
             .withEnd(true)
             .withFork(true)
             .withEndMerge(true)
-            .addNode(ValidationTestUtil.fork([['a'], ['b']]))
-            .addNode(ValidationTestUtil.action('post merge action'))
+            .addNode(fork([['a'], ['b']]))
+            .addNode(action('post merge action'))
 
         when:
         DiagramValidator.validate(diagram)
@@ -641,8 +643,8 @@ class DiagramValidatorSpec extends Specification {
             .withEnd(true)
             .withFork(true)
             .withEndMerge(true)
-            .addNode(ValidationTestUtil.action('before fork'))
-            .addNode(ValidationTestUtil.fork([['a'], ['b']]))
+            .addNode(action('before fork'))
+            .addNode(fork([['a'], ['b']]))
 
         when:
         DiagramValidator.validate(diagram)
@@ -658,10 +660,10 @@ class DiagramValidatorSpec extends Specification {
             .withEnd(true)
             .withFork(true)
             .withEndMerge(true)
-            .addNode(ValidationTestUtil.fork([
-                [ValidationTestUtil.action('a1')],
-                [ValidationTestUtil.action('a2')],
-                [ValidationTestUtil.action('a3'), ValidationTestUtil.action('a4')]
+            .addNode(fork([
+                [action('a1')],
+                [action('a2')],
+                [action('a3'), action('a4')]
             ]))
 
         when:
@@ -674,7 +676,7 @@ class DiagramValidatorSpec extends Specification {
     @Unroll
     def 'should throw IllegalArgumentException for fork branch with empty action list at position #position'() {
         given:
-        def branches = [[ValidationTestUtil.action('a')], [ValidationTestUtil.action('b')]]
+        def branches = [[action('a')], [action('b')]]
         branches[position] = []
         def diagram = new ActivityDiagram()
             .withStart(true)
@@ -708,9 +710,9 @@ class DiagramValidatorSpec extends Specification {
 
     def 'ActivityDiagram with forks and endMerge should work with ForkNode'() {
         given:
-        def forkNode = ValidationTestUtil.fork([
-            ValidationTestUtil.action('branch1'),
-            ValidationTestUtil.action('branch2')
+        def forkNode = fork([
+            action('branch1'),
+            action('branch2')
         ])
         def diagram = new ActivityDiagram()
             .withStart(true)

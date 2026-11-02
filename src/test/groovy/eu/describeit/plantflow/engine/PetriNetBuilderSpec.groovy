@@ -254,7 +254,7 @@ class PetriNetBuilderSpec extends Specification {
         'both'       | false    | false  | 'startPlace must be set'
     }
 
-    def 'should build a complete DefaultPetriNet with places, transitions, startPlace, endPlace and incidence matrix'() {
+    def 'should build a complete PetriNetStructure with places, transitions, startPlace, endPlace and incidence matrix'() {
         given:
         def builder = new PetriNetBuilder()
         def p0 = builder.addPlace('start')

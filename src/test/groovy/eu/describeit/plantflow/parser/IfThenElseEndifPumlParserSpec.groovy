@@ -2,14 +2,16 @@ package eu.describeit.plantflow.parser
 
 import spock.lang.Specification
 
+import static eu.describeit.plantflow.PlantFlowTestKit.*
+
 class IfThenElseEndifPumlParserSpec extends Specification {
 
     def 'should parse ifThenElseEndif.puml from file'() {
         when:
-        def net = ParserTestBase.parse(new File('src/test/data/puml/ifThenElseEndif.puml'))
+        def net = parse(new File('src/test/data/puml/ifThenElseEndif.puml'))
 
         then:
-        ParserTestBase.validateNetStructure(net, 6, 6)
+        validateNetStructure(net, 6, 6)
 
         and:
         net.startPlace.index == 0
@@ -55,12 +57,12 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         endifToEnd != null
 
         // Verify guard keys on branch transitions
-        ParserTestBase.validateTransitionGuard(net, "actions['process all']", branchYesTransition.index)
+        validateTransitionGuard(net, "actions['process all']", branchYesTransition.index)
         branchNoTransition.guardKey == "!(actions['process all'])"
 
         // Verify action keys on action transitions
-        ParserTestBase.validateTransitionAction(net, 'process all', actionThenTransition.index)
-        ParserTestBase.validateTransitionAction(net, 'process none', actionElseTransition.index)
+        validateTransitionAction(net, 'process all', actionThenTransition.index)
+        validateTransitionAction(net, 'process none', actionElseTransition.index)
 
         // Verify structural transitions have null actionKey
         startToDecision.actionKey == null
@@ -70,20 +72,20 @@ class IfThenElseEndifPumlParserSpec extends Specification {
 
         and:
         // Verify incidence matrix connections using verifyTransitionConnection
-        ParserTestBase.verifyTransitionConnection(net, startToDecision.index, 0, 1)
-        ParserTestBase.verifyTransitionConnection(net, branchYesTransition.index, 1, 2)
-        ParserTestBase.verifyTransitionConnection(net, branchNoTransition.index, 1, 3)
-        ParserTestBase.verifyTransitionConnection(net, actionThenTransition.index, 2, 4)
-        ParserTestBase.verifyTransitionConnection(net, actionElseTransition.index, 3, 4)
-        ParserTestBase.verifyTransitionConnection(net, endifToEnd.index, 4, 5)
+        verifyTransitionConnection(net, startToDecision.index, 0, 1)
+        verifyTransitionConnection(net, branchYesTransition.index, 1, 2)
+        verifyTransitionConnection(net, branchNoTransition.index, 1, 3)
+        verifyTransitionConnection(net, actionThenTransition.index, 2, 4)
+        verifyTransitionConnection(net, actionElseTransition.index, 3, 4)
+        verifyTransitionConnection(net, endifToEnd.index, 4, 5)
     }
 
     def 'should parse if-then-else-endif diagram from string'() {
         when:
-        def net = ParserTestBase.parse(ParserTestBase.createConditionalPuml("actions['process all']", 'process all', 'process none'))
+        def net = parse(conditionalPuml("actions['process all']", 'process all', 'process none'))
 
         then:
-        ParserTestBase.validateNetStructure(net, 6, 6)
+        validateNetStructure(net, 6, 6)
     }
 
     def 'should throw IllegalArgumentException when if statement has no matching endif'() {
@@ -98,7 +100,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -118,7 +120,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
          then:
          def ex = thrown(IllegalArgumentException)
@@ -140,17 +142,17 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+
         and:
         def thenTransition = net.transitions.find { it.actionKey == 'then action' }
         def elseTransition = net.transitions.find { it.actionKey == 'else action' }
-        
+
         thenTransition != null
         elseTransition != null
     }
@@ -170,17 +172,17 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+
         and:
         def positiveTransition = net.transitions.find { it.actionKey == 'process positive' }
         def nonPositiveTransition = net.transitions.find { it.actionKey == 'process non-positive' }
-        
+
         positiveTransition != null
         nonPositiveTransition != null
     }
@@ -200,7 +202,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -225,19 +227,19 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
         net.places.size() > 0
         net.transitions.size() > 0
-        
+
         and:
         def action1Transition = net.transitions.find { it.actionKey == 'action 1' }
         def action2Transition = net.transitions.find { it.actionKey == 'action 2' }
         def action3Transition = net.transitions.find { it.actionKey == 'action 3' }
         def action4Transition = net.transitions.find { it.actionKey == 'action 4' }
-        
+
         action1Transition != null
         action2Transition != null
         action3Transition != null
@@ -256,7 +258,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -278,7 +280,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -301,7 +303,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -324,7 +326,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        def net = ParserTestBase.parse(puml)
+        def net = parse(puml)
 
         then:
         net != null
@@ -347,7 +349,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -367,7 +369,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
@@ -389,7 +391,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         '''
 
         when:
-        ParserTestBase.parse(puml)
+        parse(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
