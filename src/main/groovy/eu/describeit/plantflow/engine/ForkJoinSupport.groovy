@@ -108,6 +108,13 @@ class ForkJoinSupport {
                 return i
             }
         }
+        // Markings deserialized from the legacy count-based format carry untagged
+        // tokens; adopt the first untagged token in place order for this activation.
+        for (int i = 0; i < tokenCount; i++) {
+            if (marking.getTokenActivation(placeIndex, i) == null) {
+                return i
+            }
+        }
         return -1
     }
 }
