@@ -11,21 +11,24 @@ metadata:
 
 You have been provided a spec, perhaps with extra instructions. This spec should have tickets associated with it, describing how to implement the spec. The goal is to implement the entire spec on a single **temporary integration branch**, with every ticket resolved the way the issue tracker closes work.
 
-The issue tracker should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`.
+The issue tracker should have been provided to you. If not, tell the user to run `/setup-skills`.
 
 The tickets are not a list of steps. They are a **task graph** with blocking relationships between them. This means there is always a **frontier** of tickets which are ready to be grabbed. However, the tickets shall be executed in a **sequential manner** to avoid conflicting edits of the same file. In other words, run `/implement-ticket` for each ticket in its own worktree, one at a time.
 
-## Steps
+Follow these instructions because it is designed to control the context window.
+- You must not deviate from the sequence described bellow. The best is to treat it as a template for your TODO plan.
+- You shall not create subagent for these Steps. 
 
-You must not deviate from this sequence and the instructions of each step because it is designed to control the context window.
+## Sequence of Steps
 
 1. Read the spec and tickets to understand the task graph.
-2. Switch to the main integration branch of the repo (e.g. develop) or stop in case anything is changed or new.
+2. Check the main worktree if it is dirty or not. If dirty, classify each change as:
+    - **spec prep**: commit it to integration branch
+    - **stray edit**: full stop and ask user to resolve the issue
 3. Create the **temporary integration branch** named after the spec.
 4. Pick one and only ticket from the **frontier** (e.g. choose the ticket with the smallest number), create a worktree on a branch named after the ticket based on the **temporary integration branch**.
-5. Run `/implement-ticket` in that worktree.
+5. Call the Skill tool for `/implement-ticket` to work on the chosen ticket using the worktree.
 6. Once the `/implement-ticket` run completes, rebase its branch to the **temporary integration branch**.
-7. If the issue tracker closes work through PRs, or the user asks for one, check if a draft PR already exists. If not, open one after the first merge and instruct the PR to close the spec and all of its tickets.
+7. Resolve ticket the way the issue tracker closes a work.
 8. If this changes the **frontier** of available tickets, go back to step 4.
-9. If a draft PR exists, mark it ready for review. Otherwise, resolve each ticket the way the issue tracker closes work. Report the **temporary integration branch**.
-10. Clean up all ticket branches and worktrees.
+9. Clean up all ticket branches and their worktrees.

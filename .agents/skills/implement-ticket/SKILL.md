@@ -5,8 +5,12 @@ description: "Implement one ticket without user intervention."
 
 Communication to and from subagents should be sparse. Communicate primarily through **context pointers**: to the spec, tickets, research notes, and previous commits. Don't duplicate information already available via pointers.
 
-## Steps
-You must not deviate from this sequence and the instructions of each step because it is designed to control the context of the current agent and its subagent. Also, for the request 'Spawn a subagent named `agenName`' use the agent type you think is best suited for the task and start it with a fresh context window.
+Follow these instructions because it is designed to control the context window.
+- You must not deviate from the `Sequence of Steps` described bellow. 
+- Keep the instructions of each step because it is designed to control the context of the current agent and its subagent.
+- For the request 'Spawn a subagent named `agenName`' use the agent type you think is best suited for the task and start it with a fresh context window.
+
+## Sequence of Steps
 
 1. Check the current branch and stop in case anything is changed or new and ask the user to resolve it.
 2. Check if the current branch is named after the ticket being implemented. Stop in case of a wrong branch and ask the user to switch to the correct branch.
