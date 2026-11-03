@@ -429,4 +429,40 @@ class PetriNetBuilderSpec extends Specification {
         def ex = thrown(IllegalArgumentException)
         ex.message == 'ForkDescriptor cannot be null'
     }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for non-positive weight #weight on place-to-transition connect'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def tAction = builder.addTransition('action')
+
+        when:
+        builder.connect(pStart, tAction, weight)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'weight must be greater than 0'
+
+        where:
+        weight << [0, -1]
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for non-positive weight #weight on transition-to-place connect'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pEnd = builder.addPlace('end')
+        def tAction = builder.addTransition('action')
+
+        when:
+        builder.connect(tAction, pEnd, weight)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'weight must be greater than 0'
+
+        where:
+        weight << [0, -1]
+    }
 }

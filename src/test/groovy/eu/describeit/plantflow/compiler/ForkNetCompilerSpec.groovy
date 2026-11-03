@@ -236,6 +236,22 @@ class ForkNetCompilerSpec extends Specification {
         (1..3).each { i -> assert findTransitionByAction(net, "b${i}") != null }
     }
 
+    def 'should skip non-action nodes inside a branch when compiling'() {
+        given: 'a branch mixing an action node with a non-action node'
+        def branch1 = [action('a1'), conditional('some guard', ['t'], ['e'])]
+        def branch2 = [action('b1')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = compiler.compile(forkNode)
+
+        then:
+        net != null
+        findTransitionByAction(net, 'a1') != null
+        findTransitionByAction(net, 'b1') != null
+        net.transitions.findAll { it.actionKey in ['t', 'e'] }.isEmpty()
+    }
+
     @Unroll
     def 'should throw IllegalArgumentException for #scenario'() {
         when:

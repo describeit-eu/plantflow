@@ -36,6 +36,29 @@ class PetriNetStructureSpec extends Specification {
         net.getTransitionByIndex(-1) == null
     }
 
+    def 'should return empty fork descriptors from the default method on custom implementations'() {
+        given: 'a minimal custom PetriNetStructure implementation that does not override getForkDescriptors'
+        PetriNetStructure net = new PetriNetStructure() {
+            @Override
+            List<Place> getPlaces() { return [] }
+
+            @Override
+            List<Transition> getTransitions() { return [] }
+
+            @Override
+            Place getStartPlace() { return null }
+
+            @Override
+            Place getEndPlace() { return null }
+
+            @Override
+            IncidenceMatrix getIncidenceMatrix() { return null }
+        }
+
+        expect:
+        net.forkDescriptors.isEmpty()
+    }
+
     def 'should expose topology via interface methods'() {
         given:
         def pStart = new Place(0, 'start')
