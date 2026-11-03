@@ -392,6 +392,20 @@ end
     }
 
     /**
+     * Finds a transition of a PlantFlow engine by its label.
+     */
+    static Transition findTransitionByLabel(PlantFlow engine, String label) {
+        engine.petriNet.transitions.find { it.label == label }
+    }
+
+    /**
+     * Finds a transition of a PlantFlow engine by its action key.
+     */
+    static Transition findTransitionByAction(PlantFlow engine, String actionKey) {
+        engine.petriNet.transitions.find { it.actionKey == actionKey }
+    }
+
+    /**
      * Finds a place by its label.
      */
     static Place findPlaceByLabel(PetriNetStructure net, String label) {
