@@ -939,7 +939,7 @@ class PlantFlowExecutionSpec extends Specification {
         executionLog.containsAll(actions)
     }
 
-    def 'should execute forkEndMerge.puml step by step and verify intermediate states'() {
+    def 'should execute forkEndMerge.puml step by step with first completed branch continuing through merge'() {
         given:
         def file = new File('src/test/data/puml/forkEndMerge.puml')
         def actions = ['action 1', 'action 2', 'action 3', 'action 4', 'action 5']
@@ -963,57 +963,44 @@ class PlantFlowExecutionSpec extends Specification {
         engine.petriNet.getTokenCount(branch2Place) == 1
         engine.petriNet.getTokenCount(branch3Place) == 1
 
-        when: 'step 2: fire action 1 (branch 1)'
+        when: 'step 2: fire action 1 (branch 1 completes first)'
         engine.step()
 
-        then: 'branch 1 end place has token'
+        then: 'branch 1 end place has token and its merge transition is enabled while other branches are unfinished'
         def branch1EndPlace = engine.petriNet.places.find { it.label == 'P_fork_1_branch_1_end' }
         engine.petriNet.getTokenCount(branch1EndPlace) == 1
+        def merge1 = engine.petriNet.transitions.find { it.label == 'T_fork_1_merge_1' }
+        engine.isEnabled(merge1)
 
-        when: 'step 3: fire action 2 (branch 2)'
-        engine.step()
+        when: 'step 3: fire branch 1 merge transition without waiting for other branches'
+        def merged = engine.fire(merge1)
 
-        then: 'branch 2 end place has token'
-        def branch2EndPlace = engine.petriNet.places.find { it.label == 'P_fork_1_branch_2_end' }
-        engine.petriNet.getTokenCount(branch2EndPlace) == 1
-
-        when: 'step 4: fire action 3 (branch 3, first action)'
-        engine.step()
-
-        then: 'branch 3 intermediate place has token'
-        def branch3Mid = engine.petriNet.places.find { it.label == 'P_fork_1_branch_3_1' }
-        engine.petriNet.getTokenCount(branch3Mid) == 1
-
-        when: 'step 5: fire action 4 (branch 3, second action)'
-        engine.step()
-
-        then: 'branch 3 end place has token'
-        def branch3EndPlace = engine.petriNet.places.find { it.label == 'P_fork_1_branch_3_end' }
-        engine.petriNet.getTokenCount(branch3EndPlace) == 1
-
-        when: 'step 6: fire merge sync transition'
-        engine.step()
-
-        then: 'merge place has token'
+        then:
+        merged
         def mergePlace = engine.petriNet.places.find { it.label == 'P_fork_1_merge' }
         engine.petriNet.getTokenCount(mergePlace) == 1
 
-        when: 'step 7: fire action 5 (post-merge)'
-        def stepped7 = engine.step()
+        and: 'post-merge action 5 is enabled immediately'
+        def action5 = engine.petriNet.transitions.find { it.actionKey == 'action 5' }
+        engine.isEnabled(action5)
 
-        then:
-        stepped7
+        when: 'step 4: fire action 5 (post-merge) and finish the remaining branches'
+        engine.fire(action5)
+        engine.petriNet.transitions.findAll { it.actionKey in ['action 2', 'action 3', 'action 4'] }.each { engine.fire(it) }
+
+        then: 'workflow is completed with exactly one end token'
         engine.isCompleted()
-        !engine.petriNet.isEmpty(engine.petriNet.endPlace)
+        engine.getEndTokens().size() == 1
 
-        when: 'step 8: no more transitions enabled'
-        def stepped8 = engine.step()
-
-        then:
-        !stepped8
+        and: 'later branch completions cannot trigger another continuation'
+        def merge2 = engine.petriNet.transitions.find { it.label == 'T_fork_1_merge_2' }
+        def merge3 = engine.petriNet.transitions.find { it.label == 'T_fork_1_merge_3' }
+        !engine.isEnabled(merge2)
+        !engine.isEnabled(merge3)
+        !engine.step()
     }
 
-    def 'should deep-merge token payloads from all branches at merge point'() {
+    def 'should continue from the first completed branch with its own token, not merging other branches'() {
         given: 'a fork with two branches that produce different payload keys'
         def puml = forkPuml([['branch a'], ['branch b']], ['after merge'])
 
@@ -1034,16 +1021,16 @@ class PlantFlowExecutionSpec extends Specification {
         then:
         engine.isCompleted()
 
-        and: 'the end token has merged payload from both branches'
+        and: 'the end token carries only the first completed branch payload without merging the other branch'
         def endToken = engine.getEndToken()
         endToken != null
         endToken.payload.initial == true
         endToken.payload.fromA == 'value-a'
-        endToken.payload.fromB == 'value-b'
-        endToken.payload.shared == 'from-b'
+        endToken.payload.shared == 'from-a'
+        !endToken.payload.containsKey('fromB')
     }
 
-    def 'should deep-merge nested map payloads from branches at merge point'() {
+    def 'should continue with the first completed branch nested map payload unchanged'() {
         given: 'a fork with branches that produce nested map payloads'
         def puml = forkPuml([['branch a'], ['branch b']])
 
@@ -1069,21 +1056,21 @@ class PlantFlowExecutionSpec extends Specification {
         then:
         engine.isCompleted()
 
-        and: 'nested maps are deep-merged correctly'
+        and: 'the winning branch payload is routed onward without combining the other branch nested maps'
         def endToken = engine.getEndToken()
         endToken != null
         endToken.payload.initial == true
         endToken.payload.branchA == true
-        endToken.payload.branchB == true
+        !endToken.payload.containsKey('branchB')
 
-        and: 'nested config map is merged with overlay winning on conflicts'
+        and: 'nested config map is the winner branch config, not deep-merged with the loser'
         def config = endToken.payload.config as Map
         config.host == 'localhost'
-        config.port == 9090
-        config.ssl == true
+        config.port == 8080
+        !config.containsKey('ssl')
     }
 
-    def 'should execute fork with three branches and verify all run in parallel'() {
+    def 'should execute fork with three branches and continue once from the first completed branch'() {
         given:
         def puml = forkPuml([['task 1'], ['task 2'], ['task 3']], ['finalize'])
 
@@ -1098,16 +1085,17 @@ class PlantFlowExecutionSpec extends Specification {
         then:
         engine.isCompleted()
 
-        and: 'all three tasks executed before finalize'
+        and: 'all three tasks and finalize executed exactly once'
         executionOrder.size() == 4
         executionOrder.containsAll(['task 1', 'task 2', 'task 3'])
         executionOrder.last() == 'finalize'
 
-        and: 'end token has all task payloads merged'
+        and: 'end token carries only the first completed branch payload and exactly one end token exists'
+        engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken.payload.task_1 == true
-        endToken.payload.task_2 == true
-        endToken.payload.task_3 == true
+        !endToken.payload.containsKey('task_2')
+        !endToken.payload.containsKey('task_3')
     }
 
     def 'should execute fork with multi-action branches and verify sequential execution within branches'() {
@@ -1129,14 +1117,15 @@ class PlantFlowExecutionSpec extends Specification {
         executionLog.size() == 5
         executionLog.containsAll(['a1', 'a2', 'b1', 'b2', 'b3'])
 
-        and: 'end token has all payloads merged'
+        and: 'end token carries only the winning branch payloads'
+        engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken.payload.start == true
         endToken.payload.a1 == true
         endToken.payload.a2 == true
-        endToken.payload.b1 == true
-        endToken.payload.b2 == true
-        endToken.payload.b3 == true
+        !endToken.payload.containsKey('b1')
+        !endToken.payload.containsKey('b2')
+        !endToken.payload.containsKey('b3')
     }
 
     def 'should preserve token id through fork and merge execution'() {
@@ -1179,12 +1168,14 @@ class PlantFlowExecutionSpec extends Specification {
         then:
         engine.isCompleted()
 
-        and:
+        and: 'exactly one end token carrying the first completed branch payload'
+        engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken != null
         endToken.payload.initial == true
-        (1..branchCount).each { i ->
-            assert endToken.payload["action_${i}".toString()] == true
+        endToken.payload.action_1 == true
+        (2..branchCount).each { i ->
+            assert !endToken.payload.containsKey("action_${i}".toString())
         }
 
         where:
@@ -1226,13 +1217,14 @@ class PlantFlowExecutionSpec extends Specification {
         executionLog.size() == 4
         executionLog.containsAll(actions)
 
-        and:
+        and: 'exactly one continuation carries the first completed branch payload only'
+        engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken.payload.initial == true
         endToken.payload.action_1 == true
-        endToken.payload.action_2 == true
-        endToken.payload.nested_action_1 == true
-        endToken.payload.nested_action_2 == true
+        !endToken.payload.containsKey('action_2')
+        !endToken.payload.containsKey('nested_action_1')
+        !endToken.payload.containsKey('nested_action_2')
     }
 
     def 'should update execution context from parallel branch actions'() {

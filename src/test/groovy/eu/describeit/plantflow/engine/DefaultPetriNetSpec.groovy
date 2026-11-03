@@ -167,4 +167,30 @@ class DefaultPetriNetSpec extends Specification {
         net.getTransitionByIndex(2) == null
         net.getTransitionByIndex(99) == null
     }
+
+    def 'should expose empty fork descriptors when constructed without them'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def matrix = new IncidenceMatrix(null, null)
+        def net = new DefaultPetriNet([pStart, pEnd], [], matrix, pStart, pEnd)
+
+        expect:
+        net.forkDescriptors.isEmpty()
+    }
+
+    def 'should store fork descriptors assigned after construction'() {
+        given:
+        def pStart = new Place(0, 'start')
+        def pEnd = new Place(1, 'end')
+        def matrix = new IncidenceMatrix(null, null)
+        def descriptor = new ForkDescriptor(0, [1, 2])
+        def net = new DefaultPetriNet([pStart, pEnd], [], matrix, pStart, pEnd)
+
+        when:
+        net.setForkDescriptors([descriptor])
+
+        then:
+        net.forkDescriptors == [descriptor]
+    }
 }

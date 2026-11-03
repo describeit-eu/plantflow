@@ -36,6 +36,29 @@ class PetriNetStructureSpec extends Specification {
         net.getTransitionByIndex(-1) == null
     }
 
+    def 'should return empty fork descriptors from the default method on custom implementations'() {
+        given: 'a minimal custom PetriNetStructure implementation that does not override getForkDescriptors'
+        PetriNetStructure net = new PetriNetStructure() {
+            @Override
+            List<Place> getPlaces() { return [] }
+
+            @Override
+            List<Transition> getTransitions() { return [] }
+
+            @Override
+            Place getStartPlace() { return null }
+
+            @Override
+            Place getEndPlace() { return null }
+
+            @Override
+            IncidenceMatrix getIncidenceMatrix() { return null }
+        }
+
+        expect:
+        net.forkDescriptors.isEmpty()
+    }
+
     def 'should expose topology via interface methods'() {
         given:
         def pStart = new Place(0, 'start')
@@ -54,7 +77,7 @@ class PetriNetStructureSpec extends Specification {
         net.incidenceMatrix.is(matrix)
     }
 
-    def 'should have exactly 5 abstract methods plus 2 default methods'() {
+    def 'should have exactly 5 abstract methods plus 3 default methods'() {
         given:
         def abstractMethods = PetriNetStructure.methods.findAll { it.default == false && !it.synthetic }.collect { it.name }.sort()
         def defaultMethods = PetriNetStructure.methods.findAll { it.default == true && !it.synthetic }.collect { it.name }.sort()
@@ -62,8 +85,8 @@ class PetriNetStructureSpec extends Specification {
         expect: '5 abstract topology methods'
         abstractMethods == ['getEndPlace', 'getIncidenceMatrix', 'getPlaces', 'getStartPlace', 'getTransitions']
 
-        and: '2 default lookup methods'
-        defaultMethods == ['getPlaceByIndex', 'getTransitionByIndex']
+        and: '3 default lookup and metadata methods'
+        defaultMethods == ['getForkDescriptors', 'getPlaceByIndex', 'getTransitionByIndex']
     }
 
     def 'should not have any execution or marking methods'() {

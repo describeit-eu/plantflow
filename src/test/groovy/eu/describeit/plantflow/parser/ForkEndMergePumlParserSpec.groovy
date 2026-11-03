@@ -213,15 +213,11 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, action5Transition.index) == 1
     }
 
-    def 'should compile forkEndMerge.puml with correct branch end places feeding merge sync'() {
+    def 'should compile forkEndMerge.puml with each branch end place feeding its own merge transition'() {
         when:
         def net = parse(new File('src/test/data/puml/forkEndMerge.puml'))
 
         then:
-        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        mergeSyncTransition != null
-
-        and:
         def branch1EndPlace = net.places.find { it.label == 'P_fork_1_branch_1_end' }
         def branch2EndPlace = net.places.find { it.label == 'P_fork_1_branch_2_end' }
         def branch3EndPlace = net.places.find { it.label == 'P_fork_1_branch_3_end' }
@@ -230,10 +226,14 @@ class ForkEndMergePumlParserSpec extends Specification {
         branch2EndPlace != null
         branch3EndPlace != null
 
-        and:
-        net.incidenceMatrix.getInputWeight(branch1EndPlace.index, mergeSyncTransition.index) == 1
-        net.incidenceMatrix.getInputWeight(branch2EndPlace.index, mergeSyncTransition.index) == 1
-        net.incidenceMatrix.getInputWeight(branch3EndPlace.index, mergeSyncTransition.index) == 1
+        and: 'each branch has a dedicated single-input merge transition'
+        (1..3).each { i ->
+            def mergeTransition = net.transitions.find { it.label == "T_fork_1_merge_${i}" }
+            assert mergeTransition != null
+            verifyTransitionIO(net, mergeTransition, 1, 1)
+            def branchEndPlace = net.places.find { it.label == "P_fork_1_branch_${i}_end" }
+            assert net.incidenceMatrix.getInputWeight(branchEndPlace.index, mergeTransition.index) == 1
+        }
     }
 
     def 'should compile forkEndMerge.puml with correct place and transition structure'() {
@@ -254,14 +254,16 @@ class ForkEndMergePumlParserSpec extends Specification {
         net.places.find { it.label == 'P_fork_1_branch_3_end' } != null
         net.places.find { it.label == 'P_fork_1_merge' } != null
 
-        and: 'fork transition has 1 input and 3 outputs, merge sync has 3 inputs and 1 output'
+        and: 'fork transition has 1 input and 3 outputs, each merge transition has 1 input and 1 output'
         def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
         forkTransition != null
         verifyTransitionIO(net, forkTransition, 1, 3)
 
-        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        mergeSyncTransition != null
-        verifyTransitionIO(net, mergeSyncTransition, 3, 1)
+        (1..3).each { i ->
+            def mergeTransition = net.transitions.find { it.label == "T_fork_1_merge_${i}" }
+            assert mergeTransition != null
+            verifyTransitionIO(net, mergeTransition, 1, 1)
+        }
     }
 
     def 'should compile fork with post-merge actions from string and verify structure'() {

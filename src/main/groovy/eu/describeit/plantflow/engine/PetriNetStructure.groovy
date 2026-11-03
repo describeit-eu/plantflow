@@ -10,6 +10,10 @@ interface PetriNetStructure {
     Place getEndPlace()
     IncidenceMatrix getIncidenceMatrix()
 
+    default List<ForkDescriptor> getForkDescriptors() {
+        return Collections.emptyList()
+    }
+
     default Place getPlaceByIndex(int index) {
         return getPlaces().find { Place place -> place.index == index }
     }

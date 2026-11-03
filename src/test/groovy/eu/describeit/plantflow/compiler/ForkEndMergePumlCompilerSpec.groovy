@@ -71,10 +71,12 @@ class ForkEndMergePumlCompilerSpec extends Specification {
         forkTransition != null
         verifyTransitionIO(net, forkTransition, 1, branchCount)
 
-        and:
-        def mergeSyncTransition = net.transitions.find { it.label == 'T_fork_1_merge_sync' }
-        mergeSyncTransition != null
-        verifyTransitionIO(net, mergeSyncTransition, branchCount, 1)
+        and: 'each branch end place feeds its own single-input merge transition'
+        (1..branchCount).each { i ->
+            def mergeTransition = net.transitions.find { it.label == "T_fork_1_merge_${i}" }
+            assert mergeTransition != null
+            verifyTransitionIO(net, mergeTransition, 1, 1)
+        }
 
         and:
         (1..branchCount).each { i ->

@@ -259,7 +259,7 @@ class StatefulExecutionSpec extends Specification {
         !execution.isNetEmpty()
 
         when: 'token removed'
-        execution.marking.removeToken(pStart, execution.getTokens(pStart)[0])
+        execution.marking.removeToken(pStart.index, execution.getTokens(pStart)[0])
 
         then: 'empty again'
         execution.isNetEmpty()

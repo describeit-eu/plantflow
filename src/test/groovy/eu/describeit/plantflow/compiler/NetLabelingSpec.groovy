@@ -26,7 +26,7 @@ class NetLabelingSpec extends Specification {
         NetLabeling.TRANSITION_ENDIF_TO_END == 'T_endif_to_end'
         NetLabeling.TRANSITION_FORK_PREFIX == 'T_fork_'
         NetLabeling.TRANSITION_FORK_BRANCH_SUFFIX == '_branch_'
-        NetLabeling.TRANSITION_FORK_MERGE_SYNC == '_merge_sync'
+        NetLabeling.TRANSITION_FORK_MERGE_SUFFIX == '_merge_'
         NetLabeling.TRANSITION_FORK_TO_END == '_to_end'
     }
 
@@ -120,13 +120,15 @@ class NetLabelingSpec extends Specification {
     }
 
     @Unroll
-    def 'forkMergeSyncTransition(#forkIndex) should return expected label'() {
+    def 'forkMergeTransition(#forkIndex, #branchNumber) should return expected label'() {
         expect:
-        NetLabeling.forkMergeSyncTransition(forkIndex) == expected
+        NetLabeling.forkMergeTransition(forkIndex, branchNumber) == expected
 
         where:
-        forkIndex | expected
-        1         | 'T_fork_1_merge_sync'
+        forkIndex | branchNumber | expected
+        1         | 1            | 'T_fork_1_merge_1'
+        1         | 2            | 'T_fork_1_merge_2'
+        2         | 3            | 'T_fork_2_merge_3'
     }
 
     @Unroll

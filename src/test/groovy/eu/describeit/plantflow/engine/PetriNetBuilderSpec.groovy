@@ -380,4 +380,89 @@ class PetriNetBuilderSpec extends Specification {
         net.incidenceMatrix.getOutputWeight(pEnd.index, tAction.index) == 1
         net.incidenceMatrix.getInputWeight(pStart.index, tAction.index) == 0
     }
+
+    def 'should build net with fork descriptors and expose them on the structure'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def pEnd = builder.addPlace('end')
+        def tFork = builder.addTransition('T_fork_1')
+        def tMerge1 = builder.addTransition('T_fork_1_merge_1')
+        def tMerge2 = builder.addTransition('T_fork_1_merge_2')
+        builder.connect(pStart, tFork)
+        builder.connect(tMerge1, pEnd)
+        builder.connect(tMerge2, pEnd)
+        builder.addForkDescriptor(new ForkDescriptor(tFork.index, [tMerge1.index, tMerge2.index]))
+        builder.setStartPlace(pStart).setEndPlace(pEnd)
+
+        when:
+        def net = builder.build()
+
+        then:
+        net.forkDescriptors.size() == 1
+        net.forkDescriptors[0].forkTransitionIndex == tFork.index
+        net.forkDescriptors[0].mergeTransitionIndexes == [tMerge1.index, tMerge2.index]
+        net.forkDescriptors[0].isMergeTransition(tMerge1.index)
+        net.forkDescriptors[0].isMergeTransition(tMerge2.index)
+        !net.forkDescriptors[0].isMergeTransition(tFork.index)
+    }
+
+    def 'should build net with empty fork descriptors by default'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def pEnd = builder.addPlace('end')
+        builder.setStartPlace(pStart).setEndPlace(pEnd)
+
+        expect:
+        builder.build().forkDescriptors.isEmpty()
+    }
+
+    def 'should throw IllegalArgumentException when adding a null fork descriptor'() {
+        given:
+        def builder = new PetriNetBuilder()
+
+        when:
+        builder.addForkDescriptor(null)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'ForkDescriptor cannot be null'
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for non-positive weight #weight on place-to-transition connect'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pStart = builder.addPlace('start')
+        def tAction = builder.addTransition('action')
+
+        when:
+        builder.connect(pStart, tAction, weight)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'weight must be greater than 0'
+
+        where:
+        weight << [0, -1]
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for non-positive weight #weight on transition-to-place connect'() {
+        given:
+        def builder = new PetriNetBuilder()
+        def pEnd = builder.addPlace('end')
+        def tAction = builder.addTransition('action')
+
+        when:
+        builder.connect(tAction, pEnd, weight)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == 'weight must be greater than 0'
+
+        where:
+        weight << [0, -1]
+    }
 }

@@ -28,7 +28,8 @@ class ForkNetCompilerSpec extends Specification {
 
         and:
         findTransitionByLabel(net, 'T_fork_1') != null
-        findTransitionByLabel(net, 'T_fork_1_merge_sync') != null
+        findTransitionByLabel(net, 'T_fork_1_merge_1') != null
+        findTransitionByLabel(net, 'T_fork_1_merge_2') != null
         findTransitionByLabel(net, 'T_fork_1_to_end') != null
 
         and:
@@ -144,7 +145,7 @@ class ForkNetCompilerSpec extends Specification {
         net.incidenceMatrix.getInputWeight(net.startPlace.index, forkTransition.index) == 1
     }
 
-    def 'should verify merge sync transition has N inputs and 1 output'() {
+    def 'should verify each branch has its own merge transition with 1 input and 1 output'() {
         given:
         def branches = (1..3).collect { [action("a${it}")] }
         def forkNode = new ForkNode(branches as List<List<ActivityNode>>)
@@ -153,14 +154,23 @@ class ForkNetCompilerSpec extends Specification {
         def net = compiler.compile(forkNode)
 
         then:
-        def mergeSyncTransition = findTransitionByLabel(net, 'T_fork_1_merge_sync')
-        mergeSyncTransition != null
-        verifyTransitionIO(net, mergeSyncTransition, 3, 1)
-
-        and:
         def mergePlace = findPlaceByLabel(net, 'P_fork_1_merge')
         mergePlace != null
-        net.incidenceMatrix.getOutputWeight(mergePlace.index, mergeSyncTransition.index) == 1
+
+        and: 'each branch end place feeds its own single-input merge transition to the merge place'
+        (1..3).each { int i ->
+            def mergeTransition = findTransitionByLabel(net, "T_fork_1_merge_${i}")
+            assert mergeTransition != null
+            verifyTransitionIO(net, mergeTransition, 1, 1)
+            assert net.incidenceMatrix.getOutputWeight(mergePlace.index, mergeTransition.index) == 1
+            def branchEnd = findPlaceByLabel(net, "P_fork_1_branch_${i}_end")
+            assert net.incidenceMatrix.getInputWeight(branchEnd.index, mergeTransition.index) == 1
+        }
+
+        and: 'a ForkDescriptor links the fork transition to all merge transitions'
+        def descriptor = net.forkDescriptors.find { it.forkTransitionIndex == findTransitionByLabel(net, 'T_fork_1').index }
+        assert descriptor != null
+        assert descriptor.mergeTransitionIndexes.size() == 3
     }
 
     def 'should compile fork with sequential actions in branch'() {
@@ -224,6 +234,22 @@ class ForkNetCompilerSpec extends Specification {
         net != null
         (1..5).each { i -> assert findTransitionByAction(net, "a${i}") != null }
         (1..3).each { i -> assert findTransitionByAction(net, "b${i}") != null }
+    }
+
+    def 'should skip non-action nodes inside a branch when compiling'() {
+        given: 'a branch mixing an action node with a non-action node'
+        def branch1 = [action('a1'), conditional('some guard', ['t'], ['e'])]
+        def branch2 = [action('b1')]
+        def forkNode = new ForkNode([branch1, branch2] as List<List<ActivityNode>>)
+
+        when:
+        def net = compiler.compile(forkNode)
+
+        then:
+        net != null
+        findTransitionByAction(net, 'a1') != null
+        findTransitionByAction(net, 'b1') != null
+        net.transitions.findAll { it.actionKey in ['t', 'e'] }.isEmpty()
     }
 
     @Unroll
