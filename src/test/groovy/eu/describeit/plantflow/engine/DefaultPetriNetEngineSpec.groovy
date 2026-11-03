@@ -60,7 +60,7 @@ class DefaultPetriNetEngineSpec extends Specification {
         engine.getEnabledTransitions(net, marking, registry, context).isEmpty()
 
         when: 'valid token replaces invalid token'
-        marking.removeToken(pStart, invalidToken)
+        marking.removeToken(pStart.index, invalidToken)
         def validToken = Token.of([valid: true])
         marking.addToken(pStart, validToken)
 
@@ -1034,7 +1034,7 @@ class DefaultPetriNetEngineSpec extends Specification {
         engine.isEnabled(net, tMerge1, marking, registry, context)
 
         when: 'the pending activation is already selected before the tagged token is consumed'
-        marking.selectForkActivation(tFork.index, marking.getTokenActivation(pB1End, 1))
+        marking.selectForkActivation(tFork.index, marking.getTokenActivation(pB1End.index, 1))
 
         then: 'the untagged token still blocks and the merge stays disabled for it'
         !engine.isEnabled(net, tMerge1, marking, registry, context)

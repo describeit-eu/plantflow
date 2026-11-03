@@ -56,27 +56,10 @@ class DefaultPetriNetEngine implements PetriNetEngine {
 
         List<Place> inputPlaces = getInputPlaces(net, transition.index)
         int[] pendingMergeToken = findPendingMergeToken(net, transition, marking, inputPlaces)
-        List<Token> consumedTokens = []
-        List<Integer> consumedActivations = []
+        ConsumedInputs consumed = consumeInputTokens(net, transition.index, marking, pendingMergeToken)
 
-        for (Place p : inputPlaces) {
-            int requiredWeight = net.incidenceMatrix.getInputWeight(p.index, transition.index)
-            for (int w = 0; w < requiredWeight; w++) {
-                int position = 0
-                if (pendingMergeToken != null && pendingMergeToken[0] == p.index && w == 0) {
-                    position = pendingMergeToken[1]
-                }
-                Integer activationId = marking.getTokenActivation(p.index, position)
-                Token tokenToConsume = marking.removeTokenAt(p.index, position)
-                if (tokenToConsume != null) {
-                    consumedTokens.add(tokenToConsume)
-                    consumedActivations.add(activationId)
-                }
-            }
-        }
-
-        Token outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
-        Integer outputActivationId = resolveOutputActivationId(net, transition, consumedActivations, marking)
+        Token outputToken = getActionOutputToken(consumed.tokens, transition, handlerRegistry, executionContext)
+        Integer outputActivationId = resolveOutputActivationId(net, transition, consumed.activations, marking)
 
         List<Place> outputPlaces = getOutputPlaces(net, transition.index)
         for (Place p : outputPlaces) {
@@ -86,22 +69,42 @@ class DefaultPetriNetEngine implements PetriNetEngine {
             }
         }
 
-        updateForkActivationState(net, transition, marking, consumedActivations)
+        updateForkActivationState(net, transition, marking, consumed.activations)
 
         return true
+    }
+
+    private static ConsumedInputs consumeInputTokens(PetriNetStructure net, int transitionIndex, Marking marking, int[] pendingMergeToken) {
+        ConsumedInputs consumed = new ConsumedInputs()
+        for (Place p : getInputPlaces(net, transitionIndex)) {
+            int requiredWeight = net.incidenceMatrix.getInputWeight(p.index, transitionIndex)
+            for (int w = 0; w < requiredWeight; w++) {
+                int position = 0
+                if (pendingMergeToken.length > 0 && pendingMergeToken[0] == p.index && w == 0) {
+                    position = pendingMergeToken[1]
+                }
+                Integer activationId = marking.getTokenActivation(p.index, position)
+                Token tokenToConsume = marking.removeTokenAt(p.index, position)
+                if (tokenToConsume != null) {
+                    consumed.tokens.add(tokenToConsume)
+                    consumed.activations.add(activationId)
+                }
+            }
+        }
+        return consumed
     }
 
     private static boolean hasForkContinuationAvailable(PetriNetStructure net, Transition transition, Marking marking, List<Place> inputPlaces) {
         if (findMergeForkIndex(net, transition.index) == null) {
             return true
         }
-        return findPendingMergeToken(net, transition, marking, inputPlaces) != null
+        return findPendingMergeToken(net, transition, marking, inputPlaces).length > 0
     }
 
     private static int[] findPendingMergeToken(PetriNetStructure net, Transition transition, Marking marking, List<Place> inputPlaces) {
         Integer forkIndex = findMergeForkIndex(net, transition.index)
         if (forkIndex == null) {
-            return null
+            return new int[0]
         }
         for (Place p : inputPlaces) {
             int tokenCount = marking.getTokenCount(p.index)
@@ -112,7 +115,12 @@ class DefaultPetriNetEngine implements PetriNetEngine {
                 }
             }
         }
-        return null
+        return new int[0]
+    }
+
+    private static class ConsumedInputs {
+        List<Token> tokens = []
+        List<Integer> activations = []
     }
 
     private static Integer resolveOutputActivationId(PetriNetStructure net, Transition transition, List<Integer> consumedActivations, Marking marking) {
@@ -155,7 +163,7 @@ class DefaultPetriNetEngine implements PetriNetEngine {
         return merged
     }
 
-    protected List<Place> getInputPlaces(PetriNetStructure net, int transitionIndex) {
+    protected static List<Place> getInputPlaces(PetriNetStructure net, int transitionIndex) {
         List<Place> result = []
         for (Place p : net.places) {
             if (net.incidenceMatrix.getInputWeight(p.index, transitionIndex) > 0) {
@@ -165,7 +173,7 @@ class DefaultPetriNetEngine implements PetriNetEngine {
         return Collections.unmodifiableList(result)
     }
 
-    protected List<Place> getOutputPlaces(PetriNetStructure net, int transitionIndex) {
+    protected static List<Place> getOutputPlaces(PetriNetStructure net, int transitionIndex) {
         List<Place> result = []
         for (Place p : net.places) {
             if (net.incidenceMatrix.getOutputWeight(p.index, transitionIndex) > 0) {

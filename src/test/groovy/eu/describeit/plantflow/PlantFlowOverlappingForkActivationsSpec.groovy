@@ -170,8 +170,8 @@ class PlantFlowOverlappingForkActivationsSpec extends Specification {
         then: 'the copy preserves both the selected and the exhausted pending state'
         def forkIndex = transitionByLabel(engine, 'T_fork_1').index
         copied.getPendingForkActivations(forkIndex) == 0
-        copied.getSelectedForkActivationCount(forkIndex) == 1
-        marking.getSelectedForkActivationCount(forkIndex) == 1
+        copied.getSelectedForkActivations(forkIndex).size() == 1
+        marking.getSelectedForkActivations(forkIndex).size() == 1
 
         when: 'the late branch completes on the copy and the copy finishes'
         engine.fire(transitionByAction(engine, 'branch b'), copied, context)
@@ -231,7 +231,7 @@ class PlantFlowOverlappingForkActivationsSpec extends Specification {
         restored.getTokenCount(engine.petriNet.endPlace) == 2
         restored.getTokens(engine.petriNet.endPlace)*.payload.toSet() == [[run: 1, branch: 'a'], [run: 2, branch: 'a']].toSet()
         restored.getPendingForkActivations(forkIndex) == 0
-        restored.getSelectedForkActivationCount(forkIndex) == 2
+        restored.getSelectedForkActivations(forkIndex).size() == 2
     }
 
     def 'serialization round-trip preserves already-selected activation state'() {
@@ -252,7 +252,7 @@ class PlantFlowOverlappingForkActivationsSpec extends Specification {
         then: 'the selected state and the pending exhaustion survive'
         def forkIndex = transitionByLabel(engine, 'T_fork_1').index
         restored.getPendingForkActivations(forkIndex) == 0
-        restored.getSelectedForkActivationCount(forkIndex) == 1
+        restored.getSelectedForkActivations(forkIndex).size() == 1
 
         when: 'the late branch completes on the restored marking and it finishes'
         engine.fire(transitionByAction(engine, 'branch b'), restored, context)

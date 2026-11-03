@@ -98,7 +98,7 @@ class MarkingMarshallerSpec extends Specification {
         json.contains('"nextForkActivationId"')
         deserialized.getPendingForkActivations(0) == 1
         deserialized.getPendingForkActivations(4) == 1
-        deserialized.getSelectedForkActivationCount(0) == 1
+        deserialized.getSelectedForkActivations(0).size() == 1
         deserialized.getSelectedForkActivations(0) == [id1]
         deserialized.getTokenActivation(0, 0) == id2
         deserialized.getTokenActivation(1, 0) == null
@@ -125,7 +125,7 @@ class MarkingMarshallerSpec extends Specification {
         deserialized.getTokenCount(0) == 0
         deserialized.getPendingForkActivations(0) == 2
         deserialized.getPendingForkActivations(4) == 1
-        deserialized.getSelectedForkActivationCount(0) == 0
+        deserialized.getSelectedForkActivations(0).size() == 0
     }
 
     def 'Marshaller should deserialize legacy Marking JSON without forkActivations'() {

@@ -53,20 +53,7 @@ class Marking {
         }
     }
 
-    private static void copyActivationIds(Map<Integer, List<Integer>> source, Map<Integer, List<Integer>> target) {
-        if (source == null) {
-            return
-        }
-        source.each { Integer key, List<Integer> ids ->
-            target.put(key, new ArrayList<>(ids))
-        }
-    }
-
-    void addToken(int placeIndex, Token token) {
-        addToken(placeIndex, token, null)
-    }
-
-    void addToken(int placeIndex, Token token, Integer activationId) {
+    void addToken(int placeIndex, Token token, Integer activationId = null) {
         if (token == null) return
         if (placeIndex >= 0 && placeIndex < tokens.length) {
             List<Integer> tags = tokenActivationList(placeIndex)
@@ -75,11 +62,7 @@ class Marking {
         }
     }
 
-    void addToken(Place place, Token token) {
-        addToken(place.index, token)
-    }
-
-    void addToken(Place place, Token token, Integer activationId) {
+    void addToken(Place place, Token token, Integer activationId = null) {
         addToken(place.index, token, activationId)
     }
 
@@ -87,16 +70,14 @@ class Marking {
         if (placeIndex < 0 || placeIndex >= tokens.length) {
             return false
         }
-        int position = indexOfToken(placeIndex, token)
-        if (position < 0) {
-            return false
+        Token[] placeTokens = tokens[placeIndex]
+        for (int i = 0; i < placeTokens.length; i++) {
+            if (placeTokens[i] != null && placeTokens[i] == token) {
+                removeTokenAt(placeIndex, i)
+                return true
+            }
         }
-        removeTokenAt(placeIndex, position)
-        return true
-    }
-
-    boolean removeToken(Place place, Token token) {
-        return removeToken(place.index, token)
+        return false
     }
 
     Token removeTokenAt(int placeIndex, int position) {
@@ -114,16 +95,6 @@ class Marking {
             tags.remove(position)
         }
         return removed
-    }
-
-    private int indexOfToken(int placeIndex, Token token) {
-        Token[] placeTokens = tokens[placeIndex]
-        for (int i = 0; i < placeTokens.length; i++) {
-            if (placeTokens[i] != null && placeTokens[i].equals(token)) {
-                return i
-            }
-        }
-        return -1
     }
 
     List<Token> getTokens(int placeIndex) {
@@ -167,10 +138,6 @@ class Marking {
         return tags.get(position)
     }
 
-    Integer getTokenActivation(Place place, int position) {
-        return getTokenActivation(place.index, position)
-    }
-
     @JsonProperty('tokens')
     Token[][] getTokens() {
         return tokens
@@ -179,7 +146,7 @@ class Marking {
     int registerForkActivation(int forkTransitionIndex) {
         int activationId = nextForkActivationId
         nextForkActivationId = nextForkActivationId + 1
-        pendingList(forkTransitionIndex).add(activationId)
+        activationIdList(pendingForkActivations, forkTransitionIndex).add(activationId)
         return activationId
     }
 
@@ -194,7 +161,7 @@ class Marking {
             return false
         }
         int activationId = pending.remove(0)
-        selectedList(forkTransitionIndex).add(activationId)
+        activationIdList(selectedForkActivations, forkTransitionIndex).add(activationId)
         return true
     }
 
@@ -208,13 +175,8 @@ class Marking {
         if (pending == null || !pending.remove((Object) Integer.valueOf(activationId))) {
             return false
         }
-        selectedList(forkTransitionIndex).add(activationId)
+        activationIdList(selectedForkActivations, forkTransitionIndex).add(activationId)
         return true
-    }
-
-    int getSelectedForkActivationCount(int forkTransitionIndex) {
-        List<Integer> selected = selectedForkActivations.get(forkTransitionIndex)
-        return selected == null ? 0 : selected.size()
     }
 
     List<Integer> getSelectedForkActivations(int forkTransitionIndex) {
@@ -257,21 +219,9 @@ class Marking {
         return activationIdSnapshot(selectedForkActivations)
     }
 
-    private static Map<Integer, List<Integer>> activationIdSnapshot(Map<Integer, List<Integer>> source) {
-        Map<Integer, List<Integer>> snapshot = [:]
-        source.each { Integer key, List<Integer> ids ->
-            snapshot.put(key, Collections.unmodifiableList(new ArrayList<>(ids)))
-        }
-        return Collections.unmodifiableMap(snapshot)
-    }
-
     @JsonProperty('tokenActivations')
     Map<Integer, List<Integer>> getTokenActivations() {
-        Map<Integer, List<Integer>> snapshot = [:]
-        tokenActivations.each { Integer placeIndex, List<Integer> tags ->
-            snapshot.put(placeIndex, Collections.unmodifiableList(new ArrayList<>(tags)))
-        }
-        return Collections.unmodifiableMap(snapshot)
+        return activationIdSnapshot(tokenActivations)
     }
 
     @JsonProperty('nextForkActivationId')
@@ -288,47 +238,53 @@ class Marking {
         return vec
     }
 
-    private List<Integer> pendingList(int forkTransitionIndex) {
-        List<Integer> pending = pendingForkActivations.get(forkTransitionIndex)
-        if (pending == null) {
-            pending = new ArrayList<>()
-            pendingForkActivations.put(forkTransitionIndex, pending)
+    Marking copy() {
+        Marking copy = new Marking(this.tokens.length)
+        for (int i = 0; i < tokens.length; i++) {
+            copy.tokens[i] = Arrays.copyOf(this.tokens[i], this.tokens[i].length)
         }
-        return pending
+        copyActivationIds(this.@pendingForkActivations, copy.@pendingForkActivations)
+        copyActivationIds(this.@selectedForkActivations, copy.@selectedForkActivations)
+        copyActivationIds(this.@tokenActivations, copy.@tokenActivations)
+        copy.nextForkActivationId = this.nextForkActivationId
+        return copy
     }
 
-    private List<Integer> selectedList(int forkTransitionIndex) {
-        List<Integer> selected = selectedForkActivations.get(forkTransitionIndex)
-        if (selected == null) {
-            selected = new ArrayList<>()
-            selectedForkActivations.put(forkTransitionIndex, selected)
+    private static void copyActivationIds(Map<Integer, List<Integer>> source, Map<Integer, List<Integer>> target) {
+        if (source == null) {
+            return
         }
-        return selected
+        source.each { Integer key, List<Integer> ids ->
+            target.put(key, new ArrayList<>(ids))
+        }
+    }
+
+    private static Map<Integer, List<Integer>> activationIdSnapshot(Map<Integer, List<Integer>> source) {
+        Map<Integer, List<Integer>> snapshot = [:]
+        source.each { Integer key, List<Integer> ids ->
+            snapshot.put(key, Collections.unmodifiableList(new ArrayList<>(ids)))
+        }
+        return Collections.unmodifiableMap(snapshot)
+    }
+
+    private static List<Integer> activationIdList(Map<Integer, List<Integer>> map, int forkTransitionIndex) {
+        List<Integer> ids = map.get(forkTransitionIndex)
+        if (ids == null) {
+            ids = []
+            map.put(forkTransitionIndex, ids)
+        }
+        return ids
     }
 
     private List<Integer> tokenActivationList(int placeIndex) {
         List<Integer> tags = tokenActivations.get(placeIndex)
         if (tags == null) {
-            tags = new ArrayList<>()
+            tags = []
             tokenActivations.put(placeIndex, tags)
         }
         while (tags.size() < tokens[placeIndex].length) {
             tags.add(null)
         }
         return tags
-    }
-
-    Marking copy() {
-        Marking copy = new Marking(this.tokens.length)
-        for (int i = 0; i < tokens.length; i++) {
-            copy.tokens[i] = Arrays.copyOf(this.tokens[i], this.tokens[i].length)
-        }
-        copyActivationIds(this.pendingForkActivations, copy.pendingForkActivations)
-        copyActivationIds(this.selectedForkActivations, copy.selectedForkActivations)
-        this.tokenActivations.each { Integer placeIndex, List<Integer> tags ->
-            copy.tokenActivations.put(placeIndex, new ArrayList<>(tags))
-        }
-        copy.nextForkActivationId = this.nextForkActivationId
-        return copy
     }
 }

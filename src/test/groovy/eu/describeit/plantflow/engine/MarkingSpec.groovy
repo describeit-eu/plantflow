@@ -24,7 +24,7 @@ class MarkingSpec extends Specification {
         marking.getMarkingVector() == [1, 0] as int[]
 
         when:
-        def removed = marking.removeToken(pStart, token)
+        def removed = marking.removeToken(pStart.index, token)
         marking.addToken(pEnd, token)
 
         then:
@@ -54,7 +54,7 @@ class MarkingSpec extends Specification {
 
         when: 'mutating the copy'
         copy.addToken(pEnd, token2)
-        copy.removeToken(pStart, token1)
+        copy.removeToken(pStart.index, token1)
 
         then: 'original marking remains unchanged'
         marking.getTokens(pStart) == [token1]
@@ -137,7 +137,7 @@ class MarkingSpec extends Specification {
         'negative index'            | -1           | { Marking m, Place p, Token t, int idx -> m.removeToken(idx, t) }
         'out of bounds index'       | 5            | { Marking m, Place p, Token t, int idx -> m.removeToken(idx, t) }
         'non-existent token index'  | 0            | { Marking m, Place p, Token t, int idx -> m.removeToken(idx, t) }
-        'non-existent token place'  | 0            | { Marking m, Place p, Token t, int idx -> m.removeToken(p, t) }
+        'non-existent token place'  | 0            | { Marking m, Place p, Token t, int idx -> m.removeToken(p.index, t) }
     }
 
     def 'should return false when removing token at exact boundary index equal to tokens length'() {
@@ -218,7 +218,7 @@ class MarkingSpec extends Specification {
         marking.addToken(place, token)
 
         expect:
-        marking.removeToken(place, token)
+        marking.removeToken(place.index, token)
         marking.isEmpty(place)
     }
 
@@ -358,7 +358,7 @@ class MarkingSpec extends Specification {
         expect:
         !marking.selectForkActivation(0, 999)
         !marking.selectForkActivation(3, id1)
-        marking.getSelectedForkActivationCount(0) == 0
+        marking.getSelectedForkActivations(0).size() == 0
         marking.getSelectedForkActivations(0).isEmpty()
         marking.getSelectedForkActivations(9).isEmpty()
 
@@ -370,7 +370,7 @@ class MarkingSpec extends Specification {
         !marking.isForkActivationPending(0, id1)
         marking.isForkActivationPending(0, id2)
         marking.getPendingForkActivations(0) == 1
-        marking.getSelectedForkActivationCount(0) == 1
+        marking.getSelectedForkActivations(0).size() == 1
         marking.getSelectedForkActivations(0) == [id1]
 
         when: 'the same activation is selected again'
@@ -378,7 +378,7 @@ class MarkingSpec extends Specification {
 
         then: 'selection is not repeated'
         !reselected
-        marking.getSelectedForkActivationCount(0) == 1
+        marking.getSelectedForkActivations(0).size() == 1
     }
 
     def 'consumeForkActivation should move the oldest pending activation to selected'() {
@@ -418,7 +418,7 @@ class MarkingSpec extends Specification {
         marking.getTokenActivation(0, -1) == null
         marking.getTokenActivation(0, 5) == null
         marking.getTokenActivation(9, 0) == null
-        marking.getTokenActivation(place, 0) == null
+        marking.getTokenActivation(place.index, 0) == null
 
         when: 'tokens are added with and without activation tags'
         marking.addToken(0, token1, 7)
@@ -427,7 +427,7 @@ class MarkingSpec extends Specification {
         then:
         marking.getTokenActivation(0, 0) == 7
         marking.getTokenActivation(0, 1) == null
-        marking.getTokenActivation(place, 0) == 7
+        marking.getTokenActivation(place.index, 0) == 7
 
         when: 'the tagged token is removed by identity'
         def removed = marking.removeToken(0, token1)
@@ -480,7 +480,7 @@ class MarkingSpec extends Specification {
         then: 'the original is unaffected'
         marking.getPendingForkActivations(0) == 1
         marking.isForkActivationPending(0, id2)
-        marking.getSelectedForkActivationCount(0) == 1
+        marking.getSelectedForkActivations(0).size() == 1
         marking.getTokenActivation(0, 0) == id2
         marking.getTokenCount(1) == 0
         marking.nextForkActivationId == id2 + 1
