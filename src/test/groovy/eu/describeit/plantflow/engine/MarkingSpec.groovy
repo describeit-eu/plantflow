@@ -324,6 +324,193 @@ class MarkingSpec extends Specification {
         marking.getPendingForkActivations(3) == 1
     }
 
+    def 'registerForkActivation should assign unique increasing activation ids'() {
+        given:
+        def marking = new Marking(1)
+
+        expect:
+        marking.nextForkActivationId == 1
+
+        when:
+        def id1 = marking.registerForkActivation(0)
+        def id2 = marking.registerForkActivation(0)
+        def id3 = marking.registerForkActivation(4)
+
+        then:
+        id1 != id2
+        id2 == id1 + 1
+        id3 == id2 + 1
+        marking.nextForkActivationId == id3 + 1
+        marking.getPendingForkActivations(0) == 2
+        marking.isForkActivationPending(0, id1)
+        marking.isForkActivationPending(0, id2)
+        marking.isForkActivationPending(4, id3)
+        !marking.isForkActivationPending(0, id3)
+        !marking.isForkActivationPending(7, id1)
+    }
+
+    def 'selectForkActivation should move a pending activation to selected exactly once'() {
+        given:
+        def marking = new Marking(1)
+        def id1 = marking.registerForkActivation(0)
+        def id2 = marking.registerForkActivation(0)
+
+        expect:
+        !marking.selectForkActivation(0, 999)
+        !marking.selectForkActivation(3, id1)
+        marking.getSelectedForkActivationCount(0) == 0
+        marking.getSelectedForkActivations(0).isEmpty()
+        marking.getSelectedForkActivations(9).isEmpty()
+
+        when:
+        def selected = marking.selectForkActivation(0, id1)
+
+        then:
+        selected
+        !marking.isForkActivationPending(0, id1)
+        marking.isForkActivationPending(0, id2)
+        marking.getPendingForkActivations(0) == 1
+        marking.getSelectedForkActivationCount(0) == 1
+        marking.getSelectedForkActivations(0) == [id1]
+
+        when: 'the same activation is selected again'
+        def reselected = marking.selectForkActivation(0, id1)
+
+        then: 'selection is not repeated'
+        !reselected
+        marking.getSelectedForkActivationCount(0) == 1
+    }
+
+    def 'consumeForkActivation should move the oldest pending activation to selected'() {
+        given:
+        def marking = new Marking(1)
+        def id1 = marking.registerForkActivation(0)
+        def id2 = marking.registerForkActivation(0)
+
+        when:
+        def consumed = marking.consumeForkActivation(0)
+
+        then:
+        consumed
+        marking.getSelectedForkActivations(0) == [id1]
+        marking.isForkActivationPending(0, id2)
+        !marking.isForkActivationPending(0, id1)
+
+        when:
+        marking.consumeForkActivation(0)
+
+        then:
+        marking.getPendingForkActivations(0) == 0
+        marking.getSelectedForkActivations(0) == [id1, id2]
+        !marking.consumeForkActivation(0)
+        !marking.consumeForkActivation(8)
+    }
+
+    def 'token activations should track the fork activation of each token per place'() {
+        given:
+        def place = new Place(0, 'start')
+        def marking = new Marking(2)
+        def token1 = Token.of([k: 'v1'])
+        def token2 = Token.of([k: 'v2'])
+
+        expect: 'no activation tag initially or for invalid positions'
+        marking.getTokenActivation(0, 0) == null
+        marking.getTokenActivation(0, -1) == null
+        marking.getTokenActivation(0, 5) == null
+        marking.getTokenActivation(9, 0) == null
+        marking.getTokenActivation(place, 0) == null
+
+        when: 'tokens are added with and without activation tags'
+        marking.addToken(0, token1, 7)
+        marking.addToken(place, token2)
+
+        then:
+        marking.getTokenActivation(0, 0) == 7
+        marking.getTokenActivation(0, 1) == null
+        marking.getTokenActivation(place, 0) == 7
+
+        when: 'the tagged token is removed by identity'
+        def removed = marking.removeToken(0, token1)
+
+        then: 'the remaining token keeps its own tag'
+        removed
+        marking.getTokenCount(0) == 1
+        marking.getTokenActivation(0, 0) == null
+
+        when: 'a token is removed by position'
+        marking.addToken(0, token1, 8)
+        def removedAt = marking.removeTokenAt(0, 1)
+
+        then:
+        removedAt == token1
+        marking.getTokenCount(0) == 1
+        marking.getTokenActivation(0, 0) == null
+
+        expect: 'invalid removals return null and change nothing'
+        marking.removeTokenAt(0, -1) == null
+        marking.removeTokenAt(0, 5) == null
+        marking.removeTokenAt(-1, 0) == null
+        marking.removeTokenAt(9, 0) == null
+        marking.getTokenCount(0) == 1
+    }
+
+    def 'copy should preserve token activation tags, selected state, and the activation id counter'() {
+        given:
+        def marking = new Marking(2)
+        def id1 = marking.registerForkActivation(0)
+        def id2 = marking.registerForkActivation(0)
+        marking.selectForkActivation(0, id1)
+        marking.addToken(0, Token.of([k: 'v']), id2)
+
+        when:
+        def copy = marking.copy()
+
+        then: 'the copy has identical activation and tag state'
+        copy.getPendingForkActivations(0) == 1
+        copy.getSelectedForkActivations(0) == [id1]
+        copy.getTokenActivation(0, 0) == id2
+        copy.nextForkActivationId == marking.nextForkActivationId
+
+        when: 'the copy mutates its own state'
+        def newId = copy.registerForkActivation(0)
+        copy.selectForkActivation(0, id2)
+        copy.removeTokenAt(0, 0)
+        copy.addToken(1, Token.of([k: 'other']), newId)
+
+        then: 'the original is unaffected'
+        marking.getPendingForkActivations(0) == 1
+        marking.isForkActivationPending(0, id2)
+        marking.getSelectedForkActivationCount(0) == 1
+        marking.getTokenActivation(0, 0) == id2
+        marking.getTokenCount(1) == 0
+        marking.nextForkActivationId == id2 + 1
+        newId == id2 + 1
+    }
+
+    def 'setForkActivations should rebuild pending activations from legacy count-based JSON'() {
+        given:
+        def marking = new Marking(1)
+
+        when: 'legacy counts are applied without pending ids'
+        marking.setForkActivations([0: 2, 3: 1])
+
+        then:
+        marking.getPendingForkActivations(0) == 2
+        marking.getPendingForkActivations(3) == 1
+
+        when: 'legacy counts are applied again while pending ids exist'
+        marking.setForkActivations([0: 5])
+
+        then: 'the existing pending ids take precedence'
+        marking.getPendingForkActivations(0) == 2
+
+        when: 'null counts are ignored'
+        marking.setForkActivations(null)
+
+        then:
+        marking.getPendingForkActivations(0) == 2
+    }
+
     def 'copy should preserve fork activation state independently'() {
         given:
         def marking = new Marking(1)

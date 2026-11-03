@@ -77,6 +77,57 @@ class MarkingMarshallerSpec extends Specification {
         marking.getPendingForkActivations(0) == 2
     }
 
+    def 'Marshaller should round-trip per-activation fork state and token activation tags'() {
+        given: 'a marking with pending and selected activations plus tagged tokens'
+        def marking = marking(2)
+        def id1 = marking.registerForkActivation(0)
+        def id2 = marking.registerForkActivation(0)
+        marking.registerForkActivation(4)
+        marking.selectForkActivation(0, id1)
+        marking.addToken(place(0, 'P1'), token('token-1', [key: 'value']), id2)
+        marking.addToken(place(1, 'P2'), token('token-2', [other: 'value']))
+
+        when:
+        def json = Marshaller.toJson(marking)
+        def deserialized = Marshaller.fromJson(json, Marking)
+
+        then: 'all activation state and tags survive the round-trip'
+        json.contains('"pendingForkActivationIds"')
+        json.contains('"selectedForkActivationIds"')
+        json.contains('"tokenActivations"')
+        json.contains('"nextForkActivationId"')
+        deserialized.getPendingForkActivations(0) == 1
+        deserialized.getPendingForkActivations(4) == 1
+        deserialized.getSelectedForkActivationCount(0) == 1
+        deserialized.getSelectedForkActivations(0) == [id1]
+        deserialized.getTokenActivation(0, 0) == id2
+        deserialized.getTokenActivation(1, 0) == null
+        deserialized.nextForkActivationId == marking.nextForkActivationId
+        deserialized.getTokenCount(0) == 1
+
+        when: 'a new activation is registered on the deserialized marking'
+        def newId = deserialized.registerForkActivation(0)
+
+        then: 'the id counter continues without collisions and the original is unchanged'
+        newId == marking.nextForkActivationId
+        deserialized.getPendingForkActivations(0) == 2
+        marking.getPendingForkActivations(0) == 1
+    }
+
+    def 'Marshaller should deserialize legacy count-based forkActivations JSON'() {
+        given:
+        def json = '{"tokens":[[],[]],"forkActivations":{"0":2,"4":1}}'
+
+        when:
+        def deserialized = Marshaller.fromJson(json, Marking)
+
+        then:
+        deserialized.getTokenCount(0) == 0
+        deserialized.getPendingForkActivations(0) == 2
+        deserialized.getPendingForkActivations(4) == 1
+        deserialized.getSelectedForkActivationCount(0) == 0
+    }
+
     def 'Marshaller should deserialize legacy Marking JSON without forkActivations'() {
         given:
         def json = '{"tokens":[[{"id":"t1","timestamp":"2026-01-01T00:00:00Z","payload":{"k":"v"}}],[]]}'

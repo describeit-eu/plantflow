@@ -26,7 +26,7 @@ class DefaultPetriNetEngine implements PetriNetEngine {
             return false
         }
 
-        if (!hasForkContinuationAvailable(net, transition, marking)) {
+        if (!hasForkContinuationAvailable(net, transition, marking, inputPlaces)) {
             return false
         }
 
@@ -55,50 +55,82 @@ class DefaultPetriNetEngine implements PetriNetEngine {
         log.info('fire() - {}', transition)
 
         List<Place> inputPlaces = getInputPlaces(net, transition.index)
+        int[] pendingMergeToken = findPendingMergeToken(net, transition, marking, inputPlaces)
         List<Token> consumedTokens = []
+        List<Integer> consumedActivations = []
 
         for (Place p : inputPlaces) {
             int requiredWeight = net.incidenceMatrix.getInputWeight(p.index, transition.index)
             for (int w = 0; w < requiredWeight; w++) {
-                List<Token> available = marking.getTokens(p)
-                if (!available.isEmpty()) {
-                    Token tokenToConsume = available.get(0)
-                    marking.removeToken(p, tokenToConsume)
+                int position = 0
+                if (pendingMergeToken != null && pendingMergeToken[0] == p.index && w == 0) {
+                    position = pendingMergeToken[1]
+                }
+                Integer activationId = marking.getTokenActivation(p.index, position)
+                Token tokenToConsume = marking.removeTokenAt(p.index, position)
+                if (tokenToConsume != null) {
                     consumedTokens.add(tokenToConsume)
+                    consumedActivations.add(activationId)
                 }
             }
         }
 
         Token outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
+        Integer outputActivationId = resolveOutputActivationId(net, transition, consumedActivations, marking)
 
         List<Place> outputPlaces = getOutputPlaces(net, transition.index)
         for (Place p : outputPlaces) {
             int produceWeight = net.incidenceMatrix.getOutputWeight(p.index, transition.index)
             for (int w = 0; w < produceWeight; w++) {
-                marking.addToken(p, outputToken)
+                marking.addToken(p, outputToken, outputActivationId)
             }
         }
 
-        updateForkActivationState(net, transition, marking)
+        updateForkActivationState(net, transition, marking, consumedActivations)
 
         return true
     }
 
-    private static boolean hasForkContinuationAvailable(PetriNetStructure net, Transition transition, Marking marking) {
-        Integer forkIndex = findMergeForkIndex(net, transition.index)
-        if (forkIndex == null) {
+    private static boolean hasForkContinuationAvailable(PetriNetStructure net, Transition transition, Marking marking, List<Place> inputPlaces) {
+        if (findMergeForkIndex(net, transition.index) == null) {
             return true
         }
-        return marking.getPendingForkActivations(forkIndex) > 0
+        return findPendingMergeToken(net, transition, marking, inputPlaces) != null
     }
 
-    private static void updateForkActivationState(PetriNetStructure net, Transition transition, Marking marking) {
+    private static int[] findPendingMergeToken(PetriNetStructure net, Transition transition, Marking marking, List<Place> inputPlaces) {
+        Integer forkIndex = findMergeForkIndex(net, transition.index)
+        if (forkIndex == null) {
+            return null
+        }
+        for (Place p : inputPlaces) {
+            int tokenCount = marking.getTokenCount(p.index)
+            for (int i = 0; i < tokenCount; i++) {
+                Integer activationId = marking.getTokenActivation(p.index, i)
+                if (activationId != null && marking.isForkActivationPending(forkIndex, activationId)) {
+                    return [p.index, i] as int[]
+                }
+            }
+        }
+        return null
+    }
+
+    private static Integer resolveOutputActivationId(PetriNetStructure net, Transition transition, List<Integer> consumedActivations, Marking marking) {
         for (ForkDescriptor descriptor : net.forkDescriptors) {
             if (descriptor.forkTransitionIndex == transition.index) {
-                marking.registerForkActivation(descriptor.forkTransitionIndex)
+                return marking.registerForkActivation(descriptor.forkTransitionIndex)
             }
+        }
+        return consumedActivations.isEmpty() ? null : consumedActivations.get(0)
+    }
+
+    private static void updateForkActivationState(PetriNetStructure net, Transition transition, Marking marking, List<Integer> consumedActivations) {
+        for (ForkDescriptor descriptor : net.forkDescriptors) {
             if (descriptor.isMergeTransition(transition.index)) {
-                marking.consumeForkActivation(descriptor.forkTransitionIndex)
+                Integer activationId = consumedActivations.isEmpty() ? null : consumedActivations.get(0)
+                if (activationId != null) {
+                    marking.selectForkActivation(descriptor.forkTransitionIndex, activationId)
+                }
             }
         }
     }

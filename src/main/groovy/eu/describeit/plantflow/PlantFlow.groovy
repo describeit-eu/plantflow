@@ -60,6 +60,10 @@ class PlantFlow {
         return petriNet.isEnabled(transition, handlerRegistry, executionContext)
     }
 
+    boolean isEnabled(Transition transition, Marking marking, ExecutionContext context) {
+        return petriNet.isEnabled(transition, marking, handlerRegistry, context)
+    }
+
     List<Transition> getEnabledTransitions() {
         return petriNet.getEnabledTransitions(handlerRegistry, executionContext)
     }

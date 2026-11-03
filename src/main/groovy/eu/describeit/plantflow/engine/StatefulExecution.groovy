@@ -53,6 +53,10 @@ class StatefulExecution {
         return engine.isEnabled(structure, transition, marking, registry, context)
     }
 
+    boolean isEnabled(Transition transition, Marking customMarking, HandlerRegistry registry, ExecutionContext context) {
+        return engine.isEnabled(structure, transition, customMarking, registry, context)
+    }
+
     List<Transition> getEnabledTransitions(HandlerRegistry registry, ExecutionContext context) {
         return engine.getEnabledTransitions(structure, marking, registry, context)
     }
