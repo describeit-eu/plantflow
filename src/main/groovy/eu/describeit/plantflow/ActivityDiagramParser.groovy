@@ -35,7 +35,7 @@ class ActivityDiagramParser {
 
     private static DiagramBuilder selectBuilder(List<ClassifiedLine> lines) {
         if (lines.any { ClassifiedLine line -> line.type == LineType.IF }) return new ConditionalDiagramBuilder()
-        if (lines.any { ClassifiedLine line -> line.type in [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE] }) {
+        if (lines.any { ClassifiedLine line -> line.type in [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE, LineType.END_FORK] }) {
             return new ForkDiagramBuilder()
         }
         return new LinearDiagramBuilder()

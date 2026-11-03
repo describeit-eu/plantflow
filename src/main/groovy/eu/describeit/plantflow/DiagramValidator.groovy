@@ -108,12 +108,12 @@ class DiagramValidator {
     }
 
     private static void validateForkStructure(ActivityDiagram diagram) {
-        boolean hasForkFlags = diagram.hasFork || diagram.hasEndMerge
+        boolean hasForkFlags = diagram.hasFork || diagram.hasEndMerge || diagram.hasEndFork
         if (hasForkFlags) {
             if (!diagram.hasFork) {
                 throw new IllegalArgumentException(ERR_NO_FORK)
             }
-            if (!diagram.hasEndMerge) {
+            if (!diagram.hasEndMerge && !diagram.hasEndFork) {
                 throw new IllegalArgumentException(ERR_NO_END_MERGE)
             }
         }

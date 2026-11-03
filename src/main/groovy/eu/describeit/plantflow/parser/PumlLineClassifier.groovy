@@ -15,6 +15,7 @@ class PumlLineClassifier {
     private static final Pattern FORK_PATTERN = Pattern.compile(/^\s*fork\s*$/)
     private static final Pattern FORK_AGAIN_PATTERN = Pattern.compile(/^\s*fork\s+again\s*$/)
     private static final Pattern END_MERGE_PATTERN = Pattern.compile(/^\s*end\s+merge\s*$/)
+    private static final Pattern END_FORK_PATTERN = Pattern.compile(/^\s*end\s+fork\s*$/)
 
     private static final String START_KEYWORD = 'start'
     private static final String END_KEYWORD = 'end'
@@ -77,6 +78,7 @@ class PumlLineClassifier {
     private static ClassifiedLine tryFork(String line, String rawLine) {
         if (FORK_AGAIN_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.FORK_AGAIN, rawLine)
         if (END_MERGE_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.END_MERGE, rawLine)
+        if (END_FORK_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.END_FORK, rawLine)
         if (FORK_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.FORK, rawLine)
         return null
     }

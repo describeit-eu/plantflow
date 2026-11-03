@@ -30,6 +30,10 @@ class DefaultPetriNetEngine implements PetriNetEngine {
             return false
         }
 
+        if (!ForkJoinSupport.hasCompleteJoinSet(net, transition, marking, inputPlaces)) {
+            return false
+        }
+
         validateAction(transition, handlerRegistry)
 
         return true
@@ -55,11 +59,21 @@ class DefaultPetriNetEngine implements PetriNetEngine {
         log.info('fire() - {}', transition)
 
         List<Place> inputPlaces = getInputPlaces(net, transition.index)
-        int[] pendingMergeToken = findPendingMergeToken(net, transition, marking, inputPlaces)
-        ConsumedInputs consumed = consumeInputTokens(net, transition.index, marking, pendingMergeToken)
+        JoinDescriptor joinDescriptor = ForkJoinSupport.findJoinDescriptor(net, transition.index)
+        Integer joinActivationId = null
+        List<Token> consumedTokens = []
+        List<Integer> consumedActivations = []
+        if (joinDescriptor != null) {
+            joinActivationId = ForkJoinSupport.findCompleteJoinActivation(marking, inputPlaces, joinDescriptor)
+            consumedTokens = ForkJoinSupport.consumeJoinInputTokens(net, transition.index, marking, inputPlaces, joinActivationId)
+        } else {
+            ConsumedInputs consumed = consumeInputTokens(net, transition.index, marking, findPendingMergeToken(net, transition, marking, inputPlaces))
+            consumedTokens = consumed.tokens
+            consumedActivations = consumed.activations
+        }
 
-        Token outputToken = getActionOutputToken(consumed.tokens, transition, handlerRegistry, executionContext)
-        Integer outputActivationId = resolveOutputActivationId(net, transition, consumed.activations, marking)
+        Token outputToken = getActionOutputToken(consumedTokens, transition, handlerRegistry, executionContext)
+        Integer outputActivationId = joinDescriptor != null ? joinActivationId : resolveOutputActivationId(net, transition, consumedActivations, marking)
 
         List<Place> outputPlaces = getOutputPlaces(net, transition.index)
         for (Place p : outputPlaces) {
@@ -69,7 +83,13 @@ class DefaultPetriNetEngine implements PetriNetEngine {
             }
         }
 
-        updateForkActivationState(net, transition, marking, consumed.activations)
+        if (joinDescriptor != null) {
+            if (joinActivationId != null) {
+                marking.selectForkActivation(joinDescriptor.forkTransitionIndex, joinActivationId)
+            }
+        } else {
+            updateForkActivationState(net, transition, marking, consumedActivations)
+        }
 
         return true
     }
@@ -125,6 +145,11 @@ class DefaultPetriNetEngine implements PetriNetEngine {
 
     private static Integer resolveOutputActivationId(PetriNetStructure net, Transition transition, List<Integer> consumedActivations, Marking marking) {
         for (ForkDescriptor descriptor : net.forkDescriptors) {
+            if (descriptor.forkTransitionIndex == transition.index) {
+                return marking.registerForkActivation(descriptor.forkTransitionIndex)
+            }
+        }
+        for (JoinDescriptor descriptor : net.joinDescriptors) {
             if (descriptor.forkTransitionIndex == transition.index) {
                 return marking.registerForkActivation(descriptor.forkTransitionIndex)
             }

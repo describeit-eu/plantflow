@@ -16,6 +16,7 @@ class ActivityDiagram {
     boolean hasEndif = false
     boolean hasFork = false
     boolean hasEndMerge = false
+    boolean hasEndFork = false
     final List<ActivityNode> nodes = []
 
     ActivityDiagram() {
@@ -74,6 +75,11 @@ class ActivityDiagram {
         return this
     }
 
+    ActivityDiagram withEndFork(boolean hasEndFork = true) {
+        this.hasEndFork = hasEndFork
+        return this
+    }
+
     ActivityDiagram addNode(ActivityNode node) {
         if (node != null) {
             this.nodes.add(node)
@@ -90,6 +96,6 @@ class ActivityDiagram {
     }
 
     boolean hasForkStructure() {
-        return hasFork || hasEndMerge || nodes.any { ActivityNode node -> node instanceof ForkNode }
+        return hasFork || hasEndMerge || hasEndFork || nodes.any { ActivityNode node -> node instanceof ForkNode }
     }
 }

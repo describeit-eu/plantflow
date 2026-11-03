@@ -4,6 +4,7 @@ import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.engine.ForkDescriptor
+import eu.describeit.plantflow.engine.JoinDescriptor
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
@@ -37,7 +38,9 @@ class ForkNetCompiler {
 
         List<Place> branchEndPlaces = processForkBranches(builder, node, forkIndex, forkTransition)
 
-        Place mergePlace = connectForkComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex)
+        Place mergePlace = node.synchronizingJoin ?
+            connectJoinComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex) :
+            connectForkComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex)
 
         Place endPlace = builder.addPlace(NetLabeling.PLACE_END)
         if (postForkActions.isEmpty()) {
@@ -110,6 +113,22 @@ class ForkNetCompiler {
         builder.addForkDescriptor(new ForkDescriptor(forkTransition.index, mergeTransitionIndexes))
 
         return mergePlace
+    }
+
+    private static Place connectJoinComponents(PetriNetBuilder builder, Place startPlace, Transition forkTransition, List<Place> branchEndPlaces, int forkIndex) {
+        builder.connect(startPlace, forkTransition)
+
+        Place joinPlace = builder.addPlace(NetLabeling.forkJoinPlace(forkIndex))
+        Transition joinTransition = builder.addTransition(NetLabeling.forkJoinTransition(forkIndex))
+
+        for (Place branchEnd : branchEndPlaces) {
+            builder.connect(branchEnd, joinTransition)
+        }
+        builder.connect(joinTransition, joinPlace)
+
+        builder.addJoinDescriptor(new JoinDescriptor(forkTransition.index, joinTransition.index))
+
+        return joinPlace
     }
 
     private static void connectPostForkActions(PetriNetBuilder builder, Place mergePlace, Place endPlace, List<ActionNode> postForkActions, int forkIndex) {
