@@ -54,7 +54,7 @@ class PetriNetStructureSpec extends Specification {
         net.incidenceMatrix.is(matrix)
     }
 
-    def 'should have exactly 5 abstract methods plus 2 default methods'() {
+    def 'should have exactly 5 abstract methods plus 3 default methods'() {
         given:
         def abstractMethods = PetriNetStructure.methods.findAll { it.default == false && !it.synthetic }.collect { it.name }.sort()
         def defaultMethods = PetriNetStructure.methods.findAll { it.default == true && !it.synthetic }.collect { it.name }.sort()
@@ -62,8 +62,8 @@ class PetriNetStructureSpec extends Specification {
         expect: '5 abstract topology methods'
         abstractMethods == ['getEndPlace', 'getIncidenceMatrix', 'getPlaces', 'getStartPlace', 'getTransitions']
 
-        and: '2 default lookup methods'
-        defaultMethods == ['getPlaceByIndex', 'getTransitionByIndex']
+        and: '3 default lookup and metadata methods'
+        defaultMethods == ['getForkDescriptors', 'getPlaceByIndex', 'getTransitionByIndex']
     }
 
     def 'should not have any execution or marking methods'() {

@@ -93,7 +93,7 @@ A control structure that creates parallel execution branches in an activity diag
 _Avoid_: Parallel split, concurrent node, thread
 
 **Merge**:
-A control structure that synchronizes parallel branches created by a fork, ensuring all branches complete before execution continues.
+A non-synchronizing control structure that routes the first completed Parallel Branch of a Fork activation onward once, using that branch's Token, while remaining branches finish independently without triggering another continuation.
 _Avoid_: Join, synchronization point, converge
 
 **Parallel Branch**:

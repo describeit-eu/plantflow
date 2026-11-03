@@ -406,9 +406,16 @@ end
         assert forkTransition != null : "Expected a fork transition in the net"
         verifyTransitionIO(net, forkTransition, 1, branchCount)
 
-        def mergeSyncTransition = net.transitions.find { it.label.contains('merge_sync') }
-        assert mergeSyncTransition != null : "Expected a merge sync transition in the net"
-        verifyTransitionIO(net, mergeSyncTransition, branchCount, 1)
+        (1..branchCount).each { int i ->
+            def mergeTransition = net.transitions.find { it.label == "T_fork_1_merge_${i}" }
+            assert mergeTransition != null : "Expected a per-branch merge transition T_fork_1_merge_${i} in the net"
+            verifyTransitionIO(net, mergeTransition, 1, 1)
+        }
+
+        def descriptor = net.forkDescriptors.find { it.forkTransitionIndex == forkTransition.index }
+        assert descriptor != null : "Expected a ForkDescriptor for the fork transition in the net"
+        assert descriptor.mergeTransitionIndexes.size() == branchCount : \
+            "Expected ${branchCount} merge transitions in the ForkDescriptor but got ${descriptor.mergeTransitionIndexes.size()}"
     }
 
     /**

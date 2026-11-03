@@ -752,4 +752,127 @@ class DefaultPetriNetEngineSpec extends Specification {
         expect:
         !engine.fire(net, null, marking, registry, context)
     }
+
+    def 'should route only the first completed branch through a fork merge per activation'() {
+        given: 'a fork-shaped net: start -> fork -> branch end places, each with its own merge transition to merge -> end'
+        def pStart = new Place(0, 'start')
+        def pB1End = new Place(1, 'b1end')
+        def pB2End = new Place(2, 'b2end')
+        def pMerge = new Place(3, 'merge')
+        def pEnd = new Place(4, 'end')
+
+        def tFork = new Transition(0, 'T_fork_1', null, null)
+        def tMerge1 = new Transition(1, 'T_fork_1_merge_1', null, null)
+        def tMerge2 = new Transition(2, 'T_fork_1_merge_2', null, null)
+        def tToEnd = new Transition(3, 'T_fork_1_to_end', null, null)
+
+        def inputMatrix = [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+            [0, 0, 0, 0],
+        ] as int[][]
+        def outputMatrix = [
+            [0, 0, 0, 0],
+            [1, 0, 0, 0],
+            [1, 0, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 0, 1],
+        ] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def descriptor = new ForkDescriptor(tFork.index, [tMerge1.index, tMerge2.index])
+        def net = new DefaultPetriNet([pStart, pB1End, pB2End, pMerge, pEnd], [tFork, tMerge1, tMerge2, tToEnd], incidenceMatrix, pStart, pEnd)
+        net.setForkDescriptors([descriptor])
+
+        def registry = new HandlerRegistry()
+        def marking = new Marking(net.places.size())
+        def context = new ExecutionContext()
+        marking.addToken(pStart, Token.of([initial: true]))
+
+        expect: 'merge transitions are not enabled before the fork fires (no pending activation)'
+        !engine.isEnabled(net, tMerge1, marking, registry, context)
+        !engine.isEnabled(net, tMerge2, marking, registry, context)
+
+        when: 'the fork transition fires, registering one activation'
+        def forkFired = engine.fire(net, tFork, marking, registry, context)
+
+        then:
+        forkFired
+        marking.getTokenCount(pB1End) == 1
+        marking.getTokenCount(pB2End) == 1
+        marking.getPendingForkActivations(tFork.index) == 1
+
+        when: 'the first branch merge fires'
+        def mergeFired = engine.fire(net, tMerge1, marking, registry, context)
+
+        then: 'the winning branch token continues to the merge place and the activation is consumed'
+        mergeFired
+        marking.getTokenCount(pMerge) == 1
+        marking.getTokens(pMerge)[0].payload == [initial: true]
+        marking.getPendingForkActivations(tFork.index) == 0
+
+        and: 'the second branch merge is no longer enabled even with a token present'
+        !engine.isEnabled(net, tMerge2, marking, registry, context)
+        !engine.fire(net, tMerge2, marking, registry, context)
+        marking.getTokenCount(pMerge) == 1
+
+        when: 'the merge to end fires'
+        engine.fire(net, tToEnd, marking, registry, context)
+
+        then:
+        marking.getTokenCount(pEnd) == 1
+    }
+
+    def 'should grant one continuation per fork activation for overlapping activations'() {
+        given: 'the same fork-shaped net with two seed tokens'
+        def pStart = new Place(0, 'start')
+        def pB1End = new Place(1, 'b1end')
+        def pMerge = new Place(2, 'merge')
+        def pEnd = new Place(3, 'end')
+
+        def tFork = new Transition(0, 'T_fork_1', null, null)
+        def tMerge1 = new Transition(1, 'T_fork_1_merge_1', null, null)
+        def tToEnd = new Transition(2, 'T_fork_1_to_end', null, null)
+
+        def inputMatrix = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+            [0, 0, 0],
+        ] as int[][]
+        def outputMatrix = [
+            [0, 0, 0],
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+        ] as int[][]
+        def incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
+        def descriptor = new ForkDescriptor(tFork.index, [tMerge1.index])
+        def net = new DefaultPetriNet([pStart, pB1End, pMerge, pEnd], [tFork, tMerge1, tToEnd], incidenceMatrix, pStart, pEnd)
+        net.setForkDescriptors([descriptor])
+
+        def registry = new HandlerRegistry()
+        def marking = new Marking(net.places.size())
+        def context = new ExecutionContext()
+        marking.addToken(pStart, Token.of([run: 1]))
+        marking.addToken(pStart, Token.of([run: 2]))
+
+        when: 'both fork activations fire'
+        engine.fire(net, tFork, marking, registry, context)
+        engine.fire(net, tFork, marking, registry, context)
+
+        then: 'two continuations are pending'
+        marking.getPendingForkActivations(tFork.index) == 2
+        marking.getTokenCount(pB1End) == 2
+
+        when: 'the branch merge fires twice'
+        engine.fire(net, tMerge1, marking, registry, context)
+        engine.fire(net, tMerge1, marking, registry, context)
+
+        then: 'each activation continued exactly once'
+        marking.getTokenCount(pMerge) == 2
+        marking.getPendingForkActivations(tFork.index) == 0
+        !engine.isEnabled(net, tMerge1, marking, registry, context)
+    }
 }

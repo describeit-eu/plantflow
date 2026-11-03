@@ -3,6 +3,7 @@ package eu.describeit.plantflow.compiler
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.engine.ForkDescriptor
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
@@ -97,10 +98,16 @@ class ForkNetCompiler {
         builder.connect(startPlace, forkTransition)
 
         Place mergePlace = builder.addPlace(NetLabeling.forkMergePlace(forkIndex))
-        Transition mergeSyncTransition = builder.addTransition(NetLabeling.forkMergeSyncTransition(forkIndex))
+        List<Integer> mergeTransitionIndexes = []
 
-        branchEndPlaces.each { Place branchEnd -> builder.connect(branchEnd, mergeSyncTransition) }
-        builder.connect(mergeSyncTransition, mergePlace)
+        branchEndPlaces.eachWithIndex { Place branchEnd, int branchIdx ->
+            Transition mergeTransition = builder.addTransition(NetLabeling.forkMergeTransition(forkIndex, branchIdx + 1))
+            builder.connect(branchEnd, mergeTransition)
+            builder.connect(mergeTransition, mergePlace)
+            mergeTransitionIndexes.add(mergeTransition.index)
+        }
+
+        builder.addForkDescriptor(new ForkDescriptor(forkTransition.index, mergeTransitionIndexes))
 
         return mergePlace
     }

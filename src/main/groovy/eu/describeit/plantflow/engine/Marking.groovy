@@ -12,13 +12,20 @@ class Marking {
 
     final Token[][] tokens
 
+    private final Map<Integer, Integer> forkActivations
+
     Marking(int numberOfPlaces) {
         this.tokens = new Token[numberOfPlaces][0]
+        this.forkActivations = [:]
     }
 
     @JsonCreator
-    Marking(@JsonProperty('tokens') Token[][] tokens) {
+    Marking(@JsonProperty('tokens') Token[][] tokens, @JsonProperty('forkActivations') Map<Integer, Integer> forkActivations) {
         this.tokens = tokens
+        this.forkActivations = [:]
+        if (forkActivations != null) {
+            this.forkActivations.putAll(forkActivations)
+        }
     }
 
     void addToken(int placeIndex, Token token) {
@@ -83,6 +90,28 @@ class Marking {
         return tokens
     }
 
+    void registerForkActivation(int forkTransitionIndex) {
+        forkActivations.merge(forkTransitionIndex, 1, Integer::sum)
+    }
+
+    int getPendingForkActivations(int forkTransitionIndex) {
+        return forkActivations.getOrDefault(forkTransitionIndex, 0)
+    }
+
+    boolean consumeForkActivation(int forkTransitionIndex) {
+        int pending = getPendingForkActivations(forkTransitionIndex)
+        if (pending <= 0) {
+            return false
+        }
+        forkActivations.put(forkTransitionIndex, pending - 1)
+        return true
+    }
+
+    @JsonProperty('forkActivations')
+    Map<Integer, Integer> getForkActivations() {
+        return Collections.unmodifiableMap(forkActivations)
+    }
+
     @JsonIgnore
     int[] getMarkingVector() {
         int[] vec = new int[tokens.length]
@@ -97,6 +126,7 @@ class Marking {
         for (int i = 0; i < tokens.length; i++) {
             copy.tokens[i] = Arrays.copyOf(this.tokens[i], this.tokens[i].length)
         }
+        copy.@forkActivations.putAll(this.@forkActivations)
         return copy
     }
 }

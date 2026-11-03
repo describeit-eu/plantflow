@@ -26,6 +26,10 @@ class DefaultPetriNetEngine implements PetriNetEngine {
             return false
         }
 
+        if (!hasForkContinuationAvailable(net, transition, marking)) {
+            return false
+        }
+
         validateAction(transition, handlerRegistry)
 
         return true
@@ -75,7 +79,37 @@ class DefaultPetriNetEngine implements PetriNetEngine {
             }
         }
 
+        updateForkActivationState(net, transition, marking)
+
         return true
+    }
+
+    private static boolean hasForkContinuationAvailable(PetriNetStructure net, Transition transition, Marking marking) {
+        Integer forkIndex = findMergeForkIndex(net, transition.index)
+        if (forkIndex == null) {
+            return true
+        }
+        return marking.getPendingForkActivations(forkIndex) > 0
+    }
+
+    private static void updateForkActivationState(PetriNetStructure net, Transition transition, Marking marking) {
+        for (ForkDescriptor descriptor : net.forkDescriptors) {
+            if (descriptor.forkTransitionIndex == transition.index) {
+                marking.registerForkActivation(descriptor.forkTransitionIndex)
+            }
+            if (descriptor.isMergeTransition(transition.index)) {
+                marking.consumeForkActivation(descriptor.forkTransitionIndex)
+            }
+        }
+    }
+
+    private static Integer findMergeForkIndex(PetriNetStructure net, int transitionIndex) {
+        for (ForkDescriptor descriptor : net.forkDescriptors) {
+            if (descriptor.isMergeTransition(transitionIndex)) {
+                return descriptor.forkTransitionIndex
+            }
+        }
+        return null
     }
 
     private static Token mergeConsumedTokens(List<Token> consumedTokens) {

@@ -14,11 +14,13 @@ class PetriNetBuilder {
     private static final String ERR_END_PLACE_NULL = 'endPlace cannot be null'
     private static final String ERR_START_PLACE_MISSING = 'startPlace must be set'
     private static final String ERR_END_PLACE_MISSING = 'endPlace must be set'
+    private static final String ERR_FORK_DESCRIPTOR_NULL = 'ForkDescriptor cannot be null'
 
     private final List<Place> places = []
     private final List<Transition> transitions = []
     private final List<Arc> inputArcs = []
     private final List<Arc> outputArcs = []
+    private final List<ForkDescriptor> forkDescriptors = []
     private Place startPlace
     private Place endPlace
 
@@ -59,6 +61,14 @@ class PetriNetBuilder {
             throw new IllegalArgumentException(ERR_WEIGHT_POSITIVE)
         }
         outputArcs.add(new Arc(toPlace.index, fromTransition.index, weight))
+        return this
+    }
+
+    PetriNetBuilder addForkDescriptor(ForkDescriptor descriptor) {
+        if (descriptor == null) {
+            throw new IllegalArgumentException(ERR_FORK_DESCRIPTOR_NULL)
+        }
+        forkDescriptors.add(descriptor)
         return this
     }
 
@@ -114,7 +124,9 @@ class PetriNetBuilder {
         }
 
         IncidenceMatrix incidenceMatrix = new IncidenceMatrix(inputMatrix, outputMatrix)
-        return new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
+        DefaultPetriNet net = new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
+        net.setForkDescriptors(forkDescriptors)
+        return net
     }
 
     private static class Arc {

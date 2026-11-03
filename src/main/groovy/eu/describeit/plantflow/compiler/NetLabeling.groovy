@@ -21,7 +21,7 @@ class NetLabeling {
     static final String TRANSITION_ENDIF_TO_END = 'T_endif_to_end'
     static final String TRANSITION_FORK_PREFIX = 'T_fork_'
     static final String TRANSITION_FORK_BRANCH_SUFFIX = '_branch_'
-    static final String TRANSITION_FORK_MERGE_SYNC = '_merge_sync'
+    static final String TRANSITION_FORK_MERGE_SUFFIX = '_merge_'
     static final String TRANSITION_FORK_TO_END = '_to_end'
 
     static final String PREFIX_INTERMEDIATE_PLACE = 'P_'
@@ -59,8 +59,8 @@ class NetLabeling {
         TRANSITION_FORK_PREFIX + forkIndex
     }
 
-    static String forkMergeSyncTransition(int forkIndex) {
-        TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SYNC
+    static String forkMergeTransition(int forkIndex, int branchNumber) {
+        TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SUFFIX + branchNumber
     }
 
     static String forkToEndTransition(int forkIndex) {

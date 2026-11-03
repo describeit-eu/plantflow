@@ -291,4 +291,59 @@ class MarkingSpec extends Specification {
         marking.tokens[0][0] == token
         marking.tokens[1].length == 0
     }
+
+    def 'should track pending fork activations per fork transition'() {
+        given:
+        def marking = new Marking(2)
+
+        expect: 'no pending activations initially'
+        marking.getPendingForkActivations(0) == 0
+        marking.getPendingForkActivations(5) == 0
+        marking.forkActivations.isEmpty()
+
+        when: 'registering fork activations'
+        marking.registerForkActivation(0)
+        marking.registerForkActivation(0)
+        marking.registerForkActivation(3)
+
+        then: 'pending counts accumulate per fork transition'
+        marking.getPendingForkActivations(0) == 2
+        marking.getPendingForkActivations(3) == 1
+        marking.getPendingForkActivations(1) == 0
+
+        when: 'consuming activations'
+        def consumed1 = marking.consumeForkActivation(0)
+        def consumed2 = marking.consumeForkActivation(0)
+        def consumed3 = marking.consumeForkActivation(0)
+
+        then: 'consumption succeeds while pending and fails when exhausted'
+        consumed1
+        consumed2
+        !consumed3
+        marking.getPendingForkActivations(0) == 0
+        marking.getPendingForkActivations(3) == 1
+    }
+
+    def 'copy should preserve fork activation state independently'() {
+        given:
+        def marking = new Marking(1)
+        marking.registerForkActivation(0)
+        marking.registerForkActivation(0)
+
+        when:
+        def copy = marking.copy()
+
+        then: 'copy starts with the same pending activations'
+        copy.getPendingForkActivations(0) == 2
+
+        when: 'the copy consumes its own activation'
+        copy.consumeForkActivation(0)
+        copy.registerForkActivation(1)
+
+        then: 'the original marking is unaffected'
+        marking.getPendingForkActivations(0) == 2
+        marking.getPendingForkActivations(1) == 0
+        copy.getPendingForkActivations(0) == 1
+        copy.getPendingForkActivations(1) == 1
+    }
 }
