@@ -56,11 +56,14 @@ class ForkEndForkPumlParserSpec extends Specification {
         def action5 = net.transitions.find { it.actionKey == 'action 5' }
         assert net.incidenceMatrix.getInputWeight(joinPlace.index, action5.index) == 1
 
-        and: 'a JoinDescriptor correlates the join transition with the fork transition'
+        and: 'a JoinDescriptor correlates the join transition with the fork transition and carries the branch-end inputs in diagram order'
         def forkTransition = net.transitions.find { it.label == 'T_fork_1' }
         def descriptor = net.joinDescriptors.find { it.forkTransitionIndex == forkTransition.index }
         assert descriptor != null
         assert descriptor.joinTransitionIndex == joinTransition.index
+        assert descriptor.branchEndPlaceIndexes == (1..3).collect { i ->
+            net.places.find { it.label == "P_fork_1_branch_${i}_end" }.index
+        }
     }
 
     def 'should compile a fork join without post-join actions with a direct join-to-end transition'() {
@@ -136,6 +139,34 @@ class ForkEndForkPumlParserSpec extends Specification {
             end merge
             end
             @enduml
-        '''                                                                | 'end merge without active fork context'
+         '''                                                                | 'end merge without active fork context'
+        'mixed end merge and end fork within one fork' | '''
+            @startuml
+            start
+            fork
+              :action 1;
+              fork
+                :action 2;
+              end merge
+            fork again
+              :action 3;
+            end fork
+            end
+            @enduml
+        '''                                                                | 'Mismatched fork terminators'
+        'mixed end fork and end merge within one fork' | '''
+            @startuml
+            start
+            fork
+              :action 1;
+              fork
+                :action 2;
+              end fork
+            fork again
+              :action 3;
+            end merge
+            end
+            @enduml
+        '''                                                                | 'Mismatched fork terminators'
     }
 }

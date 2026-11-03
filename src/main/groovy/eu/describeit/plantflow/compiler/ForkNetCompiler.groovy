@@ -38,17 +38,17 @@ class ForkNetCompiler {
 
         List<Place> branchEndPlaces = processForkBranches(builder, node, forkIndex, forkTransition)
 
-        Place mergePlace = node.synchronizingJoin ?
+        Place continuationPlace = node.synchronizingJoin ?
             connectJoinComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex) :
             connectForkComponents(builder, startPlace, forkTransition, branchEndPlaces, forkIndex)
 
         Place endPlace = builder.addPlace(NetLabeling.PLACE_END)
         if (postForkActions.isEmpty()) {
             Transition toEndTransition = builder.addTransition(NetLabeling.forkToEndTransition(forkIndex))
-            builder.connect(mergePlace, toEndTransition)
+            builder.connect(continuationPlace, toEndTransition)
             builder.connect(toEndTransition, endPlace)
         } else {
-            connectPostForkActions(builder, mergePlace, endPlace, postForkActions, forkIndex)
+            connectPostForkActions(builder, continuationPlace, endPlace, postForkActions, forkIndex)
         }
 
         builder.startPlace = startPlace
@@ -126,18 +126,18 @@ class ForkNetCompiler {
         }
         builder.connect(joinTransition, joinPlace)
 
-        builder.addJoinDescriptor(new JoinDescriptor(forkTransition.index, joinTransition.index))
+        builder.addJoinDescriptor(new JoinDescriptor(forkTransition.index, joinTransition.index, branchEndPlaces*.index))
 
         return joinPlace
     }
 
-    private static void connectPostForkActions(PetriNetBuilder builder, Place mergePlace, Place endPlace, List<ActionNode> postForkActions, int forkIndex) {
+    private static void connectPostForkActions(PetriNetBuilder builder, Place continuationPlace, Place endPlace, List<ActionNode> postForkActions, int forkIndex) {
         List<Place> intermediatePlaces = []
         int count = postForkActions.size()
         for (int i = 1; i < count; i++) {
             intermediatePlaces.add(builder.addPlace(NetLabeling.postMergePlace(forkIndex, i)))
         }
-        List<Place> allPlaces = [mergePlace] + intermediatePlaces + [endPlace]
+        List<Place> allPlaces = [continuationPlace] + intermediatePlaces + [endPlace]
         LinearChainHelper.connectLinearActions(builder, allPlaces, postForkActions)
     }
 }

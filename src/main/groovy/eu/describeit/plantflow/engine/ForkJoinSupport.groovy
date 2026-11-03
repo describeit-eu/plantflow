@@ -5,8 +5,8 @@ import groovy.transform.CompileStatic
 /**
  * Support for synchronizing Joins (`end fork`): a join transition is enabled
  * only when one pending Fork activation has a Token in every branch-end input
- * place; firing consumes exactly that correlated set and deep-merges the Tokens
- * in input-place (diagram branch) order.
+ * place; firing consumes exactly that correlated set and the Tokens are
+ * deep-merged in the diagram branch order carried by the JoinDescriptor.
  */
 @CompileStatic
 class ForkJoinSupport {
@@ -51,22 +51,51 @@ class ForkJoinSupport {
         return null
     }
 
-    static List<Token> consumeJoinInputTokens(PetriNetStructure net, int transitionIndex, Marking marking, List<Place> inputPlaces, Integer activationId) {
-        List<Token> consumedTokens = []
-        for (Place p : inputPlaces) {
-            int requiredWeight = net.incidenceMatrix.getInputWeight(p.index, transitionIndex)
+    static List<Token> consumeJoinInputTokens(PetriNetStructure net, JoinDescriptor joinDescriptor, Marking marking, List<Place> inputPlaces, Integer activationId) {
+        List<Place> orderedInputs = orderBranchEndInputs(joinDescriptor, inputPlaces)
+        List<Integer> positions = []
+        for (Place p : orderedInputs) {
+            int requiredWeight = net.incidenceMatrix.getInputWeight(p.index, joinDescriptor.joinTransitionIndex)
             for (int w = 0; w < requiredWeight; w++) {
                 int position = findTokenPositionWithActivation(marking, p.index, activationId)
                 if (position < 0) {
-                    position = 0
+                    throw new IllegalStateException(
+                        "No token correlated with fork activation ${activationId} in place '${p.label}' " +
+                            "for join transition ${joinDescriptor.joinTransitionIndex}")
                 }
-                Token tokenToConsume = marking.removeTokenAt(p.index, position)
+                positions.add(position)
+            }
+        }
+        List<Token> consumedTokens = []
+        for (int i = 0; i < orderedInputs.size(); i++) {
+            Place p = orderedInputs.get(i)
+            int requiredWeight = net.incidenceMatrix.getInputWeight(p.index, joinDescriptor.joinTransitionIndex)
+            for (int w = 0; w < requiredWeight; w++) {
+                Token tokenToConsume = marking.removeTokenAt(p.index, positions.remove(0))
                 if (tokenToConsume != null) {
                     consumedTokens.add(tokenToConsume)
                 }
             }
         }
         return consumedTokens
+    }
+
+    private static List<Place> orderBranchEndInputs(JoinDescriptor joinDescriptor, List<Place> inputPlaces) {
+        List<Integer> diagramOrder = joinDescriptor.branchEndPlaceIndexes
+        if (diagramOrder == null || diagramOrder.isEmpty()) {
+            return inputPlaces
+        }
+        List<Place> remaining = new ArrayList<>(inputPlaces)
+        List<Place> ordered = []
+        for (Integer placeIndex : diagramOrder) {
+            Place match = remaining.find { Place p -> p.index == placeIndex }
+            if (match != null) {
+                ordered.add(match)
+                remaining.remove(match)
+            }
+        }
+        ordered.addAll(remaining)
+        return ordered
     }
 
     private static int findTokenPositionWithActivation(Marking marking, int placeIndex, Integer activationId) {

@@ -239,51 +239,19 @@ class PlantFlowForkJoinSpec extends Specification {
         ]
     }
 
-    def 'correlation survives branch action handlers returning replacement tokens'() {
-        given: 'branch handlers that replace the token entirely'
-        def puml = forkJoinPuml([['branch a'], ['branch b']], ['after join'])
-        def registry = new HandlerRegistry()
-        registry.registerAction('branch a') { ExecutionContext ctx, Token tok -> Token.of([run: tok.payload.run, replaced: 'a']) }
-        registry.registerAction('branch b') { ExecutionContext ctx, Token tok -> Token.of([run: tok.payload.run, replaced: 'b']) }
-        registry.registerAction('after join') { ExecutionContext ctx, Token tok -> tok }
-        def engine = PlantFlow.from(puml, registry)
-        engine.seedToken(Token.of([run: 1]))
-        engine.seedToken(Token.of([run: 2]))
-
-        when: 'two activations interleave with replacement tokens, out of order'
-        engine.fire(transitionByLabel(engine, 'T_fork_1'))
-        engine.fire(transitionByLabel(engine, 'T_fork_1'))
-        engine.fire(transitionByAction(engine, 'branch a'))
-        engine.fire(transitionByAction(engine, 'branch a'))
-        assert !engine.isEnabled(transitionByLabel(engine, 'T_fork_1_join'))
-        engine.fire(transitionByAction(engine, 'branch b'))
-
-        then: 'the join is enabled once the first activation has a complete set'
-        engine.isEnabled(transitionByLabel(engine, 'T_fork_1_join'))
-
-        when: 'the second activation completes its branch b and both activations join and finish'
-        engine.fire(transitionByAction(engine, 'branch b'))
-        engine.fire(transitionByLabel(engine, 'T_fork_1_join'))
-        engine.fire(transitionByLabel(engine, 'T_fork_1_join'))
-        engine.fire(transitionByAction(engine, 'after join'))
-        engine.fire(transitionByAction(engine, 'after join'))
-
-        then: 'each activation continued exactly once with its own replacement tokens merged'
-        engine.isCompleted()
-        engine.getEndTokens().size() == 2
-        engine.getEndTokens()*.payload.toSet() == [
-            [run: 1, replaced: 'b'],
-            [run: 2, replaced: 'b'],
-        ].toSet()
-    }
-
-    def 'interleaved overlapping activations never mix tokens or duplicate continuations'() {
+    @Unroll
+    def 'overlapping activations with #mode never mix tokens or duplicate continuations'() {
         given: 'a two-branch fork/join seeded with two tokens for two overlapping activations'
         def puml = forkJoinPuml([['branch a'], ['branch b']], ['after join'])
         def finalizeLog = []
         def registry = new HandlerRegistry()
-        registry.registerAction('branch a') { ExecutionContext ctx, Token tok -> tok.withPayload(tok.payload + [a: true]) }
-        registry.registerAction('branch b') { ExecutionContext ctx, Token tok -> tok.withPayload(tok.payload + [b: true]) }
+        if (replacementTokens) {
+            registry.registerAction('branch a') { ExecutionContext ctx, Token tok -> Token.of([run: tok.payload.run, replaced: 'a']) }
+            registry.registerAction('branch b') { ExecutionContext ctx, Token tok -> Token.of([run: tok.payload.run, replaced: 'b']) }
+        } else {
+            registry.registerAction('branch a') { ExecutionContext ctx, Token tok -> tok.withPayload(tok.payload + [a: true]) }
+            registry.registerAction('branch b') { ExecutionContext ctx, Token tok -> tok.withPayload(tok.payload + [b: true]) }
+        }
         registry.registerAction('after join') { ExecutionContext ctx, Token tok ->
             finalizeLog.add(tok.payload)
             return tok
@@ -303,7 +271,7 @@ class PlantFlowForkJoinSpec extends Specification {
         then: 'the join is enabled once the first activation has a complete set'
         engine.isEnabled(transitionByLabel(engine, 'T_fork_1_join'))
 
-        when: 'the second activation completes its branch b and both activations continue and finish'
+        when: 'the second activation completes its branch b and both activations join and finish'
         engine.fire(transitionByAction(engine, 'branch b'))
         engine.fire(transitionByLabel(engine, 'T_fork_1_join'))
         engine.fire(transitionByLabel(engine, 'T_fork_1_join'))
@@ -313,11 +281,13 @@ class PlantFlowForkJoinSpec extends Specification {
         then: 'each activation continued exactly once with its own merged branch tokens'
         engine.isCompleted()
         engine.getEndTokens().size() == 2
-        engine.getEndTokens()*.payload.toSet() == [
-            [run: 1, a: true, b: true],
-            [run: 2, a: true, b: true],
-        ].toSet()
-        finalizeLog.toSet() == [[run: 1, a: true, b: true], [run: 2, a: true, b: true]].toSet()
+        engine.getEndTokens()*.payload.toSet() == expectedPayloads.toSet()
+        finalizeLog.toSet() == expectedPayloads.toSet()
+
+        where:
+        mode                       | replacementTokens | expectedPayloads
+        'replacement tokens'       | true              | [[run: 1, replaced: 'b'], [run: 2, replaced: 'b']]
+        'in-place payload updates' | false             | [[run: 1, a: true, b: true], [run: 2, a: true, b: true]]
     }
 
     def 'independent custom Markings keep join correlation isolated'() {
@@ -424,6 +394,8 @@ class PlantFlowForkJoinSpec extends Specification {
         'unclosed fork'                   | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend\n@enduml'                | 'Unclosed fork'
         'end fork with a single branch'   | '@startuml\nstart\nfork\n  :a;\nend fork\nend\n@enduml'                        | 'branch'
         'end fork with empty branches'    | '@startuml\nstart\nfork\nfork again\nend fork\nend\n@enduml'                   | 'branch'
+        'mixed end merge and end fork'    | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  end merge\nfork again\n  :c;\nend fork\nend\n@enduml' | 'Mismatched fork terminators'
+        'mixed end fork and end merge'    | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  end fork\nfork again\n  :c;\nend merge\nend\n@enduml' | 'Mismatched fork terminators'
     }
 
     def 'end merge keeps first-completion semantics while end fork synchronizes'() {

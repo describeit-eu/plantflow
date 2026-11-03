@@ -13,6 +13,7 @@ class ForkDiagramBuilder implements DiagramBuilder {
     private static final String ERR_END_MERGE_NO_CONTEXT = 'end merge without active fork context'
     private static final String ERR_END_FORK_NO_CONTEXT = 'end fork without active fork context'
     private static final String ERR_UNCLOSED_FORK = 'Unclosed fork - missing end merge or end fork'
+    private static final String ERR_MISMATCHED_FORK_TERMINATORS = "Mismatched fork terminators within one fork construct: 'end merge' and 'end fork' cannot be mixed"
 
     ActivityDiagram build(List<ClassifiedLine> lines) {
         ForkState state = new ForkState()
@@ -55,6 +56,9 @@ class ForkDiagramBuilder implements DiagramBuilder {
 
     private static void processFork(ForkState state) {
         state.hasFork = true
+        if (state.forkStack.isEmpty()) {
+            state.openConstructEndFork = null
+        }
         state.forkStack.push(state.branches.size())
         state.branches.add([])
         state.currentBranchIndex = state.branches.size() - 1
@@ -72,6 +76,10 @@ class ForkDiagramBuilder implements DiagramBuilder {
         if (state.forkStack.isEmpty()) {
             throw new IllegalArgumentException(endFork ? ERR_END_FORK_NO_CONTEXT : ERR_END_MERGE_NO_CONTEXT)
         }
+        if (state.openConstructEndFork != null && state.openConstructEndFork != endFork) {
+            throw new IllegalArgumentException(ERR_MISMATCHED_FORK_TERMINATORS)
+        }
+        state.openConstructEndFork = endFork
         if (endFork) {
             state.hasEndFork = true
         } else {
@@ -106,5 +114,6 @@ class ForkDiagramBuilder implements DiagramBuilder {
         Stack<Integer> forkStack = [] as Stack<Integer>
         int currentBranchIndex = -1
         boolean forkComplete = false
+        Boolean openConstructEndFork = null
     }
 }
