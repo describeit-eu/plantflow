@@ -21,6 +21,8 @@ class PumlLineClassifier {
     private static final String END_KEYWORD = 'end'
     private static final String STOP_KEYWORD = 'stop'
     private static final String IF_KEYWORD = 'if'
+    private static final String FORK_KEYWORD = 'fork'
+    private static final String MERGE_KEYWORD = 'merge'
     private static final String STARTUML = '@startuml'
     private static final String ENDUML = '@enduml'
     private static final String COMMENT = '\''
@@ -78,7 +80,11 @@ class PumlLineClassifier {
     }
 
     private static boolean isMalformedForkLine(String line) {
-        return line.startsWith(END_KEYWORD) || line.startsWith('fork')
+        String lower = line.toLowerCase(Locale.ROOT)
+        if (lower.startsWith(FORK_KEYWORD)) return true
+        if (!lower.startsWith(END_KEYWORD)) return false
+        String rest = lower.substring(END_KEYWORD.length()).replaceAll(/\s+/, '')
+        return rest.startsWith(FORK_KEYWORD) || rest.startsWith(MERGE_KEYWORD.take(4))
     }
 
     private static ClassifiedLine tryFork(String line, String rawLine) {

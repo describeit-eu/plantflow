@@ -49,6 +49,36 @@ class PlantFlowMalformedForkTerminatorSpec extends Specification {
         'end fork inside if-then-else diagram'      | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nend fork\nend\n@enduml'            | 'mixes if-then-else and fork'
         'stray fork again inside if-then-else'      | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork again\nend\n@enduml'            | 'mixes if-then-else and fork'
         'fork keyword inside if-then-else diagram'  | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork\nend\n@enduml'                 | 'mixes if-then-else and fork'
+        'uppercase FORK keyword'                    | '@startuml\nstart\nFORK\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                                     | 'Malformed'
+        'mixed-case End Fork terminator'            | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nEnd Fork\nend\n@enduml'                                     | 'Malformed'
+        'uppercase END MERGE terminator'            | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nEND MERGE\nend\n@enduml'                                    | 'Malformed'
+        'mixed-case Fork Again branch'              | '@startuml\nstart\nfork\n  :a;\nFork Again\n  :b;\nend fork\nend\n@enduml'                                     | 'Malformed'
+        'uppercase ENDFORK without space'           | '@startuml\nstart\n:action 1;\nENDFORK\nend\n@enduml'                                                      | 'Malformed'
+    }
+
+    def 'PlantFlow.from reports all malformed lines in one error'() {
+        given: 'a diagram with two malformed fork-related lines'
+        def puml = '@startuml\nstart\n:action 1;\nendfork\nfork now\nend\n@enduml'
+
+        when: 'the diagram is parsed through the public API'
+        PlantFlow.from(puml, new HandlerRegistry())
+
+        then: 'one IllegalArgumentException names both malformed lines'
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('Malformed')
+        ex.message.contains('endfork')
+        ex.message.contains('fork now')
+    }
+
+    def 'PlantFlow.from tolerates non-fork end directives like end note and end legend'() {
+        given: 'a linear diagram containing note and legend blocks closed by end directives'
+        def puml = '@startuml\nstart\n:action 1;\nnote right\nsome note\nend note\nlegend\nsome legend\nend legend\nend\n@enduml'
+
+        when: 'the diagram is parsed through the public API'
+        def engine = PlantFlow.from(puml, payloadRegistry(['action 1']))
+
+        then: 'it parses without a malformed-line error'
+        engine != null
     }
 
     def 'a valid end fork diagram still parses and executes with synchronizing join semantics'() {

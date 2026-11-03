@@ -36,26 +36,25 @@ class PumlLineClassifierSpec extends Specification {
         ''                    | LineType.IGNORED
         '   '                 | LineType.IGNORED
         'random text'         | LineType.IGNORED
+        'end note'            | LineType.IGNORED
+        'end legend'          | LineType.IGNORED
+        'end foo'             | LineType.IGNORED
         'endfork'             | LineType.MALFORMED
+        '  endfork  '         | LineType.MALFORMED
         'endmerge'            | LineType.MALFORMED
+        'end  merg'           | LineType.MALFORMED
         'end fork now'        | LineType.MALFORMED
+        'end fork again'      | LineType.MALFORMED
         'end merge;'          | LineType.MALFORMED
-        'end foo'             | LineType.MALFORMED
         'forkagain'           | LineType.MALFORMED
+        'fork again now'      | LineType.MALFORMED
         'fork now'            | LineType.MALFORMED
-    }
-
-    @Unroll
-    def 'should classify malformed fork-related line "#line" as MALFORMED'() {
-        when:
-        def result = classifier.classify(line)
-
-        then:
-        result.type == LineType.MALFORMED
-        result.text == line
-
-        where:
-        line << ['endfork', '  endfork  ', 'endmerge', 'end  merg', 'end fork again', 'forkagain', 'fork again now', 'fork;']
+        'fork;'               | LineType.MALFORMED
+        'FORK'                | LineType.MALFORMED
+        'End Fork'            | LineType.MALFORMED
+        'END MERGE'           | LineType.MALFORMED
+        'Fork Again'          | LineType.MALFORMED
+        'ENDFORK'             | LineType.MALFORMED
     }
 
     @Unroll
