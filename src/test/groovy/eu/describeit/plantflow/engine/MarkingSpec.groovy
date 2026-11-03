@@ -533,4 +533,42 @@ class MarkingSpec extends Specification {
         copy.getPendingForkActivations(0) == 1
         copy.getPendingForkActivations(1) == 1
     }
+
+    def 'deserialization skips out-of-range and over-long token activation entries'() {
+        given:
+        def tokens = [[Token.of([a: 1])] as Token[], [] as Token[]] as Token[][]
+
+        when: 'a marking is created from JSON data with defensive tokenActivations entries'
+        def marking = new Marking(tokens, [:], [:],
+                [99: [2], 0: [7, 8]], 5)
+
+        then: 'only valid entries within token bounds are applied'
+        marking.getTokenActivation(0, 0) == 7
+        marking.getTokenCount(0) == 1
+        marking.getNextForkActivationId() == 5
+    }
+
+    def 'removeToken iterates past non-matching tokens and returns false when absent'() {
+        given:
+        def marking = new Marking(1)
+        marking.addToken(0, Token.of([k: 'a']))
+        marking.addToken(0, Token.of([k: 'b']))
+
+        expect:
+        !marking.removeToken(0, Token.of([k: 'zzz']))
+        marking.getTokenCount(0) == 2
+    }
+
+    def 'removeTokenAt tolerates a missing tag list for the place'() {
+        given:
+        def marking = new Marking(1)
+        marking.tokens[0] = [Token.of([k: 'raw'])] as Token[]
+
+        when:
+        def removed = marking.removeTokenAt(0, 0)
+
+        then:
+        removed.payload == [k: 'raw']
+        marking.getTokenCount(0) == 0
+    }
 }

@@ -43,7 +43,7 @@ class Marking {
         }
         if (tokenActivations != null) {
             tokenActivations.each { Integer placeIndex, List<Integer> ids ->
-                if (placeIndex != null && placeIndex >= 0 && placeIndex < this.tokens.length) {
+                if (placeIndex >= 0 && placeIndex < this.tokens.length) {
                     List<Integer> tags = tokenActivationList(placeIndex)
                     for (int i = 0; i < ids.size() && i < tags.size(); i++) {
                         tags.set(i, ids.get(i))

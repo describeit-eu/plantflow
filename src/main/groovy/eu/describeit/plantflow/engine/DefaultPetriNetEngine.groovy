@@ -129,13 +129,22 @@ class DefaultPetriNetEngine implements PetriNetEngine {
                 return marking.registerForkActivation(descriptor.forkTransitionIndex)
             }
         }
-        return consumedActivations.isEmpty() ? null : consumedActivations.get(0)
+        return firstNonNullActivation(consumedActivations)
+    }
+
+    private static Integer firstNonNullActivation(List<Integer> consumedActivations) {
+        for (Integer activationId : consumedActivations) {
+            if (activationId != null) {
+                return activationId
+            }
+        }
+        return null
     }
 
     private static void updateForkActivationState(PetriNetStructure net, Transition transition, Marking marking, List<Integer> consumedActivations) {
         for (ForkDescriptor descriptor : net.forkDescriptors) {
             if (descriptor.isMergeTransition(transition.index)) {
-                Integer activationId = consumedActivations.isEmpty() ? null : consumedActivations.get(0)
+                Integer activationId = firstNonNullActivation(consumedActivations)
                 if (activationId != null) {
                     marking.selectForkActivation(descriptor.forkTransitionIndex, activationId)
                 }
