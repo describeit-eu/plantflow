@@ -571,4 +571,17 @@ class MarkingSpec extends Specification {
         removed.payload == [k: 'raw']
         marking.getTokenCount(0) == 0
     }
+
+    def 'fresh marking exposes empty activation and token views for unknown indices'() {
+        given:
+        def marking = new Marking(2)
+
+        expect:
+        marking.getForkActivations() == [:]
+        marking.getPendingForkActivationIds() == [:]
+        marking.getSelectedForkActivationIds() == [:]
+        marking.getTokenActivations() == [:]
+        marking.getTokens(99).isEmpty()
+        marking.getTokenActivation(99, 0) == null
+    }
 }

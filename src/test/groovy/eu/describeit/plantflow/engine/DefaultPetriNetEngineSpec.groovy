@@ -1198,6 +1198,7 @@ class DefaultPetriNetEngineSpec extends Specification {
         engine.getEnabledTransitions(plainNet, marking, registry, context) == [tMove]
         engine.fire(plainNet, tMove, marking, registry, context)
         marking.getTokenCount(pEnd) == 1
+        marking.getTokenActivation(pEnd.index, 0) == null
     }
 
     def 'a merge transition with several input places consumes the pending token from its own place'() {
