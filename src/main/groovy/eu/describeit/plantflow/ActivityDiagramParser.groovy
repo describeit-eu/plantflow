@@ -25,19 +25,33 @@ class ActivityDiagramParser {
         return parse(file.getText(StandardCharsets.UTF_8.name()))
     }
 
+    private static final String ERR_MALFORMED_LINE = 'Malformed fork-related line'
+    private static final String ERR_MIXED_CONDITIONAL_FORK = 'Diagram mixes if-then-else and fork constructs, which is not supported'
+
     PetriNetStructure parse(String pumlContent) {
         DiagramValidator.validateContent(pumlContent)
         List<ClassifiedLine> lines = classifier.classifyAll(pumlContent.readLines())
+        rejectMalformedLines(lines)
         ActivityDiagram diagram = selectBuilder(lines).build(lines)
         DiagramValidator.validate(diagram)
         return compiler.compile(diagram)
     }
 
-    private static DiagramBuilder selectBuilder(List<ClassifiedLine> lines) {
-        if (lines.any { ClassifiedLine line -> line.type == LineType.IF }) return new ConditionalDiagramBuilder()
-        if (lines.any { ClassifiedLine line -> line.type in [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE, LineType.END_FORK] }) {
-            return new ForkDiagramBuilder()
+    private static void rejectMalformedLines(List<ClassifiedLine> lines) {
+        ClassifiedLine malformed = lines.find { ClassifiedLine line -> line.type == LineType.MALFORMED }
+        if (malformed != null) {
+            throw new IllegalArgumentException("${ERR_MALFORMED_LINE}: '${malformed.text.trim()}'")
         }
+    }
+
+    private static DiagramBuilder selectBuilder(List<ClassifiedLine> lines) {
+        boolean hasConditional = lines.any { ClassifiedLine line -> line.type == LineType.IF }
+        boolean hasForkLines = lines.any { ClassifiedLine line -> line.type in [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE, LineType.END_FORK] }
+        if (hasConditional && hasForkLines) {
+            throw new IllegalArgumentException(ERR_MIXED_CONDITIONAL_FORK)
+        }
+        if (hasConditional) return new ConditionalDiagramBuilder()
+        if (hasForkLines) return new ForkDiagramBuilder()
         return new LinearDiagramBuilder()
     }
 }

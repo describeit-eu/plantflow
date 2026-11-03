@@ -42,6 +42,8 @@ class PumlLineClassifier {
         ClassifiedLine forkLine = tryFork(line, rawLine)
         if (forkLine != null) return forkLine
 
+        if (isMalformedForkLine(line)) return new ClassifiedLine(LineType.MALFORMED, rawLine)
+
         return ignored(rawLine)
     }
 
@@ -73,6 +75,10 @@ class PumlLineClassifier {
         if (elseM.matches()) return new ClassifiedLine(LineType.ELSE, rawLine, null, null, elseM.group(1).trim())
         if (ENDIF_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.ENDIF, rawLine)
         return null
+    }
+
+    private static boolean isMalformedForkLine(String line) {
+        return line.startsWith(END_KEYWORD) || line.startsWith('fork')
     }
 
     private static ClassifiedLine tryFork(String line, String rawLine) {
