@@ -238,6 +238,35 @@ end
         return forkPuml(branches, [])
     }
 
+    /**
+     * Creates a repeat loop diagram PlantUML string with the given loop condition,
+     * body actions, optional post-loop actions, and optional detach exit.
+     */
+    static String repeatPuml(String condition, List<String> bodyActions, List<String> postActions = [], boolean detach = false, String yesLabel = 'yes', String noLabel = 'no') {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << 'repeat\n'
+        bodyActions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << "repeat while ( ${condition} ) is (${yesLabel})"
+        if (!detach) {
+            sb << " not (${noLabel})"
+        }
+        sb << '\n'
+        if (detach) {
+            sb << '-[hidden]->\n'
+            sb << 'detach\n'
+        }
+        postActions.each { action ->
+            sb << ":${action};\n"
+        }
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
     // ==================== Parser Helpers ====================
 
     /**

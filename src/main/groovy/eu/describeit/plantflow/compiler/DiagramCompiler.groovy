@@ -5,6 +5,7 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.ast.RepeatNode
 import eu.describeit.plantflow.engine.PetriNetStructure
 import groovy.transform.CompileStatic
 
@@ -13,6 +14,7 @@ class DiagramCompiler {
 
     private static final String ERR_DIAGRAM_NULL = 'Diagram cannot be null'
     private static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
+    private static final String ERR_REPEAT_NOT_COMPILED = 'Repeat Loop compilation is not supported yet'
 
     private final LinearNetCompiler linearCompiler = new LinearNetCompiler()
     private final ConditionalNetCompiler conditionalCompiler = new ConditionalNetCompiler()
@@ -24,7 +26,12 @@ class DiagramCompiler {
         ForkNode fork = findForkNode(diagram)
         if (fork != null) return forkCompiler.compile(fork, extractPostForkActions(diagram, fork))
         if (diagram.isConditional()) throw new IllegalArgumentException(ERR_THEN_EMPTY)
+        if (findRepeatNode(diagram) != null) throw new IllegalArgumentException(ERR_REPEAT_NOT_COMPILED)
         return linearCompiler.compile(extractActionNodes(diagram))
+    }
+
+    private static RepeatNode findRepeatNode(ActivityDiagram diagram) {
+        diagram.nodes.find { ActivityNode n -> n instanceof RepeatNode } as RepeatNode
     }
 
     private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
