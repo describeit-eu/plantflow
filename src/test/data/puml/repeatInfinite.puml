@@ -1,0 +1,9 @@
+@startuml
+start
+repeat
+  :read data;
+  :generate diagrams;
+repeat while (true) is (true)
+-[hidden]->
+detach
+@enduml
