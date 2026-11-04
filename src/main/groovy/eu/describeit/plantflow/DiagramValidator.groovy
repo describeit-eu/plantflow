@@ -4,6 +4,7 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.ast.RepeatNode
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -24,6 +25,10 @@ class DiagramValidator {
     public static final String ERR_NO_END_MERGE = 'fork construct must be closed with an end merge or end fork'
     public static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one action'
     public static final String ERR_MIN_BRANCHES = 'Fork must have at least 2 branches'
+    public static final String ERR_NO_REPEAT = 'Diagram contains repeat while but no repeat statement found'
+    public static final String ERR_NO_REPEAT_WHILE = 'repeat construct must be closed with a repeat while line'
+    public static final String ERR_LOOP_BODY_EMPTY = 'Repeat loop body must contain at least one action'
+    public static final String ERR_LOOP_CONDITION_EMPTY = 'Repeat loop must have a loop condition'
 
     static void validate(ActivityDiagram diagram) {
         if (diagram == null) {
@@ -32,16 +37,19 @@ class DiagramValidator {
 
         boolean isConditional = diagram.isConditional()
         boolean isFork = diagram.hasForkStructure()
+        boolean isRepeat = diagram.hasRepeatStructure()
 
         if (isConditional) {
             validateConditionalStructure(diagram)
         } else if (isFork) {
             validateForkStructure(diagram)
+        } else if (isRepeat) {
+            validateRepeatStructure(diagram)
         } else {
             validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
         }
 
-        validateNodes(diagram, isConditional, isFork)
+        validateNodes(diagram, isConditional, isFork, isRepeat)
     }
 
     static void validateIfThenElseStructure(
@@ -120,6 +128,25 @@ class DiagramValidator {
         validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
     }
 
+    private static void validateRepeatStructure(ActivityDiagram diagram) {
+        boolean hasRepeatFlags = diagram.hasRepeat || diagram.hasRepeatWhile || diagram.hasDetach
+        if (hasRepeatFlags) {
+            if (!diagram.hasRepeat) {
+                throw new IllegalArgumentException(ERR_NO_REPEAT)
+            }
+            if (!diagram.hasRepeatWhile) {
+                throw new IllegalArgumentException(ERR_NO_REPEAT_WHILE)
+            }
+        }
+        if (diagram.hasDetach) {
+            if (!diagram.hasStart) {
+                throw new IllegalArgumentException(ERR_MUST_CONTAIN_START)
+            }
+        } else {
+            validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
+        }
+    }
+
     private static void validateStartAndEnd(boolean hasStart, boolean hasEnd) {
         if (!hasStart) {
             throw new IllegalArgumentException(ERR_MUST_CONTAIN_START)
@@ -129,11 +156,13 @@ class DiagramValidator {
         }
     }
 
-    private static void validateNodes(ActivityDiagram diagram, boolean isConditional, boolean isFork) {
+    private static void validateNodes(ActivityDiagram diagram, boolean isConditional, boolean isFork, boolean isRepeat) {
         if (isConditional) {
             validateConditionalNodes(diagram)
         } else if (isFork) {
             validateForkNodes(diagram)
+        } else if (isRepeat) {
+            validateRepeatNodes(diagram)
         } else {
             validateLinearNodes(diagram)
         }
@@ -164,6 +193,31 @@ class DiagramValidator {
         }
         if (!hasForkNode && diagram.nodes.isEmpty()) {
             throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+        }
+    }
+
+    private static void validateRepeatNodes(ActivityDiagram diagram) {
+        if (diagram.nodes.isEmpty()) {
+            throw new IllegalArgumentException(ERR_MUST_CONTAIN_ACTION)
+        }
+        for (ActivityNode node : diagram.nodes) {
+            if (node instanceof RepeatNode) {
+                validateRepeatNode((RepeatNode) node)
+            }
+        }
+    }
+
+    private static void validateRepeatNode(RepeatNode node) {
+        if (node.loopCondition == null || node.loopCondition.trim().isEmpty()) {
+            throw new IllegalArgumentException(ERR_LOOP_CONDITION_EMPTY)
+        }
+        if (node.body == null || node.body.isEmpty()) {
+            throw new IllegalArgumentException(ERR_LOOP_BODY_EMPTY)
+        }
+        for (ActivityNode child : node.body) {
+            if (child instanceof RepeatNode) {
+                validateRepeatNode((RepeatNode) child)
+            }
         }
     }
 

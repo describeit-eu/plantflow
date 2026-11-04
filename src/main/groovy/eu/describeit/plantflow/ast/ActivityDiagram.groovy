@@ -17,6 +17,9 @@ class ActivityDiagram {
     boolean hasFork = false
     boolean hasEndMerge = false
     boolean hasEndFork = false
+    boolean hasRepeat = false
+    boolean hasRepeatWhile = false
+    boolean hasDetach = false
     final List<ActivityNode> nodes = []
 
     ActivityDiagram() {
@@ -80,6 +83,21 @@ class ActivityDiagram {
         return this
     }
 
+    ActivityDiagram withRepeat(boolean hasRepeat = true) {
+        this.hasRepeat = hasRepeat
+        return this
+    }
+
+    ActivityDiagram withRepeatWhile(boolean hasRepeatWhile = true) {
+        this.hasRepeatWhile = hasRepeatWhile
+        return this
+    }
+
+    ActivityDiagram withDetach(boolean hasDetach = true) {
+        this.hasDetach = hasDetach
+        return this
+    }
+
     ActivityDiagram addNode(ActivityNode node) {
         if (node != null) {
             this.nodes.add(node)
@@ -97,5 +115,9 @@ class ActivityDiagram {
 
     boolean hasForkStructure() {
         return hasFork || hasEndMerge || hasEndFork || nodes.any { ActivityNode node -> node instanceof ForkNode }
+    }
+
+    boolean hasRepeatStructure() {
+        return hasRepeat || hasRepeatWhile || hasDetach || nodes.any { ActivityNode node -> node instanceof RepeatNode }
     }
 }

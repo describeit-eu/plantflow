@@ -16,12 +16,18 @@ class PumlLineClassifier {
     private static final Pattern FORK_AGAIN_PATTERN = Pattern.compile(/^\s*fork\s+again\s*$/)
     private static final Pattern END_MERGE_PATTERN = Pattern.compile(/^\s*end\s+merge\s*$/)
     private static final Pattern END_FORK_PATTERN = Pattern.compile(/^\s*end\s+fork\s*$/)
+    private static final Pattern REPEAT_PATTERN = Pattern.compile(/^\s*repeat\s*$/)
+    private static final Pattern REPEAT_WHILE_PATTERN = Pattern.compile(/^\s*repeat\s+while\s*\(\s*(.+?)\s*\)\s+is\s*\(\s*(.+?)\s*\)(?:\s+not\s*\(\s*(.+?)\s*\))?\s*$/)
+    private static final Pattern DETACH_PATTERN = Pattern.compile(/^\s*-\[hidden\]->\s*(detach)?\s*$/)
 
     private static final String START_KEYWORD = 'start'
     private static final String END_KEYWORD = 'end'
     private static final String STOP_KEYWORD = 'stop'
     private static final String IF_KEYWORD = 'if'
     private static final String FORK_KEYWORD = 'fork'
+    private static final String REPEAT_KEYWORD = 'repeat'
+    private static final String DETACH_KEYWORD = 'detach'
+    private static final String HIDDEN_ARROW = '-[hidden]->'
     private static final String MERGE_KEYWORD = 'merge'
     private static final String STARTUML = '@startuml'
     private static final String ENDUML = '@enduml'
@@ -38,19 +44,26 @@ class PumlLineClassifier {
         ClassifiedLine action = tryAction(line, rawLine)
         if (action != null) return action
 
-        ClassifiedLine conditional = tryConditional(line, rawLine)
-        if (conditional != null) return conditional
+        ClassifiedLine structural = tryStructural(line, rawLine)
+        if (structural != null) return structural
 
-        ClassifiedLine forkLine = tryFork(line, rawLine)
-        if (forkLine != null) return forkLine
-
-        if (isMalformedForkLine(line)) return new ClassifiedLine(LineType.MALFORMED, rawLine)
+        if (isMalformedForkLine(line) || isMalformedRepeatLine(line)) return new ClassifiedLine(LineType.MALFORMED, rawLine)
 
         return ignored(rawLine)
     }
 
     List<ClassifiedLine> classifyAll(List<String> lines) {
         return lines.collect { String line -> classify(line) }
+    }
+
+    private static ClassifiedLine tryStructural(String line, String rawLine) {
+        ClassifiedLine conditional = tryConditional(line, rawLine)
+        if (conditional != null) return conditional
+
+        ClassifiedLine forkLine = tryFork(line, rawLine)
+        if (forkLine != null) return forkLine
+
+        return tryRepeat(line, rawLine)
     }
 
     private static ClassifiedLine ignored(String rawLine) {
@@ -92,6 +105,24 @@ class PumlLineClassifier {
         if (END_MERGE_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.END_MERGE, rawLine)
         if (END_FORK_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.END_FORK, rawLine)
         if (FORK_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.FORK, rawLine)
+        return null
+    }
+
+    private static boolean isMalformedRepeatLine(String line) {
+        String lower = line.toLowerCase(Locale.ROOT)
+        if (lower.startsWith(REPEAT_KEYWORD)) return true
+        return lower.startsWith(HIDDEN_ARROW)
+    }
+
+    private static ClassifiedLine tryRepeat(String line, String rawLine) {
+        if (REPEAT_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.REPEAT, rawLine)
+        Matcher repeatWhile = REPEAT_WHILE_PATTERN.matcher(line)
+        if (repeatWhile.matches()) {
+            return new ClassifiedLine(LineType.REPEAT_WHILE, rawLine, null, repeatWhile.group(1).trim(), repeatWhile.group(2).trim())
+        }
+        if (DETACH_PATTERN.matcher(line).matches() || line == DETACH_KEYWORD) {
+            return new ClassifiedLine(LineType.DETACH, rawLine)
+        }
         return null
     }
 }

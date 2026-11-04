@@ -238,6 +238,35 @@ end
         return forkPuml(branches, [])
     }
 
+    /**
+     * Creates a repeat loop diagram PlantUML string with the given loop condition,
+     * body actions, optional post-loop actions, and optional detach exit.
+     */
+    static String repeatPuml(String condition, List<String> bodyActions, List<String> postActions = [], boolean detach = false, String yesLabel = 'yes', String noLabel = 'no') {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << 'repeat\n'
+        bodyActions.each { action ->
+            sb << "  :${action};\n"
+        }
+        sb << "repeat while ( ${condition} ) is (${yesLabel})"
+        if (!detach) {
+            sb << " not (${noLabel})"
+        }
+        sb << '\n'
+        if (detach) {
+            sb << '-[hidden]->\n'
+            sb << 'detach\n'
+        }
+        postActions.each { action ->
+            sb << ":${action};\n"
+        }
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
     // ==================== Parser Helpers ====================
 
     /**
@@ -455,6 +484,31 @@ end
         def branchNo = net.transitions.find { it.label == 'T_branch_no' }
         assert branchNo != null : "Expected T_branch_no transition"
         assert branchNo.guardKey == "!(${guard})" : "Expected guard '!(${guard})' but got '${branchNo.guardKey}'"
+    }
+
+    /**
+     * Verifies repeat loop structure: the loop-back branch transition carries the loop condition
+     * guard and routes back to the loop start place, and the exit branch transition carries the
+     * negated guard and routes onward.
+     */
+    static void verifyRepeatLoopStructure(PetriNetStructure net, String guard, int loopIndex = 1, String loopStartLabel = 'start') {
+        def loopBack = net.transitions.find { it.label == "T_repeat_${loopIndex}_loop_back" }
+        assert loopBack != null : "Expected T_repeat_${loopIndex}_loop_back transition"
+        assert loopBack.guardKey == guard : "Expected guard '${guard}' but got '${loopBack.guardKey}'"
+
+        def decisionPlace = net.places.find { it.label == "P_repeat_${loopIndex}_decision" }
+        assert decisionPlace != null : "Expected P_repeat_${loopIndex}_decision place"
+        def loopStartPlace = net.places.find { it.label == loopStartLabel }
+        assert loopStartPlace != null : "Expected loop start place '${loopStartLabel}'"
+        verifyTransitionConnection(net, loopBack, decisionPlace, loopStartPlace)
+
+        def exit = net.transitions.find { it.label == "T_repeat_${loopIndex}_exit" }
+        if (exit != null) {
+            assert exit.guardKey == "!(${guard})" : "Expected guard '!(${guard})' but got '${exit.guardKey}'"
+            assert net.incidenceMatrix.getInputWeight(decisionPlace.index, exit.index) == 1 : \
+                "Exit transition ${exit.label} should consume from place ${decisionPlace.label}"
+            verifyTransitionIO(net, exit, 1, 1)
+        }
     }
 
     /**

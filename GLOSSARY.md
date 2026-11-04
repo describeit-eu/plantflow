@@ -104,6 +104,18 @@ _Avoid_: Join, synchronization point, converge
 An independent execution path created by a fork that runs concurrently with other branches.
 _Avoid_: Concurrent path, thread, async path
 
+**Repeat Loop**:
+A `repeat ... repeat while` control structure whose body executes at least once and then repeats while the Loop Condition evaluates true (post-test loop).
+_Avoid_: While loop, do-while block, iteration node
+
+**Loop Condition**:
+The guard expression on `repeat while (...)` evaluated after each iteration of a Repeat Loop, routing the Token back into the loop or onward to the loop exit.
+_Avoid_: Loop guard, exit condition, while condition
+
+**Infinite Loop**:
+A Repeat Loop whose Loop Condition is constant true (`repeat while (true)`), exited only via `detach`.
+_Avoid_: Endless loop, unconditional loop
+
 **Activity Diagram Parser**:
 The top-level parser and facade that transforms PlantUML activity diagram syntax into an executable Petri Net structure.
 _Avoid_: Diagram importer, workflow parser
