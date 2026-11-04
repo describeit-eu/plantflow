@@ -11,6 +11,9 @@ import groovy.util.logging.Slf4j
 @CompileStatic
 class DefaultPetriNetEngine implements PetriNetEngine {
 
+    private static final String CONSTANT_GUARD_TRUE = 'true'
+    private static final String CONSTANT_GUARD_FALSE = 'false'
+
     @Override
     boolean isEnabled(PetriNetStructure net, Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext) {
         if (transition == null) {
@@ -240,6 +243,12 @@ class DefaultPetriNetEngine implements PetriNetEngine {
     }
 
     private boolean isGuardSatisfied(Transition transition, Marking marking, HandlerRegistry handlerRegistry, ExecutionContext executionContext, List<Place> inputPlaces) {
+        if (transition.guardKey == CONSTANT_GUARD_TRUE) {
+            return true
+        }
+        if (transition.guardKey == CONSTANT_GUARD_FALSE) {
+            return false
+        }
         if (transition.guardKey) {
             GuardPredicate guard = handlerRegistry.getGuard(transition.guardKey)
             Token tokenForGuard = getGuardToken(marking, inputPlaces)
