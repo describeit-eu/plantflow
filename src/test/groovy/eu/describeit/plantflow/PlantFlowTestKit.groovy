@@ -487,6 +487,31 @@ end
     }
 
     /**
+     * Verifies repeat loop structure: the loop-back branch transition carries the loop condition
+     * guard and routes back to the loop start place, and the exit branch transition carries the
+     * negated guard and routes onward.
+     */
+    static void verifyRepeatLoopStructure(PetriNetStructure net, String guard, int loopIndex = 1, String loopStartLabel = 'start') {
+        def loopBack = net.transitions.find { it.label == "T_repeat_${loopIndex}_loop_back" }
+        assert loopBack != null : "Expected T_repeat_${loopIndex}_loop_back transition"
+        assert loopBack.guardKey == guard : "Expected guard '${guard}' but got '${loopBack.guardKey}'"
+
+        def decisionPlace = net.places.find { it.label == "P_repeat_${loopIndex}_decision" }
+        assert decisionPlace != null : "Expected P_repeat_${loopIndex}_decision place"
+        def loopStartPlace = net.places.find { it.label == loopStartLabel }
+        assert loopStartPlace != null : "Expected loop start place '${loopStartLabel}'"
+        verifyTransitionConnection(net, loopBack, decisionPlace, loopStartPlace)
+
+        def exit = net.transitions.find { it.label == "T_repeat_${loopIndex}_exit" }
+        if (exit != null) {
+            assert exit.guardKey == "!(${guard})" : "Expected guard '!(${guard})' but got '${exit.guardKey}'"
+            assert net.incidenceMatrix.getInputWeight(decisionPlace.index, exit.index) == 1 : \
+                "Exit transition ${exit.label} should consume from place ${decisionPlace.label}"
+            verifyTransitionIO(net, exit, 1, 1)
+        }
+    }
+
+    /**
      * Validates that a parsed PetriNetStructure has the expected structure.
      */
     static void validateNetStructure(PetriNetStructure net, int expectedPlaceCount, int expectedTransitionCount) {

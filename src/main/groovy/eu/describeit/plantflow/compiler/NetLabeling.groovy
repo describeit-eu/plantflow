@@ -25,6 +25,15 @@ class NetLabeling {
     static final String TRANSITION_FORK_MERGE_SUFFIX = '_merge_'
     static final String TRANSITION_FORK_JOIN_SUFFIX = '_join'
     static final String TRANSITION_FORK_TO_END = '_to_end'
+    static final String PLACE_REPEAT_PREFIX = 'P_repeat_'
+    static final String PLACE_REPEAT_START_SUFFIX = '_start'
+    static final String PLACE_REPEAT_DECISION_SUFFIX = '_decision'
+    static final String PLACE_REPEAT_BODY_SUFFIX = '_body_'
+    static final String PLACE_REPEAT_AFTER_SUFFIX = '_after'
+    static final String TRANSITION_REPEAT_PREFIX = 'T_repeat_'
+    static final String TRANSITION_REPEAT_LOOP_BACK_SUFFIX = '_loop_back'
+    static final String TRANSITION_REPEAT_EXIT_SUFFIX = '_exit'
+    static final String TRANSITION_REPEAT_DETACH_SUFFIX = '_detach'
 
     static final String PREFIX_INTERMEDIATE_PLACE = 'P_'
     static final String PREFIX_THEN_PLACE = 'P_then_'
@@ -79,6 +88,38 @@ class NetLabeling {
 
     static String postMergePlace(int forkIndex, int index) {
         PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_POST_MERGE_SUFFIX + index
+    }
+
+    static String repeatStartPlace(int loopIndex) {
+        PLACE_REPEAT_PREFIX + loopIndex + PLACE_REPEAT_START_SUFFIX
+    }
+
+    static String repeatDecisionPlace(int loopIndex) {
+        PLACE_REPEAT_PREFIX + loopIndex + PLACE_REPEAT_DECISION_SUFFIX
+    }
+
+    static String repeatBodyPlace(int loopIndex, int actionNumber) {
+        PLACE_REPEAT_PREFIX + loopIndex + PLACE_REPEAT_BODY_SUFFIX + actionNumber
+    }
+
+    static String repeatAfterPlace(int loopIndex) {
+        PLACE_REPEAT_PREFIX + loopIndex + PLACE_REPEAT_AFTER_SUFFIX
+    }
+
+    static String repeatAfterPlace(int loopIndex, int index) {
+        PLACE_REPEAT_PREFIX + loopIndex + PLACE_REPEAT_AFTER_SUFFIX + '_' + index
+    }
+
+    static String repeatLoopBackTransition(int loopIndex) {
+        TRANSITION_REPEAT_PREFIX + loopIndex + TRANSITION_REPEAT_LOOP_BACK_SUFFIX
+    }
+
+    static String repeatExitTransition(int loopIndex) {
+        TRANSITION_REPEAT_PREFIX + loopIndex + TRANSITION_REPEAT_EXIT_SUFFIX
+    }
+
+    static String repeatDetachTransition(int loopIndex) {
+        TRANSITION_REPEAT_PREFIX + loopIndex + TRANSITION_REPEAT_DETACH_SUFFIX
     }
 
     static String negateGuard(String guard) {

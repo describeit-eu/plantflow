@@ -138,7 +138,13 @@ class DiagramValidator {
                 throw new IllegalArgumentException(ERR_NO_REPEAT_WHILE)
             }
         }
-        validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
+        if (diagram.hasDetach) {
+            if (!diagram.hasStart) {
+                throw new IllegalArgumentException(ERR_MUST_CONTAIN_START)
+            }
+        } else {
+            validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
+        }
     }
 
     private static void validateStartAndEnd(boolean hasStart, boolean hasEnd) {
