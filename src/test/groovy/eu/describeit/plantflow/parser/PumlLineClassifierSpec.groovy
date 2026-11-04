@@ -36,6 +36,25 @@ class PumlLineClassifierSpec extends Specification {
         ''                    | LineType.IGNORED
         '   '                 | LineType.IGNORED
         'random text'         | LineType.IGNORED
+        'end note'            | LineType.IGNORED
+        'end legend'          | LineType.IGNORED
+        'end foo'             | LineType.IGNORED
+        'endfork'             | LineType.MALFORMED
+        '  endfork  '         | LineType.MALFORMED
+        'endmerge'            | LineType.MALFORMED
+        'end  merg'           | LineType.MALFORMED
+        'end fork now'        | LineType.MALFORMED
+        'end fork again'      | LineType.MALFORMED
+        'end merge;'          | LineType.MALFORMED
+        'forkagain'           | LineType.MALFORMED
+        'fork again now'      | LineType.MALFORMED
+        'fork now'            | LineType.MALFORMED
+        'fork;'               | LineType.MALFORMED
+        'FORK'                | LineType.MALFORMED
+        'End Fork'            | LineType.MALFORMED
+        'END MERGE'           | LineType.MALFORMED
+        'Fork Again'          | LineType.MALFORMED
+        'ENDFORK'             | LineType.MALFORMED
     }
 
     @Unroll

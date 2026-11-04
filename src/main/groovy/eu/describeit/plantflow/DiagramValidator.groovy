@@ -21,7 +21,7 @@ class DiagramValidator {
     public static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
     public static final String ERR_DIAGRAM_NULL = 'Diagram cannot be null'
     public static final String ERR_NO_FORK = 'Diagram contains fork but no fork statement found'
-    public static final String ERR_NO_END_MERGE = 'fork construct must have an end merge'
+    public static final String ERR_NO_END_MERGE = 'fork construct must be closed with an end merge or end fork'
     public static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one action'
     public static final String ERR_MIN_BRANCHES = 'Fork must have at least 2 branches'
 
@@ -108,12 +108,12 @@ class DiagramValidator {
     }
 
     private static void validateForkStructure(ActivityDiagram diagram) {
-        boolean hasForkFlags = diagram.hasFork || diagram.hasEndMerge
+        boolean hasForkFlags = diagram.hasFork || diagram.hasEndMerge || diagram.hasEndFork
         if (hasForkFlags) {
             if (!diagram.hasFork) {
                 throw new IllegalArgumentException(ERR_NO_FORK)
             }
-            if (!diagram.hasEndMerge) {
+            if (!diagram.hasEndMerge && !diagram.hasEndFork) {
                 throw new IllegalArgumentException(ERR_NO_END_MERGE)
             }
         }

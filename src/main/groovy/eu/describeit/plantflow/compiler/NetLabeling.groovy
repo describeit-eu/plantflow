@@ -14,6 +14,7 @@ class NetLabeling {
     static final String PLACE_FORK_PREFIX = 'P_fork_'
     static final String PLACE_FORK_BRANCH_SUFFIX = '_branch_'
     static final String PLACE_FORK_MERGE_SUFFIX = '_merge'
+    static final String PLACE_FORK_JOIN_SUFFIX = '_join'
 
     static final String TRANSITION_START_TO_DECISION = 'T_start_to_decision'
     static final String TRANSITION_BRANCH_YES = 'T_branch_yes'
@@ -22,6 +23,7 @@ class NetLabeling {
     static final String TRANSITION_FORK_PREFIX = 'T_fork_'
     static final String TRANSITION_FORK_BRANCH_SUFFIX = '_branch_'
     static final String TRANSITION_FORK_MERGE_SUFFIX = '_merge_'
+    static final String TRANSITION_FORK_JOIN_SUFFIX = '_join'
     static final String TRANSITION_FORK_TO_END = '_to_end'
 
     static final String PREFIX_INTERMEDIATE_PLACE = 'P_'
@@ -51,6 +53,10 @@ class NetLabeling {
         PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_MERGE_SUFFIX
     }
 
+    static String forkJoinPlace(int forkIndex) {
+        PLACE_FORK_PREFIX + forkIndex + PLACE_FORK_JOIN_SUFFIX
+    }
+
     static String forkBranchTransition(int forkIndex, int branchIndex) {
         TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_BRANCH_SUFFIX + branchIndex
     }
@@ -61,6 +67,10 @@ class NetLabeling {
 
     static String forkMergeTransition(int forkIndex, int branchNumber) {
         TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_MERGE_SUFFIX + branchNumber
+    }
+
+    static String forkJoinTransition(int forkIndex) {
+        TRANSITION_FORK_PREFIX + forkIndex + TRANSITION_FORK_JOIN_SUFFIX
     }
 
     static String forkToEndTransition(int forkIndex) {

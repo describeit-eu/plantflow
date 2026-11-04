@@ -4,5 +4,5 @@ import groovy.transform.CompileStatic
 
 @CompileStatic
 enum LineType {
-    START, END, ACTION, IF, ELSE, ENDIF, FORK, FORK_AGAIN, END_MERGE, IGNORED
+    START, END, ACTION, IF, ELSE, ENDIF, FORK, FORK_AGAIN, END_MERGE, END_FORK, MALFORMED, IGNORED
 }

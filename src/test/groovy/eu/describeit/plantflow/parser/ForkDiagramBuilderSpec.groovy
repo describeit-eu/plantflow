@@ -200,6 +200,54 @@ end
         ex.message.contains('Unclosed fork')
     }
 
+    def 'should throw for mixed end merge and end fork terminators within one fork construct'() {
+        given:
+        def lines = classify('''@startuml
+start
+fork
+  :outer 1;
+  fork
+    :inner 1;
+  fork again
+    :inner 2;
+  end merge
+fork again
+  :outer 2;
+end fork
+end
+@enduml''')
+
+        when:
+        builder.build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('Mismatched fork terminators')
+    }
+
+    def 'should throw for mixed end fork and end merge terminators within one fork construct'() {
+        given:
+        def lines = classify('''@startuml
+start
+fork
+  :outer 1;
+  fork
+    :inner 1;
+  end fork
+fork again
+  :outer 2;
+end merge
+end
+@enduml''')
+
+        when:
+        builder.build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('Mismatched fork terminators')
+    }
+
     def 'should throw for nested fork without closing end merge'() {
         given:
         def lines = classify('''@startuml

@@ -193,6 +193,18 @@ end
      * and optional post-merge actions.
      */
     static String forkPuml(List<List<String>> branches, List<String> postMergeActions = []) {
+        return forkPumlWithTerminator(branches, postMergeActions, 'end merge')
+    }
+
+    /**
+     * Creates a synchronizing fork/join diagram PlantUML string (end fork)
+     * with variable number of branches and optional post-join actions.
+     */
+    static String forkJoinPuml(List<List<String>> branches, List<String> postJoinActions = []) {
+        return forkPumlWithTerminator(branches, postJoinActions, 'end fork')
+    }
+
+    private static String forkPumlWithTerminator(List<List<String>> branches, List<String> postActions, String terminator) {
         def sb = new StringBuilder()
         sb << '@startuml\n'
         sb << 'start\n'
@@ -207,8 +219,8 @@ end
             }
         }
 
-        sb << 'end merge\n'
-        postMergeActions.each { action ->
+        sb << terminator + '\n'
+        postActions.each { action ->
             sb << ":${action};\n"
         }
         sb << 'end\n'
@@ -377,6 +389,20 @@ end
      */
     static Transition findTransitionByAction(PetriNetStructure net, String actionKey) {
         net.transitions.find { it.actionKey == actionKey }
+    }
+
+    /**
+     * Finds a transition of a PlantFlow engine by its label.
+     */
+    static Transition findTransitionByLabel(PlantFlow engine, String label) {
+        engine.petriNet.transitions.find { it.label == label }
+    }
+
+    /**
+     * Finds a transition of a PlantFlow engine by its action key.
+     */
+    static Transition findTransitionByAction(PlantFlow engine, String actionKey) {
+        engine.petriNet.transitions.find { it.actionKey == actionKey }
     }
 
     /**

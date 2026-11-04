@@ -14,6 +14,10 @@ interface PetriNetStructure {
         return Collections.emptyList()
     }
 
+    default List<JoinDescriptor> getJoinDescriptors() {
+        return Collections.emptyList()
+    }
+
     default Place getPlaceByIndex(int index) {
         return getPlaces().find { Place place -> place.index == index }
     }

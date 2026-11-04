@@ -15,11 +15,14 @@ class PumlLineClassifier {
     private static final Pattern FORK_PATTERN = Pattern.compile(/^\s*fork\s*$/)
     private static final Pattern FORK_AGAIN_PATTERN = Pattern.compile(/^\s*fork\s+again\s*$/)
     private static final Pattern END_MERGE_PATTERN = Pattern.compile(/^\s*end\s+merge\s*$/)
+    private static final Pattern END_FORK_PATTERN = Pattern.compile(/^\s*end\s+fork\s*$/)
 
     private static final String START_KEYWORD = 'start'
     private static final String END_KEYWORD = 'end'
     private static final String STOP_KEYWORD = 'stop'
     private static final String IF_KEYWORD = 'if'
+    private static final String FORK_KEYWORD = 'fork'
+    private static final String MERGE_KEYWORD = 'merge'
     private static final String STARTUML = '@startuml'
     private static final String ENDUML = '@enduml'
     private static final String COMMENT = '\''
@@ -40,6 +43,8 @@ class PumlLineClassifier {
 
         ClassifiedLine forkLine = tryFork(line, rawLine)
         if (forkLine != null) return forkLine
+
+        if (isMalformedForkLine(line)) return new ClassifiedLine(LineType.MALFORMED, rawLine)
 
         return ignored(rawLine)
     }
@@ -74,9 +79,18 @@ class PumlLineClassifier {
         return null
     }
 
+    private static boolean isMalformedForkLine(String line) {
+        String lower = line.toLowerCase(Locale.ROOT)
+        if (lower.startsWith(FORK_KEYWORD)) return true
+        if (!lower.startsWith(END_KEYWORD)) return false
+        String rest = lower.substring(END_KEYWORD.length()).replaceAll(/\s+/, '')
+        return rest.startsWith(FORK_KEYWORD) || rest.startsWith(MERGE_KEYWORD.take(4))
+    }
+
     private static ClassifiedLine tryFork(String line, String rawLine) {
         if (FORK_AGAIN_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.FORK_AGAIN, rawLine)
         if (END_MERGE_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.END_MERGE, rawLine)
+        if (END_FORK_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.END_FORK, rawLine)
         if (FORK_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.FORK, rawLine)
         return null
     }
