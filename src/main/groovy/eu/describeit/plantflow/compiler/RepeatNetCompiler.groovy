@@ -45,6 +45,16 @@ class RepeatNetCompiler {
         return builder.build()
     }
 
+    void compileLoopInto(PetriNetBuilder builder, RepeatNode node, Place loopStart, Place exitTarget) {
+        if (node == null) {
+            throw new IllegalArgumentException(ERR_REPEAT_NODE_NULL)
+        }
+        if (node.body.isEmpty()) {
+            throw new IllegalArgumentException(ERR_BODY_EMPTY)
+        }
+        compileLoop(builder, node, loopStart, exitTarget)
+    }
+
     private Place connectPreActions(PetriNetBuilder builder, Place startPlace, List<ActionNode> preActions) {
         if (preActions.isEmpty()) {
             return startPlace
