@@ -10,28 +10,28 @@ import groovy.transform.ToString
 class ConditionalNode implements ActivityNode {
 
     final String guardCondition
-    final List<ActionNode> thenActions
-    final List<ActionNode> elseActions
+    final List<ActivityNode> thenActions
+    final List<ActivityNode> elseActions
 
-    ConditionalNode(String guardCondition, List<ActionNode> thenActions, List<ActionNode> elseActions) {
+    ConditionalNode(String guardCondition, List<ActivityNode> thenActions, List<ActivityNode> elseActions) {
         this.guardCondition = guardCondition
         this.thenActions = thenActions != null ?
             Collections.unmodifiableList(new ArrayList<>(thenActions)) :
-            Collections.<ActionNode>emptyList()
+            Collections.<ActivityNode>emptyList()
         this.elseActions = elseActions != null ?
             Collections.unmodifiableList(new ArrayList<>(elseActions)) :
-            Collections.<ActionNode>emptyList()
+            Collections.<ActivityNode>emptyList()
     }
 
     String getGuardCondition() {
         return guardCondition
     }
 
-    List<ActionNode> getThenActions() {
+    List<ActivityNode> getThenActions() {
         return thenActions
     }
 
-    List<ActionNode> getElseActions() {
+    List<ActivityNode> getElseActions() {
         return elseActions
     }
 }

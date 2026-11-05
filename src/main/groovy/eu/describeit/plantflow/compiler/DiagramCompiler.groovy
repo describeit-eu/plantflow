@@ -25,11 +25,11 @@ class DiagramCompiler {
         if (cond != null) return conditionalCompiler.compile(cond)
         ForkNode fork = findForkNode(diagram)
         if (fork != null) return forkCompiler.compile(fork, extractPostForkActions(diagram, fork))
-        if (diagram.isConditional()) throw new IllegalArgumentException(ERR_THEN_EMPTY)
         RepeatNode repeat = findRepeatNode(diagram)
         if (repeat != null) {
             return repeatCompiler.compile(repeat, extractPreRepeatActions(diagram, repeat), extractPostRepeatActions(diagram, repeat))
         }
+        if (diagram.isConditional()) throw new IllegalArgumentException(ERR_THEN_EMPTY)
         return linearCompiler.compile(extractActionNodes(diagram))
     }
 

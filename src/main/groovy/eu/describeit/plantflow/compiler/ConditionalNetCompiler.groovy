@@ -1,6 +1,7 @@
 package eu.describeit.plantflow.compiler
 
 import eu.describeit.plantflow.ast.ActionNode
+import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.PetriNetStructure
@@ -14,6 +15,7 @@ class ConditionalNetCompiler {
     private static final String ERR_CONDITIONAL_NODE_NULL = 'ConditionalNode cannot be null'
     private static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
     private static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
+    private static final String ERR_COMPOSED_BRANCH = 'Conditional branch contains a composed node that is not supported here yet'
 
     PetriNetStructure compile(ConditionalNode node) {
         validate(node)
@@ -33,19 +35,21 @@ class ConditionalNetCompiler {
     }
 
     private static PetriNetStructure assembleNet(ConditionalNode node) {
+        List<ActionNode> thenActions = actionNodesOf(node.thenActions)
+        List<ActionNode> elseActions = actionNodesOf(node.elseActions)
         PetriNetBuilder builder = new PetriNetBuilder()
         Place startPlace = builder.addPlace(NetLabeling.PLACE_START)
         Place decisionPlace = builder.addPlace(NetLabeling.PLACE_IF_DECISION)
-        List<Place> thenPlaces = generateBranchPlaces(builder, NetLabeling.PLACE_THEN, NetLabeling.PREFIX_THEN_PLACE, node.thenActions.size())
-        List<Place> elsePlaces = generateBranchPlaces(builder, NetLabeling.PLACE_ELSE, NetLabeling.PREFIX_ELSE_PLACE, node.elseActions.size())
+        List<Place> thenPlaces = generateBranchPlaces(builder, NetLabeling.PLACE_THEN, NetLabeling.PREFIX_THEN_PLACE, thenActions.size())
+        List<Place> elsePlaces = generateBranchPlaces(builder, NetLabeling.PLACE_ELSE, NetLabeling.PREFIX_ELSE_PLACE, elseActions.size())
         Place endifPlace = builder.addPlace(NetLabeling.PLACE_ENDIF)
         Place endPlace = builder.addPlace(NetLabeling.PLACE_END)
 
         Transition startToDecision = builder.addTransition(NetLabeling.TRANSITION_START_TO_DECISION)
         Transition branchYes = builder.addTransition(NetLabeling.TRANSITION_BRANCH_YES, null, node.guardCondition)
         Transition branchNo = builder.addTransition(NetLabeling.TRANSITION_BRANCH_NO, null, NetLabeling.negateGuard(node.guardCondition))
-        List<Transition> thenTransitions = generateActionTransitions(builder, node.thenActions)
-        List<Transition> elseTransitions = generateActionTransitions(builder, node.elseActions)
+        List<Transition> thenTransitions = generateActionTransitions(builder, thenActions)
+        List<Transition> elseTransitions = generateActionTransitions(builder, elseActions)
         Transition endifToEnd = builder.addTransition(NetLabeling.TRANSITION_ENDIF_TO_END)
 
         connectBranchActions(builder, thenPlaces, thenTransitions, endifPlace)
@@ -75,6 +79,13 @@ class ConditionalNetCompiler {
             places.add(builder.addPlace(prefix + i))
         }
         return places
+    }
+
+    private static List<ActionNode> actionNodesOf(List<ActivityNode> branch) {
+        if (branch.any { ActivityNode item -> !(item instanceof ActionNode) }) {
+            throw new IllegalArgumentException(ERR_COMPOSED_BRANCH)
+        }
+        return branch as List<ActionNode>
     }
 
     private static List<Transition> generateActionTransitions(PetriNetBuilder builder, List<ActionNode> actionNodes) {

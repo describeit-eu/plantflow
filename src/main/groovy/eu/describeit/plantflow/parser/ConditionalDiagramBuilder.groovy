@@ -87,8 +87,8 @@ class ConditionalDiagramBuilder implements DiagramBuilder {
         boolean hasElse = false
         boolean hasEndif = false
         String guard = null
-        List<ActionNode> thenActions = []
-        List<ActionNode> elseActions = []
+        List<ActivityNode> thenActions = []
+        List<ActivityNode> elseActions = []
         Branch branch = Branch.NONE
     }
 }

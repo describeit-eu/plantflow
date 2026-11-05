@@ -11,6 +11,7 @@ import eu.describeit.plantflow.parser.LineType
 import eu.describeit.plantflow.parser.LinearDiagramBuilder
 import eu.describeit.plantflow.parser.PumlLineClassifier
 import eu.describeit.plantflow.parser.RepeatDiagramBuilder
+import eu.describeit.plantflow.parser.UnifiedDiagramBuilder
 import groovy.transform.CompileStatic
 
 import java.nio.charset.StandardCharsets
@@ -20,7 +21,6 @@ class ActivityDiagramParser {
 
     private static final String ERR_MALFORMED_LINE = 'Malformed line'
     private static final String ERR_MIXED_CONDITIONAL_FORK = 'Diagram mixes if-then-else and fork constructs, which is not supported'
-    private static final String ERR_MIXED_CONDITIONAL_REPEAT = 'Diagram mixes if-then-else and repeat constructs, which is not supported'
     private static final String ERR_MIXED_FORK_REPEAT = 'Diagram mixes fork and repeat constructs, which is not supported'
 
     private final PumlLineClassifier classifier = new PumlLineClassifier()
@@ -55,12 +55,10 @@ class ActivityDiagramParser {
         if (hasConditional && hasForkLines) {
             throw new IllegalArgumentException(ERR_MIXED_CONDITIONAL_FORK)
         }
-        if (hasConditional && hasRepeatLines) {
-            throw new IllegalArgumentException(ERR_MIXED_CONDITIONAL_REPEAT)
-        }
         if (hasForkLines && hasRepeatLines) {
             throw new IllegalArgumentException(ERR_MIXED_FORK_REPEAT)
         }
+        if (hasConditional && hasRepeatLines) return new UnifiedDiagramBuilder()
         if (hasConditional) return new ConditionalDiagramBuilder()
         if (hasForkLines) return new ForkDiagramBuilder()
         if (hasRepeatLines) return new RepeatDiagramBuilder()
