@@ -1,7 +1,7 @@
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
-    <inspection_tool class="CodeNarc.AbcMetric" enabled="true" level="WARNING" enabled_by_default="true">
+    <inspection_tool class="CodeNarc.AbcMetric" enabled="false" level="WARNING" enabled_by_default="false">
       <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.BlankLineBeforePackage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
@@ -24,7 +24,7 @@
     <inspection_tool class="CodeNarc.ClassName" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="doNotApplyToFilesMatching" value=".md" />
     </inspection_tool>
-    <inspection_tool class="CodeNarc.ClassSize" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+    <inspection_tool class="CodeNarc.ClassSize" enabled="false" level="WEAK WARNING" enabled_by_default="false">
       <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
       <option name="maxLines" value="300" />
     </inspection_tool>
@@ -39,7 +39,8 @@
       <option name="doNotApplyToFileNames" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.CoupledTestCase" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="CodeNarc.CyclomaticComplexity" enabled="true" level="WARNING" enabled_by_default="true">
+    <inspection_tool class="CodeNarc.CrapMetric" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.CyclomaticComplexity" enabled="false" level="WARNING" enabled_by_default="false">
       <option name="maxClassAverageMethodComplexity" value="10" />
       <option name="maxMethodComplexity" value="10" />
     </inspection_tool>
@@ -83,6 +84,7 @@
     <inspection_tool class="CodeNarc.InconsistentPropertyLocking" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.InconsistentPropertySynchronization" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.Indentation" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.Instanceof" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.JUnitAssertAlwaysFails" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.JUnitAssertAlwaysSucceeds" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.JUnitFailWithoutMessage" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -115,6 +117,7 @@
     <inspection_tool class="CodeNarc.JdbcResultSetReference" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.JdbcStatementReference" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.LineLength" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.MethodCount" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.MethodName" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="doNotApplyToClassNames" value="*Spec" />
       <option name="doNotApplyToFileNames" value="*.md" />
@@ -123,17 +126,19 @@
       <option name="doNotApplyToFileNames" value="*.md" />
       <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
     </inspection_tool>
-    <inspection_tool class="CodeNarc.MethodSize" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+    <inspection_tool class="CodeNarc.MethodSize" enabled="false" level="WEAK WARNING" enabled_by_default="false">
       <option name="doNotApplyToFilesMatching" value=".*(Spec|Test|Tests|TestCase)\.groovy" />
       <option name="maxLines" value="40" />
     </inspection_tool>
     <inspection_tool class="CodeNarc.MissingBlankLineAfterImports" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.MissingBlankLineAfterPackage" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.MissingBlankLineBeforeAnnotatedField" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.NestedBlockDepth" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.NestedForLoop" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.NestedSynchronization" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.NoDef" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.NoScriptBindings" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.ParameterCount" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.RequiredRegex" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.RequiredString" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.SpaceAfterCatch" enabled="false" level="WEAK WARNING" enabled_by_default="false" />

@@ -42,7 +42,7 @@ class ActivityDiagramParser {
 
     private static void rejectMalformedLines(List<ClassifiedLine> lines) {
         List<String> malformedTexts = lines.findAll { ClassifiedLine line -> line.type == LineType.MALFORMED }
-                .collect { ClassifiedLine line -> "'" + line.text.trim() + "'" }
+                .collect { ClassifiedLine line -> "'${line.text.trim()}'".toString() }
         if (!malformedTexts.isEmpty()) {
             throw new IllegalArgumentException("$ERR_MALFORMED_LINE: ${malformedTexts.join(', ')}")
         }

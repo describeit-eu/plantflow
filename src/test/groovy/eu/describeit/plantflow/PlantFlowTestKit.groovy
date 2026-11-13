@@ -1,5 +1,7 @@
 package eu.describeit.plantflow
 
+import groovy.transform.CompileStatic
+
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
@@ -18,6 +20,7 @@ import eu.describeit.plantflow.engine.Transition
  * Provides builders, factories, assertion helpers, and validation methods
  * in a single coherent interface.
  */
+@CompileStatic
 class PlantFlowTestKit {
 
     // ==================== Net Builders ====================
@@ -112,7 +115,7 @@ class PlantFlowTestKit {
             registry.registerAction(action) { ExecutionContext ctx, Token tok ->
                 executionLog?.add(action)
                 def key = action.replace(' ', '_')
-                return tok.withPayload(tok.payload + [(key): true])
+                return tok.withPayload(tok.payload + ([(key): true] as Map<String, Object>))
             }
         }
         return registry
@@ -233,9 +236,9 @@ end
      * Each branch contains a single action with the format "action N".
      */
     static String forkPuml(int branchCount) {
-        def branches = []
-        (1..branchCount).each { i -> branches.add(["action ${i}"]) }
-        return forkPuml(branches, [])
+        List<List<String>> branches = []
+        (1..branchCount).each { int i -> branches.add(["action ${i}".toString()]) }
+        return forkPuml(branches, [] as List<String>)
     }
 
     /**
@@ -303,28 +306,28 @@ end
      * Creates a ConditionalNode with the given guard condition and action lists.
      */
     static ConditionalNode conditional(String guardCondition, List<ActionNode> thenActions, List<ActionNode> elseActions) {
-        return new ConditionalNode(guardCondition, thenActions, elseActions)
+        return new ConditionalNode(guardCondition, thenActions as List<ActivityNode>, elseActions as List<ActivityNode>)
     }
 
     /**
      * Creates a ConditionalNode with string-based action lists.
      */
     static ConditionalNode conditional(String guardCondition, String[] thenActionStrings, String[] elseActionStrings) {
-        return new ConditionalNode(guardCondition, actions(*thenActionStrings), actions(*elseActionStrings))
+        return new ConditionalNode(guardCondition, actions(*thenActionStrings) as List<ActivityNode>, actions(*elseActionStrings) as List<ActivityNode>)
     }
 
     /**
      * Creates a ForkNode with the given list of branches.
      */
     static ForkNode fork(List<ActivityNode> branches) {
-        return new ForkNode(branches)
+        return new ForkNode(branches as List<List<ActivityNode>>)
     }
 
     /**
      * Creates a ForkNode with the given activity node branches (varargs).
      */
     static ForkNode fork(ActivityNode... branches) {
-        return new ForkNode(Arrays.asList(branches))
+        return new ForkNode(Arrays.asList(branches) as List<List<ActivityNode>>)
     }
 
     /**
