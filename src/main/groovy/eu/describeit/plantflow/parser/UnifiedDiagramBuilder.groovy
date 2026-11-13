@@ -74,11 +74,9 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
     }
 
     private static void processRepeatWhile(ClassifiedLine line, UnifiedState state) {
-        if (state.stack.isEmpty()) {
+        Object top = topOf(state)
+        if (top == null || top instanceof ConditionalFrame) {
             throw new IllegalArgumentException(ERR_REPEAT_WHILE_NO_CONTEXT)
-        }
-        if (state.stack.peek() instanceof ConditionalFrame) {
-            throw new IllegalArgumentException(ERR_UNCLOSED_IF)
         }
         state.hasRepeatWhile = true
         LoopFrame frame = (LoopFrame) state.stack.pop()
@@ -107,26 +105,26 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
     }
 
     private static void processElse(UnifiedState state) {
-        if (state.stack.isEmpty()) {
+        Object top = topOf(state)
+        if (top == null || top instanceof LoopFrame) {
             throw new IllegalArgumentException(ERR_ELSE_NO_CONTEXT)
         }
-        if (state.stack.peek() instanceof LoopFrame) {
-            throw new IllegalArgumentException(ERR_UNCLOSED_REPEAT)
-        }
         state.hasElse = true
-        ((ConditionalFrame) state.stack.peek()).inElse = true
+        ((ConditionalFrame) top).inElse = true
     }
 
     private static void processEndif(UnifiedState state) {
-        if (state.stack.isEmpty()) {
+        Object top = topOf(state)
+        if (top == null || top instanceof LoopFrame) {
             throw new IllegalArgumentException(ERR_ENDIF_NO_CONTEXT)
-        }
-        if (state.stack.peek() instanceof LoopFrame) {
-            throw new IllegalArgumentException(ERR_UNCLOSED_REPEAT)
         }
         state.hasEndif = true
         ConditionalFrame frame = (ConditionalFrame) state.stack.pop()
         currentContainer(state).add(new ConditionalNode(frame.guard, frame.thenBranch, frame.elseBranch))
+    }
+
+    private static Object topOf(UnifiedState state) {
+        state.stack.isEmpty() ? null : state.stack.peek()
     }
 
     private static List<ActivityNode> currentContainer(UnifiedState state) {

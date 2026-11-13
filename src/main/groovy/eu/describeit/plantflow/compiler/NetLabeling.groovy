@@ -42,6 +42,14 @@ class NetLabeling {
     static final String NEGATION_PREFIX = '!('
     static final String NEGATION_SUFFIX = ')'
 
+    private static final String REPEAT_IF_SUFFIX = '_if_'
+    private static final String REPEAT_TO_DECISION_SUFFIX = '_to_decision'
+    private static final String REPEAT_YES_SUFFIX = '_yes'
+    private static final String REPEAT_NO_SUFFIX = '_no'
+    private static final String REPEAT_THEN_SUFFIX = '_then'
+    private static final String REPEAT_ELSE_SUFFIX = '_else'
+    private static final String INDEX_SEPARATOR = '_'
+
     static String intermediatePlace(int index) {
         PREFIX_INTERMEDIATE_PLACE + index
     }
@@ -122,17 +130,8 @@ class NetLabeling {
         TRANSITION_REPEAT_PREFIX + loopIndex + TRANSITION_REPEAT_DETACH_SUFFIX
     }
 
-    private static final String REPEAT_IF_SUFFIX = '_if_'
-    private static final String REPEAT_DECISION_SUFFIX = '_decision'
-    private static final String REPEAT_TO_DECISION_SUFFIX = '_to_decision'
-    private static final String REPEAT_YES_SUFFIX = '_yes'
-    private static final String REPEAT_NO_SUFFIX = '_no'
-    private static final String REPEAT_THEN_SUFFIX = '_then'
-    private static final String REPEAT_ELSE_SUFFIX = '_else'
-    private static final String INDEX_SEPARATOR = '_'
-
     static String repeatIfDecisionPlace(int loopIndex, int condIndex) {
-        PLACE_REPEAT_PREFIX + repeatIfBase(loopIndex, condIndex) + REPEAT_DECISION_SUFFIX
+        PLACE_REPEAT_PREFIX + repeatIfBase(loopIndex, condIndex) + PLACE_REPEAT_DECISION_SUFFIX
     }
 
     static String repeatIfToDecisionTransition(int loopIndex, int condIndex) {

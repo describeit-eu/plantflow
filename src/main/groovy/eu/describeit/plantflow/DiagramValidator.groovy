@@ -194,11 +194,7 @@ class DiagramValidator {
     }
 
     private static void validateBranchChildren(List<ActivityNode> branch) {
-        for (Object child : branch) {
-            if (child instanceof ConditionalNode || child instanceof RepeatNode || child instanceof ForkNode) {
-                validateNode((ActivityNode) child)
-            }
-        }
+        validateComposedChildren(branch)
     }
 
     private static void validateRepeatNode(RepeatNode node) {
@@ -208,7 +204,11 @@ class DiagramValidator {
         if (node.body == null || node.body.isEmpty()) {
             throw new IllegalArgumentException(ERR_LOOP_BODY_EMPTY)
         }
-        for (Object child : node.body) {
+        validateComposedChildren(node.body)
+    }
+
+    private static void validateComposedChildren(List<ActivityNode> children) {
+        for (Object child : children) {
             if (child instanceof ConditionalNode || child instanceof RepeatNode || child instanceof ForkNode) {
                 validateNode((ActivityNode) child)
             }

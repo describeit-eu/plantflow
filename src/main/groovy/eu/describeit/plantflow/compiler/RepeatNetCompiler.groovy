@@ -15,6 +15,7 @@ class RepeatNetCompiler {
 
     private static final String ERR_REPEAT_NODE_NULL = 'RepeatNode cannot be null'
     private static final String ERR_BODY_EMPTY = 'Repeat loop body must contain at least one action'
+    private static final String ERR_UNSUPPORTED_NODE = 'Unsupported node type in repeat chain: '
 
     private int loopCounter = 0
     private int condCounter = 0
@@ -127,7 +128,7 @@ class RepeatNetCompiler {
                     compileConditional(ctx, (ConditionalNode) item, currentPlace, nextPlace)
                     break
                 default:
-                    break
+                    throw new IllegalArgumentException(ERR_UNSUPPORTED_NODE + item.getClass().getName())
             }
             currentPlace = nextPlace
         }
