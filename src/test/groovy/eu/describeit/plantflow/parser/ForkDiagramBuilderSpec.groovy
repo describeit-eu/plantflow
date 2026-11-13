@@ -393,4 +393,32 @@ end
         fork.branches[0]*.action == ['action a']
         fork.branches[1]*.action == ['action b']
     }
+
+    def 'should drop actions between an inner fork terminator and the outer fork continuation'() {
+        given: 'a nested fork with an action after the inner terminator while the outer fork is still open'
+        def lines = classify('''@startuml
+start
+fork
+  :outer 1;
+  fork
+    :inner 1;
+  end merge
+  :gap action;
+fork again
+  :outer 2;
+end merge
+end
+@enduml''')
+
+        when:
+        def diagram = builder.build(lines)
+
+        then: 'the gap action is dropped because neither a branch nor a completed fork accepts it'
+        diagram.nodes.size() == 1
+        def fork = diagram.nodes[0] as ForkNode
+        fork.branches.size() == 3
+        fork.branches[0]*.action == ['outer 1']
+        fork.branches[1]*.action == ['inner 1']
+        fork.branches[2]*.action == ['outer 2']
+    }
 }
