@@ -2,14 +2,17 @@
 start
 :init;
 fork
-  while (true)
+  repeat
     :update;
-  endwhile
+  repeat while (true) is (true)
+  -[hidden]->
+  detach
 fork again
-  while (true)
+  repeat
     :deactivate;
     :activate;
-  endwhile
-end merge
-end
+  repeat while (true) is (true)
+  -[hidden]->
+  detach
+end fork
 @enduml
