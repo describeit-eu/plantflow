@@ -105,4 +105,25 @@ class ForkJoinSupportSpec extends Specification {
         marking.getTokenCount(branch1End) == 1
         marking.getTokenCount(branch2End) == 1
     }
+
+    def 'consumeJoinInputTokens keeps the given input order when the JoinDescriptor carries no branch order'() {
+        given: 'a join descriptor built without branch-end place indexes (empty diagram order)'
+        PetriNetStructure net = buildJoinNet()
+        Transition fork = net.transitions.find { it.label == 'T_fork_1' }
+        Transition join = net.transitions.find { it.label == 'T_fork_1_join' }
+        JoinDescriptor descriptor = new JoinDescriptor(fork.index, join.index)
+        Place branch1End = net.places.find { it.label == 'P_fork_1_branch_1_end' }
+        Place branch2End = net.places.find { it.label == 'P_fork_1_branch_2_end' }
+        Marking marking = new Marking(net.places.size())
+        marking.addToken(branch1End, Token.of([branch: 'a']), 1)
+        marking.addToken(branch2End, Token.of([branch: 'b']), 1)
+
+        when: 'the join input tokens are consumed with reversed input places'
+        List<Token> consumed = ForkJoinSupport.consumeJoinInputTokens(net, descriptor, marking, [branch2End, branch1End], 1)
+
+        then: 'the tokens are consumed in the given input order because no diagram order is defined'
+        consumed*.payload == [[branch: 'b'], [branch: 'a']]
+        marking.getTokenCount(branch1End) == 0
+        marking.getTokenCount(branch2End) == 0
+    }
 }

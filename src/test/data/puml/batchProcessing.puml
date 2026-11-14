@@ -1,0 +1,23 @@
+@startuml
+
+start
+:Initialize Data Batch;
+
+repeat
+  :Fetch Next Record;
+
+  if (Record is valid?) then (yes)
+    :Process Record Data;
+    :Calculate Metrics;
+    :Write Metrics to Buffer;
+  else (no)
+    :Log Validation Error;
+  endif
+
+repeat while (More Records Available?) is (yes) not (no)
+
+:Aggregate Final Results;
+:Commit to Data Store;
+stop
+
+@enduml
