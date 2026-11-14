@@ -8,34 +8,6 @@ import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class PlantFlowComposedRepeatConditionalSpec extends Specification {
 
-    private static final String BRANCH_IN_LOOP = '''@startuml
-start
-repeat
-  :fetch;
-  if (valid?) then (yes)
-    :process;
-  else (no)
-    :reject;
-  endif
-repeat while (more?) is (yes) not (no)
-:finalize;
-end
-@enduml
-'''
-
-    private static final String LOOP_IN_BRANCH = '''@startuml
-start
-if (run loop?) then (yes)
-  repeat
-    :iterate;
-  repeat while (more?) is (yes) not (no)
-else (no)
-  :skip;
-endif
-end
-@enduml
-'''
-
     private static HandlerRegistry batchRegistry(List<String> executionLog) {
         def registry = new HandlerRegistry()
         registry.registerAction('Initialize Data Batch') { ExecutionContext ctx, Token tok ->
@@ -94,53 +66,6 @@ end
         return registry
     }
 
-    private static HandlerRegistry loopRegistry(List<String> executionLog) {
-        def registry = new HandlerRegistry()
-        registry.registerAction('fetch') { ExecutionContext ctx, Token tok ->
-            executionLog << 'fetch'
-            int remaining = (ctx.get('remaining') ?: 0) as int
-            ctx['remaining'] = remaining - 1
-            def valid = ((ctx.get('validPattern') ?: []) as List)[((ctx.get('fetched') ?: 0) as int) % 2] as boolean
-            ctx['valid'] = valid
-            int fetched = ((ctx.get('fetched') ?: 0) as int) + 1
-            ctx['fetched'] = fetched
-            return tok.withPayload(tok.payload + [fetched: fetched])
-        }
-        registry.registerAction('process') { ExecutionContext ctx, Token tok ->
-            executionLog << 'process'
-            return tok.withPayload(tok.payload + [processed: true])
-        }
-        registry.registerAction('reject') { ExecutionContext ctx, Token tok ->
-            executionLog << 'reject'
-            int rejected = ((ctx.get('rejectedCount') ?: 0) as int) + 1
-            ctx['rejectedCount'] = rejected
-            return tok.withPayload(tok.payload + [rejected: rejected])
-        }
-        registry.registerAction('finalize') { ExecutionContext ctx, Token tok ->
-            executionLog << 'finalize'
-            return tok.withPayload(tok.payload + [finalized: true])
-        }
-        registry.registerAction('iterate') { ExecutionContext ctx, Token tok ->
-            executionLog << 'iterate'
-            int remaining = (ctx.get('remaining') ?: 0) as int
-            ctx['remaining'] = remaining - 1
-            int iterations = ((ctx.get('iterations') ?: 0) as int) + 1
-            ctx['iterations'] = iterations
-            return tok.withPayload(tok.payload + [iterations: iterations])
-        }
-        registry.registerAction('skip') { ExecutionContext ctx, Token tok ->
-            executionLog << 'skip'
-            return tok.withPayload(tok.payload + [skipped: true])
-        }
-        registry.registerGuard('valid?') { ExecutionContext ctx, Token tok -> ctx.get('valid') as boolean }
-        registry.registerGuard('!(valid?)') { ExecutionContext ctx, Token tok -> !(ctx.get('valid') as boolean) }
-        registry.registerGuard('more?') { ExecutionContext ctx, Token tok -> (ctx.get('remaining') ?: 0) as int > 0 }
-        registry.registerGuard('!(more?)') { ExecutionContext ctx, Token tok -> (ctx.get('remaining') ?: 0) as int <= 0 }
-        registry.registerGuard('run loop?') { ExecutionContext ctx, Token tok -> ctx.get('runLoop') as boolean }
-        registry.registerGuard('!(run loop?)') { ExecutionContext ctx, Token tok -> !(ctx.get('runLoop') as boolean) }
-        return registry
-    }
-
     def 'batchProcessing.puml runs end-to-end via PlantFlow.from() and runUntilEnd()'() {
         given:
         def executionLog = []
@@ -176,7 +101,7 @@ end
     def 'branch-inside-loop branches correctly on each iteration'() {
         given: 'alternating validity across four iterations'
         def executionLog = []
-        def engine = PlantFlow.from(BRANCH_IN_LOOP, loopRegistry(executionLog))
+        def engine = PlantFlow.from(branchInLoopPuml(), composedLoopRegistry(executionLog))
 
         when:
         engine.runUntilEnd(Token.of(), new ExecutionContext([remaining: 4, validPattern: [true, false, true, false]]))
@@ -191,7 +116,7 @@ end
     def 'loop-inside-branch executes the correct number of iterations'() {
         given:
         def executionLog = []
-        def engine = PlantFlow.from(LOOP_IN_BRANCH, loopRegistry(executionLog))
+        def engine = PlantFlow.from(loopInBranchPuml(), composedLoopRegistry(executionLog))
 
         when:
         engine.runUntilEnd(Token.of(), new ExecutionContext([runLoop: true, remaining: 3]))
@@ -204,7 +129,7 @@ end
 
         when: 'the branch guard is false'
         executionLog.clear()
-        def engine2 = PlantFlow.from(LOOP_IN_BRANCH, loopRegistry(executionLog))
+        def engine2 = PlantFlow.from(loopInBranchPuml(), composedLoopRegistry(executionLog))
         engine2.runUntilEnd(Token.of(), new ExecutionContext([runLoop: false, remaining: 3]))
 
         then:
@@ -215,8 +140,8 @@ end
 
     def 'per-Marking isolation holds for a composed diagram: a copied in-progress marking evolves independently'() {
         given: 'an engine for the branch-inside-loop diagram and a marking inside the first iteration'
-        def registry = loopRegistry([])
-        def engine = PlantFlow.from(BRANCH_IN_LOOP, registry)
+        def registry = composedLoopRegistry([])
+        def engine = PlantFlow.from(branchInLoopPuml(), registry)
         def marking = new Marking(engine.petriNet.places.size())
         marking.addToken(engine.petriNet.startPlace, Token.of())
         def context = new ExecutionContext([remaining: 2, validPattern: [true, true]])

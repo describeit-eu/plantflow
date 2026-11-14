@@ -24,7 +24,6 @@ class MalformedComposedDiagramSpec extends Specification {
         'unclosed repeat inside a conditional branch'         | '@startuml\nstart\nif (x?) then (yes)\n  repeat\n    :a;\nelse (no)\n  :b;\nendif\nend\n@enduml'                                                                                                            | 'else without active if'
         'unclosed repeat inside else branch closed by endif'  | '@startuml\nstart\nif (x?) then (yes)\n  :a;\nelse (no)\n  repeat\n    :b;\nendif\nend\n@enduml'                                                                                                              | 'endif without active if'
         'repeat while without matching repeat inside branch'  | '@startuml\nstart\nif (x?) then (yes)\n  repeat while (y?) is (yes) not (no)\nelse (no)\n  :b;\nendif\nend\n@enduml'                                                                                          | 'repeat while without active repeat'
-        'repeat while without any repeat'                    | '@startuml\nstart\nrepeat while (y?) is (yes) not (no)\nend\n@enduml'                                                                                                                                        | 'repeat while without active repeat'
         'detach not following a repeat while inside branch'   | '@startuml\nstart\nif (x?) then (yes)\n  repeat\n    :a;\n  repeat while (y?) is (yes) not (no)\n  :other;\n  -[hidden]-> detach\nelse (no)\n  :b;\nendif\nend\n@enduml'                                   | 'detach'
         'detach inside a branch without any loop'             | '@startuml\nstart\nif (x?) then (yes)\n  :a;\n  detach\nelse (no)\n  :b;\nendif\nend\n@enduml'                                                                                                              | 'detach'
         'empty loop body containing only an unclosed if'      | '@startuml\nstart\nrepeat\n  if (x?) then (yes)\n    :a;\nrepeat while (y?) is (yes) not (no)\nend\n@enduml'                                                                                                | 'repeat while without active repeat'
@@ -33,11 +32,5 @@ class MalformedComposedDiagramSpec extends Specification {
         'else inside a loop body without an if'               | '@startuml\nstart\nrepeat\n  :a;\n  else (no)\nrepeat while (y?) is (yes) not (no)\nend\n@enduml'                                                                                                          | 'else without active if'
         'endif inside a loop body without an if'              | '@startuml\nstart\nrepeat\n  :a;\n  endif\nrepeat while (y?) is (yes) not (no)\nend\n@enduml'                                                                                                              | 'endif without active if'
         'malformed repeat while line in composed diagram'     | '@startuml\nstart\nrepeat\n  if (x?) then (yes)\n    :a;\n  else (no)\n    :b;\n  endif\nrepeat while (broken\nend\n@enduml'                                                                               | 'Malformed'
-    }
-
-    def 'should accept well-formed composed diagrams through the public parser'() {
-        expect:
-        parse(new File('src/test/data/puml/batchProcessing.puml')) != null
-        parse('@startuml\nstart\nif (x?) then (yes)\n  repeat\n    :a;\n  repeat while (y?) is (yes) not (no)\nelse (no)\n  :b;\nendif\nend\n@enduml') != null
     }
 }

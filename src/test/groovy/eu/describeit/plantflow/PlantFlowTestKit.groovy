@@ -121,6 +121,68 @@ class PlantFlowTestKit {
         return registry
     }
 
+    /**
+     * Creates a HandlerRegistry for the composed repeat+conditional diagrams
+     * (branchInLoopPuml, loopInBranchPuml, loopInElseBranchPuml). Actions append
+     * their name to the given execution log and record counters in the context.
+     */
+    static HandlerRegistry composedLoopRegistry(List<String> executionLog) {
+        def registry = new HandlerRegistry()
+        registry.registerAction('fetch') { ExecutionContext ctx, Token tok ->
+            executionLog << 'fetch'
+            int remaining = (ctx.get('remaining') ?: 0) as int
+            ctx['remaining'] = remaining - 1
+            def valid = ((ctx.get('validPattern') ?: []) as List)[((ctx.get('fetched') ?: 0) as int) % 2] as boolean
+            ctx['valid'] = valid
+            int fetched = ((ctx.get('fetched') ?: 0) as int) + 1
+            ctx['fetched'] = fetched
+            return tok.withPayload(tok.payload + ([fetched: fetched] as Map<String, Object>))
+        }
+        registry.registerAction('process') { ExecutionContext ctx, Token tok ->
+            executionLog << 'process'
+            return tok.withPayload(tok.payload + ([processed: true] as Map<String, Object>))
+        }
+        registry.registerAction('reject') { ExecutionContext ctx, Token tok ->
+            executionLog << 'reject'
+            int rejected = ((ctx.get('rejectedCount') ?: 0) as int) + 1
+            ctx['rejectedCount'] = rejected
+            return tok.withPayload(tok.payload + ([rejected: rejected] as Map<String, Object>))
+        }
+        registry.registerAction('finalize') { ExecutionContext ctx, Token tok ->
+            executionLog << 'finalize'
+            return tok.withPayload(tok.payload + ([finalized: true] as Map<String, Object>))
+        }
+        registry.registerAction('iterate') { ExecutionContext ctx, Token tok ->
+            executionLog << 'iterate'
+            int remaining = (ctx.get('remaining') ?: 0) as int
+            ctx['remaining'] = remaining - 1
+            int iterations = ((ctx.get('iterations') ?: 0) as int) + 1
+            ctx['iterations'] = iterations
+            return tok.withPayload(tok.payload + ([iterations: iterations] as Map<String, Object>))
+        }
+        registry.registerAction('skip') { ExecutionContext ctx, Token tok ->
+            executionLog << 'skip'
+            return tok.withPayload(tok.payload + ([skipped: true] as Map<String, Object>))
+        }
+        registry.registerAction('plain') { ExecutionContext ctx, Token tok ->
+            executionLog << 'plain'
+            return tok.withPayload(tok.payload + ([plain: true] as Map<String, Object>))
+        }
+        registry.registerAction('after') { ExecutionContext ctx, Token tok ->
+            executionLog << 'after'
+            return tok.withPayload(tok.payload + ([after: true] as Map<String, Object>))
+        }
+        registry.registerGuard('valid?') { ExecutionContext ctx, Token tok -> ctx.get('valid') as boolean }
+        registry.registerGuard('!(valid?)') { ExecutionContext ctx, Token tok -> !(ctx.get('valid') as boolean) }
+        registry.registerGuard('more?') { ExecutionContext ctx, Token tok -> (ctx.get('remaining') ?: 0) as int > 0 }
+        registry.registerGuard('!(more?)') { ExecutionContext ctx, Token tok -> (ctx.get('remaining') ?: 0) as int <= 0 }
+        registry.registerGuard('run loop?') { ExecutionContext ctx, Token tok -> ctx.get('runLoop') as boolean }
+        registry.registerGuard('!(run loop?)') { ExecutionContext ctx, Token tok -> !(ctx.get('runLoop') as boolean) }
+        registry.registerGuard('skip loop?') { ExecutionContext ctx, Token tok -> ctx.get('skipLoop') as boolean }
+        registry.registerGuard('!(skip loop?)') { ExecutionContext ctx, Token tok -> !(ctx.get('skipLoop') as boolean) }
+        return registry
+    }
+
     // ==================== Context Factory ====================
 
     /**
@@ -268,6 +330,62 @@ end
         sb << 'end\n'
         sb << '@enduml\n'
         return sb.toString()
+    }
+
+    /**
+     * Creates a composed diagram PlantUML string with a conditional inside a repeat loop body.
+     */
+    static String branchInLoopPuml() {
+        return '''@startuml
+start
+repeat
+  :fetch;
+  if (valid?) then (yes)
+    :process;
+  else (no)
+    :reject;
+  endif
+repeat while (more?) is (yes) not (no)
+:finalize;
+end
+@enduml
+'''
+    }
+
+    /**
+     * Creates a composed diagram PlantUML string with a repeat loop inside the then branch.
+     */
+    static String loopInBranchPuml() {
+        return '''@startuml
+start
+if (run loop?) then (yes)
+  repeat
+    :iterate;
+  repeat while (more?) is (yes) not (no)
+else (no)
+  :skip;
+endif
+end
+@enduml
+'''
+    }
+
+    /**
+     * Creates a composed diagram PlantUML string with a repeat loop inside the else branch.
+     */
+    static String loopInElseBranchPuml() {
+        return '''@startuml
+start
+if (skip loop?) then (yes)
+  :plain;
+else (no)
+  repeat
+    :iterate;
+  repeat while (more?) is (yes) not (no)
+endif
+end
+@enduml
+'''
     }
 
     // ==================== Parser Helpers ====================

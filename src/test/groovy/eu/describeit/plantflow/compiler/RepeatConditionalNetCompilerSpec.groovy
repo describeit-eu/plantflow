@@ -1,34 +1,15 @@
 package eu.describeit.plantflow.compiler
 
-import eu.describeit.plantflow.ExecutionContext
-import eu.describeit.plantflow.HandlerRegistry
-import eu.describeit.plantflow.PlantFlow
 import eu.describeit.plantflow.engine.PetriNetStructure
-import eu.describeit.plantflow.engine.Token
 import spock.lang.Specification
 
 import static eu.describeit.plantflow.PlantFlowTestKit.*
 
 class RepeatConditionalNetCompilerSpec extends Specification {
 
-    private static final String COMPOSED_PUML = '''@startuml
-start
-repeat
-  :fetch;
-  if (valid?) then (yes)
-    :process;
-  else (no)
-    :log;
-  endif
-repeat while (more?) is (yes) not (no)
-:done;
-end
-@enduml
-'''
-
     def 'should compile conditional inside loop body with a decision place and two guarded branch transitions'() {
         when:
-        PetriNetStructure net = parse(COMPOSED_PUML)
+        PetriNetStructure net = parse(branchInLoopPuml())
 
         then:
         def decision = findPlaceByLabel(net, 'P_repeat_1_if_1_decision')
@@ -53,7 +34,7 @@ end
 
     def 'should converge both conditional branches at the loop decision place'() {
         when:
-        PetriNetStructure net = parse(COMPOSED_PUML)
+        PetriNetStructure net = parse(branchInLoopPuml())
 
         then:
         def loopDecision = findPlaceByLabel(net, 'P_repeat_1_decision')
@@ -65,9 +46,9 @@ end
         net.incidenceMatrix.getOutputWeight(loopDecision.index, process.index) == 1
 
         and: 'the else branch action leads into the loop decision place'
-        def log = findTransitionByAction(net, 'log')
-        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_repeat_1_if_1_else').index, log.index) == 1
-        net.incidenceMatrix.getOutputWeight(loopDecision.index, log.index) == 1
+        def reject = findTransitionByAction(net, 'reject')
+        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_repeat_1_if_1_else').index, reject.index) == 1
+        net.incidenceMatrix.getOutputWeight(loopDecision.index, reject.index) == 1
 
         and: 'the loop structure is intact'
         verifyRepeatLoopStructure(net, 'more?')
@@ -96,53 +77,4 @@ end
         }
     }
 
-    def 'should execute a conditional inside a loop body with correct iteration count and token payload'() {
-        given:
-        def bodyLog = []
-        def registry = new HandlerRegistry()
-        registry.registerAction('fetch') { ExecutionContext ctx, Token tok ->
-            bodyLog << 'fetch'
-            int remaining = (ctx.get('remaining') ?: 0) as int
-            ctx['remaining'] = remaining - 1
-            int iterations = ((ctx.get('iterations') ?: 0) as int) + 1
-            ctx['iterations'] = iterations
-            return tok.withPayload(tok.payload + [fetchCount: iterations])
-        }
-        registry.registerAction('process') { ExecutionContext ctx, Token tok ->
-            bodyLog << 'process'
-            return tok.withPayload(tok.payload + [processed: true])
-        }
-        registry.registerAction('log') { ExecutionContext ctx, Token tok ->
-            bodyLog << 'log'
-            return tok.withPayload(tok.payload + [logged: true])
-        }
-        registry.registerAction('done') { ExecutionContext ctx, Token tok ->
-            return tok.withPayload(tok.payload + [done: true])
-        }
-        registry.registerGuard('valid?') { ExecutionContext ctx, Token tok -> ctx.get('valid') as boolean }
-        registry.registerGuard('!(valid?)') { ExecutionContext ctx, Token tok -> !(ctx.get('valid') as boolean) }
-        registry.registerGuard('more?') { ExecutionContext ctx, Token tok -> (ctx.get('remaining') ?: 0) as int > 0 }
-        registry.registerGuard('!(more?)') { ExecutionContext ctx, Token tok -> (ctx.get('remaining') ?: 0) as int <= 0 }
-
-        when: 'running two iterations where every record is valid'
-        def engine = PlantFlow.from(COMPOSED_PUML, registry)
-        engine.runUntilEnd(Token.of(), new ExecutionContext([remaining: 2, valid: true]))
-
-        then:
-        engine.isCompleted()
-        engine.executionContext['iterations'] == 2
-        bodyLog == ['fetch', 'process', 'fetch', 'process']
-        verifyEndTokenPayload(engine, [fetchCount: 2, processed: true, done: true])
-
-        when: 'running two iterations where no record is valid'
-        bodyLog.clear()
-        def engine2 = PlantFlow.from(COMPOSED_PUML, registry)
-        engine2.runUntilEnd(Token.of(), new ExecutionContext([remaining: 2, valid: false]))
-
-        then:
-        engine2.isCompleted()
-        engine2.executionContext['iterations'] == 2
-        bodyLog == ['fetch', 'log', 'fetch', 'log']
-        verifyEndTokenPayload(engine2, [fetchCount: 2, logged: true, done: true])
-    }
 }

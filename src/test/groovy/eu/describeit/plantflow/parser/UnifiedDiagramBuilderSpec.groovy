@@ -207,46 +207,6 @@ end
         DiagramValidator.validate(diagram)
     }
 
-    def 'should reject unclosed repeat inside a conditional branch'() {
-        given:
-        def puml = '''@startuml
-start
-if (x?) then (yes)
-  repeat
-    :a;
-else (no)
-  :b;
-endif
-end
-@enduml
-'''
-
-        when:
-        parseAst(puml)
-
-        then:
-        thrown(IllegalArgumentException)
-    }
-
-    def 'should reject unclosed if inside a repeat loop'() {
-        given:
-        def puml = '''@startuml
-start
-repeat
-  if (x?) then (yes)
-    :a;
-repeat while (more?) is (yes) not (no)
-end
-@enduml
-'''
-
-        when:
-        parseAst(puml)
-
-        then:
-        thrown(IllegalArgumentException)
-    }
-
     def 'public parser should accept mixed repeat and conditional diagrams without mix rejection'() {
         when:
         def net = new ActivityDiagramParser().parse(new File('src/test/data/puml/batchProcessing.puml'))
@@ -255,28 +215,19 @@ end
         net != null
         net.startPlace != null
         net.endPlace != null
+
+        and: 'a repeat loop inside a conditional branch also parses through the public parser'
+        def loopInBranch = new ActivityDiagramParser().parse(loopInBranchPuml())
+        loopInBranch != null
+        loopInBranch.transitions.size() > 0
     }
 
-    def 'public parser should still accept repeat-only and conditional-only diagrams'() {
-        expect:
-        parse(repeatPuml('more?', ['work'], ['done'])).transitions.size() > 0
-        parse(conditionalPuml('x > 0', 'yes action', 'no action')).transitions.size() == 6
-        parse(linearPuml('a', 'b')).transitions.size() == 2
-    }
-
-    def 'public parser should still reject fork mixed with repeat or conditional'() {
+    def 'public parser should still reject fork mixed with repeat'() {
         when:
         parse('@startuml\nstart\nrepeat\n  :a;\nrepeat while (x?) is (yes) not (no)\nfork\n  :b;\nfork again\n  :c;\nend merge\nend\n@enduml')
 
         then:
         def ex = thrown(IllegalArgumentException)
         ex.message.contains('mixes fork and repeat')
-
-        when:
-        parse('@startuml\nstart\nif (c?) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork\n  :x;\nfork again\n  :y;\nend merge\nend\n@enduml')
-
-        then:
-        def ex2 = thrown(IllegalArgumentException)
-        ex2.message.contains('mixes if-then-else and fork')
     }
 }

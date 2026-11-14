@@ -257,17 +257,4 @@ class PlantFlowRepeatLoopSpec extends Specification {
         marking.getTokenCount(resumed.petriNet.endPlace) == 0
     }
 
-    // ==================== Regression: malformed terminator rejection ====================
-
-    def 'malformed repeat terminator is still rejected through the public API'() {
-        given:
-        def puml = '@startuml\nstart\nrepeat\n  :a;\nrepeat while (broken\nend\n@enduml'
-
-        when:
-        PlantFlow.from(puml, new HandlerRegistry())
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message.contains('Malformed')
-    }
 }
