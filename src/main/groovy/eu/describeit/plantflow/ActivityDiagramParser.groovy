@@ -4,13 +4,10 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.compiler.DiagramCompiler
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.parser.ClassifiedLine
-import eu.describeit.plantflow.parser.ConditionalDiagramBuilder
 import eu.describeit.plantflow.parser.DiagramBuilder
 import eu.describeit.plantflow.parser.ForkDiagramBuilder
 import eu.describeit.plantflow.parser.LineType
-import eu.describeit.plantflow.parser.LinearDiagramBuilder
 import eu.describeit.plantflow.parser.PumlLineClassifier
-import eu.describeit.plantflow.parser.RepeatDiagramBuilder
 import eu.describeit.plantflow.parser.UnifiedDiagramBuilder
 import groovy.transform.CompileStatic
 
@@ -50,15 +47,11 @@ class ActivityDiagramParser {
 
     private static DiagramBuilder selectBuilder(List<ClassifiedLine> lines) {
         boolean hasConditional = lines.any { ClassifiedLine line -> line.type == LineType.IF }
-        boolean hasConditionalTerminators = lines.any { ClassifiedLine line -> line.type in [LineType.ELSE, LineType.ENDIF] }
         boolean hasForkLines = lines.any { ClassifiedLine line -> line.type in [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE, LineType.END_FORK] }
         boolean hasRepeatLines = lines.any { ClassifiedLine line -> line.type in [LineType.REPEAT, LineType.REPEAT_WHILE, LineType.DETACH] }
         rejectUnsupportedMixes(hasConditional, hasForkLines, hasRepeatLines)
-        if ((hasConditional || hasConditionalTerminators) && hasRepeatLines) return new UnifiedDiagramBuilder()
-        if (hasConditional) return new ConditionalDiagramBuilder()
         if (hasForkLines) return new ForkDiagramBuilder()
-        if (hasRepeatLines) return new RepeatDiagramBuilder()
-        return new LinearDiagramBuilder()
+        return new UnifiedDiagramBuilder()
     }
 
     private static void rejectUnsupportedMixes(boolean hasConditional, boolean hasForkLines, boolean hasRepeatLines) {
