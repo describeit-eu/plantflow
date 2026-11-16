@@ -118,16 +118,98 @@ class ChainNetCompilerSpec extends Specification {
         ex.message == 'Diagram must contain at least one action transition'
     }
 
-    def 'should throw for an unsupported fork node inside a chain'() {
+    def 'should compile a fork node inside a chain with pre and post actions in order'() {
         given:
-        def fork = new ForkNode([[action('b1')], [action('b2')]] as List<List<eu.describeit.plantflow.ast.ActivityNode>>)
-        def diagram = diagram(true, true, [action('pre'), fork])
+        def fork = new ForkNode([[action('b1')], [action('b2')]] as List<List<eu.describeit.plantflow.ast.ActivityNode>>, true)
+        def diagram = diagram(true, true, [action('pre'), fork, action('post')])
+
+        when:
+        PetriNetStructure net = compiler.compile(diagram)
+
+        then: 'the fork takes id 1 from the shared counter and all actions compile'
+        findTransitionByLabel(net, 'T_fork_1') != null
+        findTransitionByLabel(net, 'T_fork_1_join') != null
+        net.transitions*.actionKey.containsAll(['pre', 'b1', 'b2', 'post'])
+
+        and: 'the pre action feeds the fork and the post action follows the join place'
+        def pre = findTransitionByAction(net, 'pre')
+        def forkTransition = findTransitionByLabel(net, 'T_fork_1')
+        net.incidenceMatrix.getOutputWeight(findPlaceByLabel(net, 'P_1').index, pre.index) == 1
+        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_1').index, forkTransition.index) == 1
+        def post = findTransitionByAction(net, 'post')
+        def joinPlace = findPlaceByLabel(net, 'P_fork_1_join')
+        net.incidenceMatrix.getInputWeight(joinPlace.index, post.index) == 1
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, post.index) == 1
+
+        and: 'a JoinDescriptor correlates the join with the fork transition'
+        net.joinDescriptors.size() == 1
+        net.joinDescriptors[0].forkTransitionIndex == forkTransition.index
+        net.joinDescriptors[0].branchEndPlaceIndexes.size() == 2
+    }
+
+    def 'should compile sequential forks with distinct naming context ids'() {
+        given:
+        def fork1 = new ForkNode([[action('a')], [action('b')]] as List<List<eu.describeit.plantflow.ast.ActivityNode>>, true)
+        def fork2 = new ForkNode([[action('c')], [action('d')]] as List<List<eu.describeit.plantflow.ast.ActivityNode>>, true)
+        def diagram = diagram(true, true, [fork1, fork2])
+
+        when:
+        PetriNetStructure net = compiler.compile(diagram)
+
+        then: 'both forks compile with their own id and all four branch actions exist'
+        findTransitionByLabel(net, 'T_fork_1') != null
+        findTransitionByLabel(net, 'T_fork_2') != null
+        findTransitionByLabel(net, 'T_fork_2_to_end') != null
+        net.transitions*.actionKey.containsAll(['a', 'b', 'c', 'd'])
+
+        and: 'the first fork join place feeds the second fork transition'
+        def joinPlace1 = findPlaceByLabel(net, 'P_fork_1_join')
+        def forkTransition2 = findTransitionByLabel(net, 'T_fork_2')
+        net.incidenceMatrix.getInputWeight(joinPlace1.index, forkTransition2.index) == 1
+
+        and: 'each fork has its own join descriptor'
+        net.joinDescriptors.size() == 2
+    }
+
+    def 'should compile a nested fork inside a fork branch as a real nested ForkNode structure'() {
+        given:
+        def inner = new ForkNode([[action('i1')], [action('i2')]] as List<List<eu.describeit.plantflow.ast.ActivityNode>>, true)
+        def outer = new ForkNode([
+            [action('a'), inner, action('a3')],
+            [action('b')],
+        ] as List<List<eu.describeit.plantflow.ast.ActivityNode>>, true)
+        def diagram = diagram(true, true, [outer, action('after')])
+
+        when:
+        PetriNetStructure net = compiler.compile(diagram)
+
+        then: 'outer fork is id 1 with a join descriptor, inner fork is id 2 without one (tag-transparent)'
+        findTransitionByLabel(net, 'T_fork_1') != null
+        findTransitionByLabel(net, 'T_fork_2') != null
+        findTransitionByLabel(net, 'T_fork_2_join') != null
+        net.joinDescriptors.size() == 1
+        net.joinDescriptors[0].forkTransitionIndex == findTransitionByLabel(net, 'T_fork_1').index
+        net.forkDescriptors.isEmpty()
+        net.transitions*.actionKey.containsAll(['a', 'i1', 'i2', 'a3', 'b', 'after'])
+
+        and: 'the action after the inner join stays in the outer branch before its branch end'
+        def a3 = findTransitionByAction(net, 'a3')
+        def branch1End = findPlaceByLabel(net, 'P_fork_1_branch_1_end')
+        net.incidenceMatrix.getOutputWeight(branch1End.index, a3.index) == 1
+        def innerJoinPlace = findPlaceByLabel(net, 'P_fork_2_join')
+        net.incidenceMatrix.getInputWeight(innerJoinPlace.index, a3.index) == 1
+    }
+
+    def 'should throw for an empty fork branch inside a chain'() {
+        given:
+        def fork = new ForkNode([[action('b1')], []] as List<List<eu.describeit.plantflow.ast.ActivityNode>>)
+        def diagram = diagram(true, true, [fork])
 
         when:
         compiler.compile(diagram)
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message.startsWith('Unsupported node type in chain: ')
+        ex.message == 'Fork branch must contain at least one action'
     }
 }

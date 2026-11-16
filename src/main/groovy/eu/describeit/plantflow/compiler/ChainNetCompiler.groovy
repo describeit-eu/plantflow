@@ -4,7 +4,10 @@ import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.ast.RepeatNode
+import eu.describeit.plantflow.engine.ForkDescriptor
+import eu.describeit.plantflow.engine.JoinDescriptor
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
@@ -13,10 +16,19 @@ import groovy.transform.CompileStatic
 
 /**
  * Recursive chain compiler: walks a node list and compiles Action, Conditional,
- * and Repeat nodes uniformly at any depth. Sequential nodes execute as one chain
- * in written order; a ConditionalNode's branches and a RepeatNode's body are
- * themselves compiled as chains. All labels are drawn from one shared
- * {@link NamingContext} so they stay unique at any depth.
+ * Repeat, and Fork nodes uniformly at any depth. Sequential nodes execute as one
+ * chain in written order; a ConditionalNode's branches, a RepeatNode's body, and
+ * a ForkNode's Parallel Branches are themselves compiled as chains. All labels are
+ * drawn from one shared {@link NamingContext} so they stay unique at any depth.
+ *
+ * Forks reuse the per-activation ForkDescriptor/JoinDescriptor machinery: the
+ * fork transition of a top-level fork (not nested inside another fork's branch)
+ * registers one activation per firing, a Join (`end fork`) waits for all Parallel
+ * Branches of that activation, and a Merge (`end merge`) continues once on the
+ * first completed branch. A fork nested inside another fork's branch is compiled
+ * tag-transparent (plain fork transition and plain terminator transitions, no
+ * descriptors) so the tokens keep the enclosing fork's activation id and the
+ * enclosing Join/Merge can still correlate its branch-end tokens.
  */
 @CompileStatic
 class ChainNetCompiler {
@@ -25,6 +37,7 @@ class ChainNetCompiler {
     private static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
     private static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
     private static final String ERR_REPEAT_BODY_EMPTY = 'Repeat loop body must contain at least one action'
+    private static final String ERR_FORK_BRANCH_EMPTY = 'Fork branch must contain at least one action'
     private static final String ERR_UNSUPPORTED_NODE = 'Unsupported node type in chain: '
     private static final String BRANCH_PLACE_SEPARATOR = '_'
 
@@ -35,7 +48,7 @@ class ChainNetCompiler {
         }
         PetriNetBuilder builder = new PetriNetBuilder()
         Place startPlace = builder.addPlace(NetLabeling.PLACE_START)
-        ChainContext ctx = new ChainContext(builder, new NamingContext(), NetLabeling.PREFIX_INTERMEDIATE_PLACE)
+        ChainContext ctx = new ChainContext(builder, new NamingContext(), NetLabeling.PREFIX_INTERMEDIATE_PLACE, null)
         // a null toPlace at the top level creates the end place lazily, so it
         // is appended after all chain intermediate places
         compileChain(ctx, nodes, startPlace, null)
@@ -51,6 +64,12 @@ class ChainNetCompiler {
         for (int i = 0; i < nodes.size(); i++) {
             ActivityNode node = nodes.get(i)
             boolean last = i == nodes.size() - 1
+            if (node instanceof ForkNode) {
+                // a fork compiles its own continuation place and, when it is the
+                // last node of the chain, connects it to the chain target itself
+                currentPlace = compileFork(ctx, (ForkNode) node, currentPlace, last, toPlace)
+                continue
+            }
             Place nextPlace = last ?
                 (toPlace != null ? toPlace : ctx.builder.addPlace(NetLabeling.PLACE_END)) :
                 ctx.builder.addPlace(ctx.placePrefix + (++index))
@@ -131,19 +150,125 @@ class ChainNetCompiler {
         }
     }
 
+    /**
+     * Compiles a ForkNode at any depth. Returns the place from which the chain
+     * continues: the fork's own continuation place when the fork is not the last
+     * chain node (the next node consumes from it directly), or the chain target
+     * when it is the last node (connected via a fork to-end transition).
+     */
+    private Place compileFork(ChainContext ctx, ForkNode node, Place fromPlace, boolean last, Place toPlace) {
+        validateForkBranches(node)
+        int id = ctx.naming.nextConstructId()
+        PetriNetBuilder builder = ctx.builder
+        // a fork nested inside another fork's branch is tag-transparent: it keeps
+        // the enclosing fork's activation on its tokens so the enclosing Join/Merge
+        // stays correlated; only top-level forks register their own activations
+        boolean nestedInForkBranch = ctx.enclosingForkTransitionIndex != null
+        Transition forkTransition = builder.addTransition(ctx.naming.forkTransition(id))
+        builder.connect(fromPlace, forkTransition)
+
+        Integer branchEnclosingFork = nestedInForkBranch ?
+            ctx.enclosingForkTransitionIndex : forkTransition.index
+        List<Place> branchEndPlaces = compileForkBranches(ctx, node, id, forkTransition, branchEnclosingFork)
+
+        Place continuationPlace = node.synchronizingJoin ?
+            connectJoin(ctx, id, forkTransition, branchEndPlaces, nestedInForkBranch) :
+            connectMerge(ctx, id, forkTransition, branchEndPlaces, nestedInForkBranch)
+
+        if (!last) {
+            return continuationPlace
+        }
+        return connectForkToTarget(ctx, id, continuationPlace, toPlace)
+    }
+
+    private void validateForkBranches(ForkNode node) {
+        if (node.branches == null || node.branches.isEmpty()) {
+            throw new IllegalArgumentException(ERR_FORK_BRANCH_EMPTY)
+        }
+        for (List<ActivityNode> branch : node.branches) {
+            if (branch == null || branch.isEmpty()) {
+                throw new IllegalArgumentException(ERR_FORK_BRANCH_EMPTY)
+            }
+        }
+    }
+
+    private List<Place> compileForkBranches(ChainContext ctx, ForkNode node, int id, Transition forkTransition, Integer branchEnclosingFork) {
+        PetriNetBuilder builder = ctx.builder
+        ChainContext branchCtx = ctx.withEnclosingFork(branchEnclosingFork)
+        List<Place> branchEndPlaces = []
+        int branchNumber = 0
+        for (List<ActivityNode> branch : node.branches) {
+            branchNumber++
+            Place branchStart = builder.addPlace(ctx.naming.forkBranchPlace(id, branchNumber))
+            builder.connect(forkTransition, branchStart)
+            Place branchEnd = builder.addPlace(ctx.naming.forkBranchEndPlace(id, branchNumber))
+            compileChain(branchCtx.withPlacePrefix(ctx.naming.forkBranchPlace(id, branchNumber) + BRANCH_PLACE_SEPARATOR),
+                branch, branchStart, branchEnd)
+            branchEndPlaces.add(branchEnd)
+        }
+        return branchEndPlaces
+    }
+
+    private Place connectForkToTarget(ChainContext ctx, int id, Place continuationPlace, Place toPlace) {
+        PetriNetBuilder builder = ctx.builder
+        Place target = toPlace != null ? toPlace : builder.addPlace(NetLabeling.PLACE_END)
+        Transition toEnd = builder.addTransition(ctx.naming.forkToEndTransition(id))
+        builder.connect(continuationPlace, toEnd)
+        builder.connect(toEnd, target)
+        return target
+    }
+
+    private Place connectJoin(ChainContext ctx, int id, Transition forkTransition, List<Place> branchEndPlaces, boolean nestedInForkBranch) {
+        PetriNetBuilder builder = ctx.builder
+        Place joinPlace = builder.addPlace(ctx.naming.forkJoinPlace(id))
+        Transition joinTransition = builder.addTransition(ctx.naming.forkJoinTransition(id))
+        for (Place branchEnd : branchEndPlaces) {
+            builder.connect(branchEnd, joinTransition)
+        }
+        builder.connect(joinTransition, joinPlace)
+        if (!nestedInForkBranch) {
+            builder.addJoinDescriptor(new JoinDescriptor(forkTransition.index, joinTransition.index, branchEndPlaces*.index))
+        }
+        return joinPlace
+    }
+
+    private Place connectMerge(ChainContext ctx, int id, Transition forkTransition, List<Place> branchEndPlaces, boolean nestedInForkBranch) {
+        PetriNetBuilder builder = ctx.builder
+        Place mergePlace = builder.addPlace(ctx.naming.forkMergePlace(id))
+        List<Integer> mergeTransitionIndexes = []
+        int branchNumber = 0
+        for (Place branchEnd : branchEndPlaces) {
+            branchNumber++
+            Transition mergeTransition = builder.addTransition(ctx.naming.forkMergeTransition(id, branchNumber))
+            builder.connect(branchEnd, mergeTransition)
+            builder.connect(mergeTransition, mergePlace)
+            mergeTransitionIndexes.add(mergeTransition.index)
+        }
+        if (!nestedInForkBranch) {
+            builder.addForkDescriptor(new ForkDescriptor(forkTransition.index, mergeTransitionIndexes))
+        }
+        return mergePlace
+    }
+
     private static class ChainContext {
         final PetriNetBuilder builder
         final NamingContext naming
         final String placePrefix
+        final Integer enclosingForkTransitionIndex
 
-        ChainContext(PetriNetBuilder builder, NamingContext naming, String placePrefix) {
+        ChainContext(PetriNetBuilder builder, NamingContext naming, String placePrefix, Integer enclosingForkTransitionIndex) {
             this.builder = builder
             this.naming = naming
             this.placePrefix = placePrefix
+            this.enclosingForkTransitionIndex = enclosingForkTransitionIndex
         }
 
         ChainContext withPlacePrefix(String prefix) {
-            return new ChainContext(builder, naming, prefix)
+            return new ChainContext(builder, naming, prefix, enclosingForkTransitionIndex)
+        }
+
+        ChainContext withEnclosingFork(Integer forkTransitionIndex) {
+            return new ChainContext(builder, naming, placePrefix, forkTransitionIndex)
         }
     }
 }

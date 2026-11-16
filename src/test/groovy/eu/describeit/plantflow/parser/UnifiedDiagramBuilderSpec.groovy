@@ -5,8 +5,10 @@ import eu.describeit.plantflow.DiagramValidator
 import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ConditionalNode
+import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.ast.RepeatNode
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static eu.describeit.plantflow.PlantFlowTestKit.*
 
@@ -222,12 +224,164 @@ end
         loopInBranch.transitions.size() > 0
     }
 
-    def 'public parser should still reject fork mixed with repeat'() {
+    def 'public parser should accept fork mixed with repeat and conditional without mix rejection'() {
         when:
-        parse('@startuml\nstart\nrepeat\n  :a;\nrepeat while (x?) is (yes) not (no)\nfork\n  :b;\nfork again\n  :c;\nend merge\nend\n@enduml')
+        def net = parse('@startuml\nstart\nrepeat\n  :a;\nrepeat while (x?) is (yes) not (no)\nfork\n  :b;\nfork again\n  :c;\nend merge\nend\n@enduml')
+
+        then:
+        net != null
+        net.transitions.find { it.actionKey == 'a' } != null
+        net.transitions.find { it.actionKey == 'b' } != null
+        net.transitions.find { it.actionKey == 'c' } != null
+
+        and: 'a fork inside a conditional branch also parses through the public parser'
+        def forkInIf = parse('''@startuml
+start
+if (g?) then (yes)
+  fork
+    :b;
+  fork again
+    :c;
+  end fork
+else (no)
+  :d;
+endif
+end
+@enduml
+''')
+        forkInIf.transitions.find { it.actionKey == 'b' } != null
+        forkInIf.transitions.find { it.actionKey == 'c' } != null
+        forkInIf.transitions.find { it.actionKey == 'd' } != null
+    }
+
+    def 'should parse a nested fork inside a fork branch as a real nested ForkNode'() {
+        given:
+        def puml = '''@startuml
+start
+fork
+  :outer 1;
+  fork
+    :inner 1;
+  fork again
+    :inner 2;
+  end fork
+  :outer 1 tail;
+fork again
+  :outer 2;
+end fork
+end
+@enduml
+'''
+
+        when:
+        ActivityDiagram diagram = parseAst(puml)
+
+        then:
+        diagram.hasFork
+        diagram.hasEndFork
+        diagram.nodes.size() == 1
+        def outer = diagram.nodes[0] as ForkNode
+        outer.synchronizingJoin
+        outer.branches.size() == 2
+        outer.branches[1]*.action == ['outer 2']
+
+        and: 'the first branch keeps the action before the inner fork, the nested ForkNode, and the action after the inner join'
+        def branch = outer.branches[0]
+        branch.size() == 3
+        branch[0].action == 'outer 1'
+        def inner = branch[1] as ForkNode
+        inner.synchronizingJoin
+        inner.branches*.action == [['inner 1'], ['inner 2']]
+        branch[2].action == 'outer 1 tail'
+        DiagramValidator.validate(diagram)
+    }
+
+    def 'should parse a fork inside a conditional branch and a repeat loop body'() {
+        given:
+        def puml = '''@startuml
+start
+if (g?) then (yes)
+  fork
+    :fb;
+  fork again
+    :fc;
+  end merge
+else (no)
+  repeat
+    :lb;
+  repeat while (more?) is (yes) not (no)
+endif
+end
+@enduml
+'''
+
+        when:
+        ActivityDiagram diagram = parseAst(puml)
+
+        then:
+        def cond = diagram.nodes[0] as ConditionalNode
+        def fork = cond.thenActions[0] as ForkNode
+        !fork.synchronizingJoin
+        fork.branches*.action == [['fb'], ['fc']]
+        def loop = cond.elseActions[0] as RepeatNode
+        loop.body*.action == ['lb']
+        DiagramValidator.validate(diagram)
+    }
+
+    def 'should parse a conditional and a repeat loop inside a fork branch'() {
+        given:
+        def puml = '''@startuml
+start
+fork
+  if (g?) then (yes)
+    :t;
+  else (no)
+    :e;
+  endif
+  repeat
+    :l;
+  repeat while (more?) is (yes) not (no)
+fork again
+  :b;
+end fork
+end
+@enduml
+'''
+
+        when:
+        ActivityDiagram diagram = parseAst(puml)
+
+        then:
+        def fork = diagram.nodes[0] as ForkNode
+        def branch = fork.branches[0]
+        branch.size() == 2
+        def cond = branch[0] as ConditionalNode
+        cond.thenActions*.action == ['t']
+        cond.elseActions*.action == ['e']
+        def loop = branch[1] as RepeatNode
+        loop.body*.action == ['l']
+        DiagramValidator.validate(diagram)
+    }
+
+    @Unroll
+    def 'should reject invalid fork nesting: #scenario'() {
+        when:
+        parseAst(puml)
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message.contains('mixes fork and repeat')
+        ex.message.contains(expectedMessage)
+
+        where:
+        scenario                          | puml                                                                                                          | expectedMessage
+        'fork again without active fork'  | '@startuml\nstart\nfork again\n  :a;\nend\n@enduml'                                                        | 'fork again without active fork context'
+        'end merge without active fork'   | '@startuml\nstart\nend merge\nend\n@enduml'                                                                   | 'end merge without active fork context'
+        'end fork without active fork'    | '@startuml\nstart\nend fork\nend\n@enduml'                                                                    | 'end fork without active fork context'
+        'unclosed fork'                   | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend\n@enduml'                                              | 'Unclosed fork'
+        'empty fork branch'               | '@startuml\nstart\nfork\n  :a;\nfork again\nend fork\nend\n@enduml'                                          | 'Fork branch must contain at least one action'
+        'fork again inside a conditional' | '@startuml\nstart\nif (g?) then (yes)\n  fork again\n  :a;\nelse (no)\n  :b;\nendif\nend\n@enduml'          | 'fork again without active fork context'
+        'repeat while closing a fork'     | '@startuml\nstart\nfork\n  :a;\n  repeat while (c?) is (yes) not (no)\nfork again\n  :b;\nend fork\nend\n@enduml' | 'repeat while without active repeat'
+        'else inside a fork branch'       | '@startuml\nstart\nfork\n  else (no)\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                        | 'else without active if'
+        'endif inside a fork branch'      | '@startuml\nstart\nfork\n  endif\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                           | 'endif without active if'
     }
 }

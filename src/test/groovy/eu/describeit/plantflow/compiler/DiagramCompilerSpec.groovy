@@ -37,7 +37,7 @@ class DiagramCompilerSpec extends Specification {
         verifyConditionalStructure(net, 'isValid')
     }
 
-    def 'should dispatch fork diagram to ForkNetCompiler'() {
+    def 'should compile fork diagram through the chain compiler'() {
         given:
         def branch1 = [action('branch 1')]
         def branch2 = [action('branch 2')]
@@ -53,7 +53,7 @@ class DiagramCompilerSpec extends Specification {
         findTransitionByLabel(net, 'T_fork_1_to_end') != null
     }
 
-    def 'should dispatch fork diagram with post-merge actions'() {
+    def 'should compile fork diagram with post-merge actions in the chain'() {
         given:
         def branch1 = [action('action 1')]
         def branch2 = [action('action 2')]
@@ -94,7 +94,7 @@ class DiagramCompilerSpec extends Specification {
         findTransitionByAction(net, 'post 2') != null
     }
 
-    def 'should handle fork followed by another fork (second fork ignored in post-fork extraction)'() {
+    def 'should compile fork followed by another fork in written order'() {
         given:
         def forkNode1 = new ForkNode([
             [action('branch 1')],
@@ -109,10 +109,14 @@ class DiagramCompilerSpec extends Specification {
         when:
         def net = compiler.compile(diagram)
 
-        then:
+        then: 'both sequential forks compile with all their branch actions'
         net != null
         findTransitionByAction(net, 'branch 1') != null
         findTransitionByAction(net, 'branch 2') != null
+        findTransitionByAction(net, 'branch 3') != null
+        findTransitionByAction(net, 'branch 4') != null
+        findTransitionByLabel(net, 'T_fork_1') != null
+        findTransitionByLabel(net, 'T_fork_2') != null
     }
 
     def 'should handle ActionNode before fork node'() {
@@ -151,7 +155,7 @@ class DiagramCompilerSpec extends Specification {
         findTransitionByLabel(net, 'T_fork_1_to_end') != null
     }
 
-    def 'should handle multiple non-ActionNodes after fork'() {
+    def 'should compile multiple sequential forks with all branches'() {
         given:
         def forkNode1 = new ForkNode([
             [action('branch 1')],
@@ -172,8 +176,8 @@ class DiagramCompilerSpec extends Specification {
 
         then:
         net != null
-        findTransitionByAction(net, 'branch 1') != null
-        findTransitionByAction(net, 'branch 2') != null
+        (1..6).each { int i -> assert findTransitionByAction(net, "branch ${i}") != null }
+        findTransitionByLabel(net, 'T_fork_3') != null
     }
 
     def 'should compile single-action linear diagram'() {

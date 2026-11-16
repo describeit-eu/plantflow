@@ -186,7 +186,11 @@ class DiagramValidator {
                 validateRepeatNode((RepeatNode) node)
                 break
             case ForkNode:
-                validateForkBranches(((ForkNode) node).branches)
+                ForkNode forkNode = (ForkNode) node
+                validateForkBranches(forkNode.branches)
+                for (List<ActivityNode> branch : forkNode.branches) {
+                    validateComposedChildren(branch)
+                }
                 break
             default:
                 break

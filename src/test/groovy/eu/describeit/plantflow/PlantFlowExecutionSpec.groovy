@@ -1217,14 +1217,13 @@ class PlantFlowExecutionSpec extends Specification {
         executionLog.size() == 4
         executionLog.containsAll(actions)
 
-        and: 'exactly one continuation carries the first completed branch payload only'
+        and: 'exactly one continuation carries only the first completed outer branch payload'
         engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken.payload.initial == true
         endToken.payload.action_1 == true
         !endToken.payload.containsKey('action_2')
-        !endToken.payload.containsKey('nested_action_1')
-        !endToken.payload.containsKey('nested_action_2')
+        (endToken.payload.containsKey('nested_action_1') || endToken.payload.containsKey('nested_action_2'))
     }
 
     def 'should update execution context from parallel branch actions'() {

@@ -4,9 +4,10 @@ import groovy.transform.CompileStatic
 
 /**
  * Single naming context threaded through the recursive chain compiler.
- * One counter source feeds the indices of every Repeat Loop and Conditional
- * label, so all Place and Transition labels stay unique at any nesting depth.
- * This is the single place where the uniform label scheme is defined.
+ * One counter source feeds the indices of every Repeat Loop, Conditional,
+ * and Fork label, so all Place and Transition labels stay unique at any
+ * nesting depth. This is the single place where the uniform label scheme
+ * is defined.
  */
 @CompileStatic
 class NamingContext {
@@ -50,5 +51,37 @@ class NamingContext {
 
     String ifExitTransition(int conditionalId) {
         TRANSITION_IF_PREFIX + conditionalId + '_to_end'
+    }
+
+    String forkTransition(int forkId) {
+        NetLabeling.forkTransition(forkId)
+    }
+
+    String forkBranchPlace(int forkId, int branchNumber) {
+        NetLabeling.forkBranchPlace(forkId, branchNumber)
+    }
+
+    String forkBranchEndPlace(int forkId, int branchNumber) {
+        NetLabeling.forkBranchPlace(forkId, branchNumber) + '_end'
+    }
+
+    String forkMergePlace(int forkId) {
+        NetLabeling.forkMergePlace(forkId)
+    }
+
+    String forkJoinPlace(int forkId) {
+        NetLabeling.forkJoinPlace(forkId)
+    }
+
+    String forkMergeTransition(int forkId, int branchNumber) {
+        NetLabeling.forkMergeTransition(forkId, branchNumber)
+    }
+
+    String forkJoinTransition(int forkId) {
+        NetLabeling.forkJoinTransition(forkId)
+    }
+
+    String forkToEndTransition(int forkId) {
+        NetLabeling.forkToEndTransition(forkId)
     }
 }

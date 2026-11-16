@@ -4,8 +4,6 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.compiler.DiagramCompiler
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.parser.ClassifiedLine
-import eu.describeit.plantflow.parser.DiagramBuilder
-import eu.describeit.plantflow.parser.ForkDiagramBuilder
 import eu.describeit.plantflow.parser.LineType
 import eu.describeit.plantflow.parser.PumlLineClassifier
 import eu.describeit.plantflow.parser.UnifiedDiagramBuilder
@@ -17,8 +15,6 @@ import java.nio.charset.StandardCharsets
 class ActivityDiagramParser {
 
     private static final String ERR_MALFORMED_LINE = 'Malformed line'
-    private static final String ERR_MIXED_CONDITIONAL_FORK = 'Diagram mixes if-then-else and fork constructs, which is not supported'
-    private static final String ERR_MIXED_FORK_REPEAT = 'Diagram mixes fork and repeat constructs, which is not supported'
 
     private final PumlLineClassifier classifier = new PumlLineClassifier()
     private final DiagramCompiler compiler = new DiagramCompiler()
@@ -32,7 +28,7 @@ class ActivityDiagramParser {
         DiagramValidator.validateContent(pumlContent)
         List<ClassifiedLine> lines = classifier.classifyAll(pumlContent.readLines())
         rejectMalformedLines(lines)
-        ActivityDiagram diagram = selectBuilder(lines).build(lines)
+        ActivityDiagram diagram = new UnifiedDiagramBuilder().build(lines)
         DiagramValidator.validate(diagram)
         return compiler.compile(diagram)
     }
@@ -42,24 +38,6 @@ class ActivityDiagramParser {
                 .collect { ClassifiedLine line -> "'${line.text.trim()}'".toString() }
         if (!malformedTexts.isEmpty()) {
             throw new IllegalArgumentException("$ERR_MALFORMED_LINE: ${malformedTexts.join(', ')}")
-        }
-    }
-
-    private static DiagramBuilder selectBuilder(List<ClassifiedLine> lines) {
-        boolean hasConditional = lines.any { ClassifiedLine line -> line.type == LineType.IF }
-        boolean hasForkLines = lines.any { ClassifiedLine line -> line.type in [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE, LineType.END_FORK] }
-        boolean hasRepeatLines = lines.any { ClassifiedLine line -> line.type in [LineType.REPEAT, LineType.REPEAT_WHILE, LineType.DETACH] }
-        rejectUnsupportedMixes(hasConditional, hasForkLines, hasRepeatLines)
-        if (hasForkLines) return new ForkDiagramBuilder()
-        return new UnifiedDiagramBuilder()
-    }
-
-    private static void rejectUnsupportedMixes(boolean hasConditional, boolean hasForkLines, boolean hasRepeatLines) {
-        if (hasConditional && hasForkLines) {
-            throw new IllegalArgumentException(ERR_MIXED_CONDITIONAL_FORK)
-        }
-        if (hasForkLines && hasRepeatLines) {
-            throw new IllegalArgumentException(ERR_MIXED_FORK_REPEAT)
         }
     }
 }
