@@ -47,12 +47,12 @@ class ChainNetCompiler {
             throw new IllegalArgumentException(ERR_NO_ACTIONS)
         }
         PetriNetBuilder builder = new PetriNetBuilder()
-        Place startPlace = builder.addPlace(NetLabeling.PLACE_START)
-        ChainContext ctx = new ChainContext(builder, new NamingContext(), NetLabeling.PREFIX_INTERMEDIATE_PLACE, null)
+        Place startPlace = builder.addPlace(NamingContext.PLACE_START)
+        ChainContext ctx = new ChainContext(builder, new NamingContext(), NamingContext.PREFIX_INTERMEDIATE_PLACE, null)
         // a null toPlace at the top level creates the end place lazily, so it
         // is appended after all chain intermediate places
         compileChain(ctx, nodes, startPlace, null)
-        Place endPlace = builder.places.find { Place place -> place.label == NetLabeling.PLACE_END }
+        Place endPlace = builder.places.find { Place place -> place.label == NamingContext.PLACE_END }
         builder.startPlace = startPlace
         builder.endPlace = endPlace
         return builder.build()
@@ -71,7 +71,7 @@ class ChainNetCompiler {
                 continue
             }
             Place nextPlace = last ?
-                (toPlace != null ? toPlace : ctx.builder.addPlace(NetLabeling.PLACE_END)) :
+                (toPlace != null ? toPlace : ctx.builder.addPlace(NamingContext.PLACE_END)) :
                 ctx.builder.addPlace(ctx.placePrefix + (++index))
             switch (node) {
                 case ActionNode:
@@ -105,7 +105,7 @@ class ChainNetCompiler {
         Place decisionPlace = builder.addPlace(ctx.naming.ifDecisionPlace(id))
         Transition toDecision = builder.addTransition(ctx.naming.ifToDecisionTransition(id))
         Transition branchYes = builder.addTransition(ctx.naming.ifBranchYesTransition(id), null, node.guardCondition)
-        Transition branchNo = builder.addTransition(ctx.naming.ifBranchNoTransition(id), null, NetLabeling.negateGuard(node.guardCondition))
+        Transition branchNo = builder.addTransition(ctx.naming.ifBranchNoTransition(id), null, NamingContext.negateGuard(node.guardCondition))
         builder.connect(fromPlace, toDecision)
         builder.connect(toDecision, decisionPlace)
         builder.connect(decisionPlace, branchYes)
@@ -131,20 +131,20 @@ class ChainNetCompiler {
         }
         int id = ctx.naming.nextConstructId()
         PetriNetBuilder builder = ctx.builder
-        Place decisionPlace = builder.addPlace(NetLabeling.repeatDecisionPlace(id))
+        Place decisionPlace = builder.addPlace(ctx.naming.repeatDecisionPlace(id))
 
-        String bodyPrefix = NetLabeling.PLACE_REPEAT_PREFIX + id + NetLabeling.PLACE_REPEAT_BODY_SUFFIX
+        String bodyPrefix = ctx.naming.repeatBodyPlacePrefix(id)
         compileChain(ctx.withPlacePrefix(bodyPrefix), node.body, loopStart, decisionPlace)
 
-        Transition loopBack = builder.addTransition(NetLabeling.repeatLoopBackTransition(id), null, node.loopCondition)
+        Transition loopBack = builder.addTransition(ctx.naming.repeatLoopBackTransition(id), null, node.loopCondition)
         builder.connect(decisionPlace, loopBack)
         builder.connect(loopBack, loopStart)
 
         if (node.detach) {
-            Transition detachTransition = builder.addTransition(NetLabeling.repeatDetachTransition(id))
+            Transition detachTransition = builder.addTransition(ctx.naming.repeatDetachTransition(id))
             builder.connect(decisionPlace, detachTransition)
         } else {
-            Transition exit = builder.addTransition(NetLabeling.repeatExitTransition(id), null, NetLabeling.negateGuard(node.loopCondition))
+            Transition exit = builder.addTransition(ctx.naming.repeatExitTransition(id), null, NamingContext.negateGuard(node.loopCondition))
             builder.connect(decisionPlace, exit)
             builder.connect(exit, exitTarget)
         }
@@ -211,7 +211,7 @@ class ChainNetCompiler {
 
     private Place connectForkToTarget(ChainContext ctx, int id, Place continuationPlace, Place toPlace) {
         PetriNetBuilder builder = ctx.builder
-        Place target = toPlace != null ? toPlace : builder.addPlace(NetLabeling.PLACE_END)
+        Place target = toPlace != null ? toPlace : builder.addPlace(NamingContext.PLACE_END)
         Transition toEnd = builder.addTransition(ctx.naming.forkToEndTransition(id))
         builder.connect(continuationPlace, toEnd)
         builder.connect(toEnd, target)
