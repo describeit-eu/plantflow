@@ -19,6 +19,12 @@ class PumlLineClassifier {
     private static final Pattern REPEAT_PATTERN = Pattern.compile(/^\s*repeat\s*$/)
     private static final Pattern REPEAT_WHILE_PATTERN = Pattern.compile(/^\s*repeat\s+while\s*\(\s*(.+?)\s*\)\s+is\s*\(\s*(.+?)\s*\)(?:\s+not\s*\(\s*(.+?)\s*\))?\s*$/)
     private static final Pattern DETACH_PATTERN = Pattern.compile(/^\s*-\[hidden\]->\s*(detach)?\s*$/)
+    private static final Pattern ELSEIF_PATTERN = Pattern.compile(/^\s*elseif(\s|\(|$).*$/)
+    private static final Pattern WHILE_PATTERN = Pattern.compile(/^\s*while(\s|\(|$).*$/)
+    private static final Pattern ENDWHILE_PATTERN = Pattern.compile(/^\s*endwhile(\s|\(|$).*$/)
+    private static final Pattern SWITCH_PATTERN = Pattern.compile(/^\s*switch(\s|\(|$).*$/)
+    private static final Pattern CASE_PATTERN = Pattern.compile(/^\s*case(\s|\(|$).*$/)
+    private static final Pattern ENDSWITCH_PATTERN = Pattern.compile(/^\s*endswitch(\s|\(|$).*$/)
 
     private static final String START_KEYWORD = 'start'
     private static final String END_KEYWORD = 'end'
@@ -29,6 +35,12 @@ class PumlLineClassifier {
     private static final String DETACH_KEYWORD = 'detach'
     private static final String HIDDEN_ARROW = '-[hidden]->'
     private static final String MERGE_KEYWORD = 'merge'
+    private static final String ELSEIF_KEYWORD = 'elseif'
+    private static final String WHILE_KEYWORD = 'while'
+    private static final String ENDWHILE_KEYWORD = 'endwhile'
+    private static final String SWITCH_KEYWORD = 'switch'
+    private static final String CASE_KEYWORD = 'case'
+    private static final String ENDSWITCH_KEYWORD = 'endswitch'
     private static final String STARTUML = '@startuml'
     private static final String ENDUML = '@enduml'
     private static final String COMMENT = '\''
@@ -57,6 +69,9 @@ class PumlLineClassifier {
     }
 
     private static ClassifiedLine tryStructural(String line, String rawLine) {
+        ClassifiedLine unsupported = tryUnsupported(line, rawLine)
+        if (unsupported != null) return unsupported
+
         ClassifiedLine conditional = tryConditional(line, rawLine)
         if (conditional != null) return conditional
 
@@ -89,6 +104,16 @@ class PumlLineClassifier {
         Matcher elseM = ELSE_PATTERN.matcher(line)
         if (elseM.matches()) return new ClassifiedLine(LineType.ELSE, rawLine, null, null, elseM.group(1).trim())
         if (ENDIF_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.ENDIF, rawLine)
+        return null
+    }
+
+    private static ClassifiedLine tryUnsupported(String line, String rawLine) {
+        if (ELSEIF_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, ELSEIF_KEYWORD)
+        if (WHILE_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, WHILE_KEYWORD)
+        if (ENDWHILE_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, ENDWHILE_KEYWORD)
+        if (SWITCH_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, SWITCH_KEYWORD)
+        if (CASE_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, CASE_KEYWORD)
+        if (ENDSWITCH_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, ENDSWITCH_KEYWORD)
         return null
     }
 
