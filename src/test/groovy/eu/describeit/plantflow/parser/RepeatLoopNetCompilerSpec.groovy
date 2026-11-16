@@ -93,7 +93,7 @@ class RepeatLoopNetCompilerSpec extends Specification {
 
         then:
         def exit = findTransitionByLabel(net, 'T_repeat_1_exit')
-        def afterPlace = findPlaceByLabel(net, 'P_repeat_1_after')
+        def afterPlace = findPlaceByLabel(net, 'P_1')
         afterPlace != null
         net.incidenceMatrix.getOutputWeight(afterPlace.index, exit.index) == 1
 
@@ -127,7 +127,7 @@ end
 
         and: 'the pre action feeds into the loop start place'
         def preTransition = findTransitionByAction(net, 'pre action')
-        def loopStart = findPlaceByLabel(net, 'P_repeat_1_start')
+        def loopStart = findPlaceByLabel(net, 'P_1')
         loopStart != null
         net.incidenceMatrix.getOutputWeight(loopStart.index, preTransition.index) == 1
 
@@ -137,7 +137,7 @@ end
 
         and: 'the exit feeds the post-loop action chain'
         def exit = findTransitionByLabel(net, 'T_repeat_1_exit')
-        def afterPlace = findPlaceByLabel(net, 'P_repeat_1_after')
+        def afterPlace = findPlaceByLabel(net, 'P_2')
         net.incidenceMatrix.getOutputWeight(afterPlace.index, exit.index) == 1
         def postTransition = findTransitionByAction(net, 'post action')
         net.incidenceMatrix.getInputWeight(afterPlace.index, postTransition.index) == 1
@@ -192,6 +192,43 @@ end
         def outerExit = findTransitionByLabel(net, 'T_repeat_1_exit')
         outerExit.guardKey == '!(outer done?)'
         net.incidenceMatrix.getOutputWeight(net.endPlace.index, outerExit.index) == 1
+    }
+
+    def 'should compile sequential repeat loops with distinct ids and wire the first exit into the second loop'() {
+        given:
+        def puml = '''@startuml
+start
+repeat
+  :L1;
+repeat while (c1) is (yes) not (no)
+repeat
+  :L2;
+repeat while (c2) is (yes) not (no)
+end
+@enduml
+'''
+
+        when:
+        PetriNetStructure net = parse(puml)
+
+        then: 'each loop gets its own decision place and loop-back transition from the shared naming context'
+        findPlaceByLabel(net, 'P_repeat_1_decision') != null
+        findPlaceByLabel(net, 'P_repeat_2_decision') != null
+        def loopBack1 = findTransitionByLabel(net, 'T_repeat_1_loop_back')
+        def loopBack2 = findTransitionByLabel(net, 'T_repeat_2_loop_back')
+        loopBack1.guardKey == 'c1'
+        loopBack2.guardKey == 'c2'
+
+        and: 'the first loop exit feeds the second loop start place'
+        def exit1 = findTransitionByLabel(net, 'T_repeat_1_exit')
+        def secondStart = findPlaceByLabel(net, 'P_1')
+        secondStart != null
+        net.incidenceMatrix.getOutputWeight(secondStart.index, exit1.index) == 1
+        net.incidenceMatrix.getOutputWeight(secondStart.index, loopBack2.index) == 1
+
+        and: 'the second loop exit routes to the end place'
+        def exit2 = findTransitionByLabel(net, 'T_repeat_2_exit')
+        net.incidenceMatrix.getOutputWeight(net.endPlace.index, exit2.index) == 1
     }
 
     // ==================== Guard resolution through the Handler Registry ====================

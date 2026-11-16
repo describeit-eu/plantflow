@@ -131,17 +131,17 @@ class PlantFlowSteppableExecutionSpec extends Specification {
         when: 'getting enabled transitions from start'
         def enabled = engine.getEnabledTransitions(marking, context)
 
-        then: 'only start_to_decision transition is enabled'
+        then: 'only to_decision transition is enabled'
         enabled.size() == 1
-        enabled[0].label == 'T_start_to_decision'
+        enabled[0].label == 'T_if_1_to_decision'
 
-        when: 'firing start_to_decision transition'
+        when: 'firing to_decision transition'
         def markingAfterDecision = engine.fire(enabled[0], marking, context)
 
-        then: 'token moved from start (0) to P_if_decision (1)'
+        then: 'token moved from start (0) to P_if_1_decision (2)'
         markingAfterDecision.getTokenCount(0) == 0
-        markingAfterDecision.getTokenCount(1) == 1
-        markingAfterDecision.getTokenCount(2) == 0
+        markingAfterDecision.getTokenCount(1) == 0
+        markingAfterDecision.getTokenCount(2) == 1
         markingAfterDecision.getTokenCount(3) == 0
         markingAfterDecision.getTokenCount(4) == 0
         markingAfterDecision.getTokenCount(5) == 0
@@ -151,37 +151,37 @@ class PlantFlowSteppableExecutionSpec extends Specification {
 
         then: 'only the yes branch transition is enabled (guard is true)'
         enabledAtDecision.size() == 1
-        enabledAtDecision[0].label == 'T_branch_yes'
+        enabledAtDecision[0].label == 'T_if_1_yes'
 
-        when: 'firing the then branch (T_branch_yes)'
+        when: 'firing the then branch (T_if_1_yes)'
         def branchYesTransition = enabledAtDecision[0]
         def markingAfterThenBranch = engine.fire(branchYesTransition, markingAfterDecision, context)
 
-        then: 'token moved from P_if_decision (1) to P_then (2)'
-        markingAfterThenBranch.getTokenCount(1) == 0
-        markingAfterThenBranch.getTokenCount(2) == 1
-        markingAfterThenBranch.getTokenCount(3) == 0
+        then: 'token moved from P_if_1_decision (2) to P_if_1_then (3)'
+        markingAfterThenBranch.getTokenCount(2) == 0
+        markingAfterThenBranch.getTokenCount(3) == 1
+        markingAfterThenBranch.getTokenCount(4) == 0
 
         when: 'firing process all action transition'
         def processAllTransition = engine.petriNet.transitions.find { it.label == 'process all' }
         def markingAfterThenAction = engine.fire(processAllTransition, markingAfterThenBranch, context)
 
-        then: 'token moved from P_then (2) to P_endif (4)'
-        markingAfterThenAction.getTokenCount(2) == 0
-        markingAfterThenAction.getTokenCount(4) == 1
+        then: 'token moved from P_if_1_then (3) to P_if_1_endif (5)'
         markingAfterThenAction.getTokenCount(3) == 0
+        markingAfterThenAction.getTokenCount(5) == 1
+        markingAfterThenAction.getTokenCount(4) == 0
 
         and: 'token has thenBranch payload'
-        def tokenAtEndif = markingAfterThenAction.getTokens(4)[0]
+        def tokenAtEndif = markingAfterThenAction.getTokens(5)[0]
         tokenAtEndif.payload.thenBranch == true
 
         when: 'firing endif to end transition'
-        def endifToEndTransition = engine.petriNet.transitions.find { it.label == 'T_endif_to_end' }
+        def endifToEndTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_end' }
         def markingAfterEnd = engine.fire(endifToEndTransition, markingAfterThenAction, context)
 
-        then: 'token moved from P_endif (4) to end (5)'
-        markingAfterEnd.getTokenCount(4) == 0
-        markingAfterEnd.getTokenCount(5) == 1
+        then: 'token moved from P_if_1_endif (5) to end (1)'
+        markingAfterEnd.getTokenCount(5) == 0
+        markingAfterEnd.getTokenCount(1) == 1
 
         and: 'workflow completed'
         def finalEnabled = engine.getEnabledTransitions(markingAfterEnd, context)
@@ -219,49 +219,49 @@ class PlantFlowSteppableExecutionSpec extends Specification {
 
         when: 'stepping through to decision point'
         def markingAtDecision = engine.fire(
-            engine.petriNet.transitions.find { it.label == 'T_start_to_decision' },
+            engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' },
             marking,
             context
         )
 
-        then: 'token at P_if_decision (1)'
-        markingAtDecision.getTokenCount(1) == 1
+        then: 'token at P_if_1_decision (2)'
+        markingAtDecision.getTokenCount(2) == 1
 
         when: 'getting enabled transitions at decision point with processAll=false'
         def enabledAtDecision = engine.getEnabledTransitions(markingAtDecision, context)
 
         then: 'only the no branch transition is enabled (guard is true)'
         enabledAtDecision.size() == 1
-        enabledAtDecision[0].label == 'T_branch_no'
+        enabledAtDecision[0].label == 'T_if_1_no'
 
-        when: 'firing the else branch (T_branch_no)'
+        when: 'firing the else branch (T_if_1_no)'
         def branchNoTransition = enabledAtDecision[0]
         def markingAfterElseBranch = engine.fire(branchNoTransition, markingAtDecision, context)
 
-        then: 'token moved from P_if_decision (1) to P_else (3)'
-        markingAfterElseBranch.getTokenCount(1) == 0
-        markingAfterElseBranch.getTokenCount(3) == 1
+        then: 'token moved from P_if_1_decision (2) to P_if_1_else (4)'
         markingAfterElseBranch.getTokenCount(2) == 0
+        markingAfterElseBranch.getTokenCount(4) == 1
+        markingAfterElseBranch.getTokenCount(3) == 0
 
         when: 'firing process none action transition'
         def processNoneTransition = engine.petriNet.transitions.find { it.label == 'process none' }
         def markingAfterElseAction = engine.fire(processNoneTransition, markingAfterElseBranch, context)
 
-        then: 'token moved from P_else (3) to P_endif (4)'
-        markingAfterElseAction.getTokenCount(3) == 0
-        markingAfterElseAction.getTokenCount(4) == 1
+        then: 'token moved from P_if_1_else (4) to P_if_1_endif (5)'
+        markingAfterElseAction.getTokenCount(4) == 0
+        markingAfterElseAction.getTokenCount(5) == 1
 
         and: 'token has elseBranch payload'
-        def tokenAtEndif = markingAfterElseAction.getTokens(4)[0]
+        def tokenAtEndif = markingAfterElseAction.getTokens(5)[0]
         tokenAtEndif.payload.elseBranch == true
 
         when: 'firing endif to end transition'
-        def endifToEndTransition = engine.petriNet.transitions.find { it.label == 'T_endif_to_end' }
+        def endifToEndTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_end' }
         def markingAfterEnd = engine.fire(endifToEndTransition, markingAfterElseAction, context)
 
-        then: 'token moved from P_endif (4) to end (5)'
-        markingAfterEnd.getTokenCount(4) == 0
-        markingAfterEnd.getTokenCount(5) == 1
+        then: 'token moved from P_if_1_endif (5) to end (1)'
+        markingAfterEnd.getTokenCount(5) == 0
+        markingAfterEnd.getTokenCount(1) == 1
 
         and: 'workflow completed'
         def finalEnabled = engine.getEnabledTransitions(markingAfterEnd, context)

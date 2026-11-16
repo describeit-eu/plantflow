@@ -598,12 +598,12 @@ end
      * Verifies conditional structure: checks that the net has the expected guard on branch transitions.
      */
     static void verifyConditionalStructure(PetriNetStructure net, String guard) {
-        def branchYes = net.transitions.find { it.label == 'T_branch_yes' }
-        assert branchYes != null : "Expected T_branch_yes transition"
+        def branchYes = net.transitions.find { it.label ==~ /T_(if_\d+|branch)_yes/ }
+        assert branchYes != null : 'Expected a branch-yes transition (T_if_<id>_yes or T_branch_yes)'
         assert branchYes.guardKey == guard : "Expected guard '${guard}' but got '${branchYes.guardKey}'"
 
-        def branchNo = net.transitions.find { it.label == 'T_branch_no' }
-        assert branchNo != null : "Expected T_branch_no transition"
+        def branchNo = net.transitions.find { it.label ==~ /T_(if_\d+|branch)_no/ }
+        assert branchNo != null : 'Expected a branch-no transition (T_if_<id>_no or T_branch_no)'
         assert branchNo.guardKey == "!(${guard})" : "Expected guard '!(${guard})' but got '${branchNo.guardKey}'"
     }
 

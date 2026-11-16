@@ -753,7 +753,7 @@ class PlantFlowExecutionSpec extends Specification {
         engine.seedToken(Token.of())
 
         // First, fire the initial transition to get token to decision place
-        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' }
         engine.fire(startTransition)
 
         def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
@@ -788,7 +788,7 @@ class PlantFlowExecutionSpec extends Specification {
         engine.seedToken(Token.of())
 
         // First, fire the initial transition to get token to decision place
-        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' }
         engine.fire(startTransition)
 
         when: 'querying enabled transitions'
@@ -821,7 +821,7 @@ class PlantFlowExecutionSpec extends Specification {
         engine.seedToken(Token.of())
 
         // First, fire the initial transition to get token to decision place
-        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' }
         engine.fire(startTransition)
 
         def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
