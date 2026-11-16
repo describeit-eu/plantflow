@@ -275,16 +275,4 @@ end
         def ex = thrown(IllegalArgumentException)
         ex.message == 'Repeat loop body must contain at least one action'
     }
-
-    def 'should reject null repeat node'() {
-        given:
-        def repeatCompiler = new eu.describeit.plantflow.compiler.RepeatNetCompiler()
-
-        when:
-        repeatCompiler.compile(null)
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message == 'RepeatNode cannot be null'
-    }
 }

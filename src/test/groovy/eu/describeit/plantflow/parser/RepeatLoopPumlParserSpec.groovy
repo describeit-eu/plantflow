@@ -10,7 +10,7 @@ class RepeatLoopPumlParserSpec extends Specification {
 
     private static ActivityDiagram parseAst(String puml) {
         List<ClassifiedLine> lines = new PumlLineClassifier().classifyAll(puml.readLines())
-        return new RepeatDiagramBuilder().build(lines)
+        return new UnifiedDiagramBuilder().build(lines)
     }
 
     // ==================== Classifier ====================

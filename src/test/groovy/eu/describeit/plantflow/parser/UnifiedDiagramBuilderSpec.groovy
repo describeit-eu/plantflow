@@ -384,4 +384,137 @@ end
         'else inside a fork branch'       | '@startuml\nstart\nfork\n  else (no)\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                        | 'else without active if'
         'endif inside a fork branch'      | '@startuml\nstart\nfork\n  endif\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                           | 'endif without active if'
     }
+
+    private static ClassifiedLine line(LineType type, String text, String action = null, String guard = null) {
+        return new ClassifiedLine(type, text, action, guard)
+    }
+
+    def 'should build nested repeat and conditional structures with detach from classified lines'() {
+        given:
+        def builder = new UnifiedDiagramBuilder()
+
+        expect: 'empty and null input are tolerated'
+        builder.build([]).nodes.isEmpty()
+        builder.build(null).nodes.isEmpty()
+
+        when: 'a repeat loop containing a conditional is built'
+        def diagram = builder.build([
+            line(LineType.START, 'start'),
+            line(LineType.REPEAT, 'repeat'),
+            line(LineType.IF, 'if (g) then (y)', null, 'g'),
+            line(LineType.ACTION, ':a;', 'a'),
+            line(LineType.ELSE, 'else (n)'),
+            line(LineType.ACTION, ':b;', 'b'),
+            line(LineType.ENDIF, 'endif'),
+            line(LineType.REPEAT_WHILE, 'repeat while (c) is (yes)', null, 'c'),
+            line(LineType.DETACH, 'detach'),
+            line(LineType.END, 'end'),
+        ])
+
+        then:
+        diagram.hasStart && diagram.hasEnd && diagram.hasRepeat && diagram.hasRepeatWhile && diagram.hasDetach
+        diagram.hasIf && diagram.hasElse && diagram.hasEndif
+        diagram.nodes.size() == 1
+        def loop = diagram.nodes[0] as RepeatNode
+        loop.detach
+        loop.body.size() == 1
+        (loop.body[0] as ConditionalNode).thenActions*.action == ['a']
+        (loop.body[0] as ConditionalNode).elseActions*.action == ['b']
+    }
+
+    def 'should reject unclosed constructs and misplaced terminators from classified lines'() {
+        given:
+        def builder = new UnifiedDiagramBuilder()
+
+        when: 'a repeat is never closed'
+        builder.build([line(LineType.REPEAT, 'repeat'), line(LineType.ACTION, ':a;', 'a')])
+
+        then: 'unclosed repeat error'
+        def e1 = thrown(IllegalArgumentException)
+        e1.message == 'Unclosed repeat - missing repeat while'
+
+        when: 'an if is never closed'
+        builder.build([line(LineType.IF, 'if (g) then (y)', null, 'g'), line(LineType.ACTION, ':a;', 'a')])
+
+        then: 'unclosed if error'
+        def e2 = thrown(IllegalArgumentException)
+        e2.message == 'Unclosed if - missing endif'
+
+        when: 'repeat while appears without an open loop'
+        builder.build([line(LineType.REPEAT_WHILE, 'x', null, 'c')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'repeat while appears while an if is open'
+        builder.build([line(LineType.IF, 'if (g) then (y)', null, 'g'), line(LineType.REPEAT_WHILE, 'x', null, 'c')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'the loop body is empty'
+        builder.build([line(LineType.REPEAT, 'repeat'), line(LineType.REPEAT_WHILE, 'x', null, 'c')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'else appears without an open if'
+        builder.build([line(LineType.ELSE, 'else (n)')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'else appears while a loop is open'
+        builder.build([line(LineType.REPEAT, 'repeat'), line(LineType.ELSE, 'else (n)')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'endif appears without an open if'
+        builder.build([line(LineType.ENDIF, 'endif')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'endif appears while a loop is open'
+        builder.build([line(LineType.REPEAT, 'repeat'), line(LineType.ENDIF, 'endif')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'detach appears without a preceding loop'
+        builder.build([line(LineType.DETACH, 'detach')])
+
+        then:
+        thrown(IllegalArgumentException)
+
+        when: 'detach does not directly follow the loop'
+        builder.build([
+            line(LineType.REPEAT, 'repeat'),
+            line(LineType.ACTION, ':a;', 'a'),
+            line(LineType.REPEAT_WHILE, 'x', null, 'c'),
+            line(LineType.ACTION, ':b;', 'b'),
+            line(LineType.DETACH, 'detach'),
+        ])
+
+        then:
+        thrown(IllegalArgumentException)
+    }
+
+    def 'should tolerate an if line without a guard'() {
+        given:
+        def builder = new UnifiedDiagramBuilder()
+
+        when:
+        def diagram = builder.build([
+            line(LineType.IF, 'if'),
+            line(LineType.ACTION, ':a;', 'a'),
+            line(LineType.ENDIF, 'endif'),
+        ])
+
+        then: 'no guard means the hasIf flag stays false but the node is still built'
+        !diagram.hasIf
+        diagram.nodes.size() == 1
+        (diagram.nodes[0] as ConditionalNode).guardCondition == null
+    }
 }
