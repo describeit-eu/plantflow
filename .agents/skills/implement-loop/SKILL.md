@@ -27,7 +27,7 @@ Follow these instructions because it is designed to control the context window.
     - **stray edit**: full stop and ask user to resolve the issue
 3. Create the **temporary integration branch** named after the spec.
 4. Pick one and only ticket from the **frontier** (e.g. choose the ticket with the smallest number), create a worktree on a branch named after the ticket based on the **temporary integration branch**.
-5. Call the Skill tool for `/implement-ticket` to work on the chosen ticket using the worktree.
+5. Call the Skill tool for `/implement-ticket` in the worktree session and let it drive its own **Sequence of Steps** end-to-end (including its `/code-review` step). Do not re-dispatch the ticket to a sub-agent with a summarized prompt — skills do not propagate into sub-agent contexts, so any step not carried verbatim into the sub-agent prompt is silently dropped. If you do hand part of the work to a sub-agent, paste the relevant implement-ticket steps into the sub-agent prompt verbatim.
 6. Once the `/implement-ticket` run completes, rebase its branch to the **temporary integration branch**.
 7. Resolve ticket the way the issue tracker closes a work.
 8. If this changes the **frontier** of available tickets, go back to step 4.

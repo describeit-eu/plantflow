@@ -9,6 +9,7 @@ Follow these instructions because it is designed to control the context window.
 - You must not deviate from the `Sequence of Steps` described bellow. 
 - Follow the instructions of each step because it is designed to control the context of the current agent and its sub-agent.
 - For the request 'Use a sub-agent' choose the agent type you think is best suited for the task and start it with a fresh context window.
+- **Hand-off rule:** a skill loads only into the session that invokes it. A sub-agent's fresh context window sees only its prompt — never assume the sub-agent knows this skill or any other skill. Steps written as a skill call (e.g. step 4's `/code-review`) are executed by the agent running this skill, not by sub-agents. If you delegate any step to a sub-agent, paste that step's instruction verbatim into the sub-agent prompt; a summarized paraphrase drops steps silently.
 
 ## Sequence of Steps
 
