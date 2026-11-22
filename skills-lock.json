@@ -224,6 +224,27 @@
       "skillPath": "skills/productivity/writing-for-agents/SKILL.md",
       "computedHash": "e79a2476b2417b228922453478d9505a6b9af19f3a412e560728ce62ed3555ca",
       "commit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823"
+    },
+    "zeroshot": {
+      "source": "the-open-engine/zeroshot",
+      "commit": "4220524b59df62f6b15da606d7e66da25d0f9423",
+      "sourceType": "github",
+      "skillPath": "plugins/zeroshot-claude/skills/zeroshot/SKILL.md",
+      "computedHash": "657ac2efc7e7ce9ee07ea96a5ae2edf85ba64dd479521b58ab8a780e84ef1e8b"
+    },
+    "zeroshot-graph-design": {
+      "source": "the-open-engine/zeroshot",
+      "commit": "4220524b59df62f6b15da606d7e66da25d0f9423",
+      "sourceType": "github",
+      "skillPath": "plugins/zeroshot-claude/skills/zeroshot-graph-design/SKILL.md",
+      "computedHash": "d496c9a5582299c7169ed3abf37b5d36962f87a9db1d2c1cfc465a7b10f8630f"
+    },
+    "zeroshot-plan": {
+      "source": "the-open-engine/zeroshot",
+      "commit": "4220524b59df62f6b15da606d7e66da25d0f9423",
+      "sourceType": "github",
+      "skillPath": "plugins/zeroshot-claude/skills/zeroshot-plan/SKILL.md",
+      "computedHash": "d0e907d679b5f73ef77f7dd8e3865f574fa281690a6b65ee5ed034577f758e67"
     }
   }
 }
