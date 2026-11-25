@@ -333,6 +333,28 @@ end
     }
 
     /**
+     * Creates a switch/case/endswitch diagram PlantUML string with one single-action
+     * case per condition, optional post-switch actions, and a switch expression.
+     */
+    static String switchPuml(List<String> caseConditions, List<String> caseActions, List<String> postActions = [], String switchExpression = 'test?') {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << "switch ( ${switchExpression} )\n"
+        caseConditions.eachWithIndex { String condition, int i ->
+            sb << "case ( ${condition} )\n"
+            sb << "  :${caseActions[i]};\n"
+        }
+        sb << 'endswitch\n'
+        postActions.each { String action ->
+            sb << ":${action};\n"
+        }
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
+    /**
      * Creates a composed diagram PlantUML string with a conditional inside a repeat loop body.
      */
     static String branchInLoopPuml() {

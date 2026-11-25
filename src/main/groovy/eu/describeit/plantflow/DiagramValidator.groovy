@@ -5,6 +5,8 @@ import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.ast.RepeatNode
+import eu.describeit.plantflow.ast.SwitchCase
+import eu.describeit.plantflow.ast.SwitchNode
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -192,6 +194,11 @@ class DiagramValidator {
                     validateComposedChildren(branch)
                 }
                 break
+            case SwitchNode:
+                for (SwitchCase switchCase : ((SwitchNode) node).cases) {
+                    validateComposedChildren(switchCase.actions)
+                }
+                break
             default:
                 break
         }
@@ -213,7 +220,7 @@ class DiagramValidator {
 
     private static void validateComposedChildren(List<ActivityNode> children) {
         for (Object child : children) {
-            if (child instanceof ConditionalNode || child instanceof RepeatNode || child instanceof ForkNode) {
+            if (child instanceof ConditionalNode || child instanceof RepeatNode || child instanceof ForkNode || child instanceof SwitchNode) {
                 validateNode((ActivityNode) child)
             }
         }

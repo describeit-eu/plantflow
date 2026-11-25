@@ -5,6 +5,8 @@ import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.ast.RepeatNode
+import eu.describeit.plantflow.ast.SwitchCase
+import eu.describeit.plantflow.ast.SwitchNode
 import eu.describeit.plantflow.engine.PetriNetStructure
 import groovy.transform.CompileStatic
 
@@ -23,7 +25,11 @@ class DiagramCompiler {
 
     PetriNetStructure compile(ActivityDiagram diagram) {
         if (diagram == null) throw new IllegalArgumentException(ERR_DIAGRAM_NULL)
-        if (diagram.isConditional() && !containsNode(diagram.nodes, ConditionalNode) && !containsNode(diagram.nodes, RepeatNode) && !containsNode(diagram.nodes, ForkNode)) {
+        if (diagram.isConditional() &&
+            !containsNode(diagram.nodes, ConditionalNode) &&
+            !containsNode(diagram.nodes, RepeatNode) &&
+            !containsNode(diagram.nodes, ForkNode) &&
+            !containsNode(diagram.nodes, SwitchNode)) {
             throw new IllegalArgumentException(ERR_THEN_EMPTY)
         }
         return chainCompiler.compile(diagram)
@@ -46,6 +52,12 @@ class DiagramCompiler {
                     children.addAll(branch)
                 }
                 return children
+            case SwitchNode:
+                List<ActivityNode> caseChildren = []
+                for (SwitchCase switchCase : ((SwitchNode) node).cases) {
+                    caseChildren.addAll(switchCase.actions)
+                }
+                return caseChildren
             default:
                 return []
         }

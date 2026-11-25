@@ -22,9 +22,9 @@ class PumlLineClassifier {
     private static final Pattern ELSEIF_PATTERN = Pattern.compile(/^\s*elseif(\s|\(|$).*$/)
     private static final Pattern WHILE_PATTERN = Pattern.compile(/^\s*while(\s|\(|$).*$/)
     private static final Pattern ENDWHILE_PATTERN = Pattern.compile(/^\s*endwhile(\s|\(|$).*$/)
-    private static final Pattern SWITCH_PATTERN = Pattern.compile(/^\s*switch(\s|\(|$).*$/)
-    private static final Pattern CASE_PATTERN = Pattern.compile(/^\s*case(\s|\(|$).*$/)
-    private static final Pattern ENDSWITCH_PATTERN = Pattern.compile(/^\s*endswitch(\s|\(|$).*$/)
+    private static final Pattern SWITCH_EXPR_PATTERN = Pattern.compile(/^\s*switch\s*\(\s*(.+?)\s*\)\s*$/)
+    private static final Pattern CASE_CONDITION_PATTERN = Pattern.compile(/^\s*case\s*\(\s*(.+?)\s*\)\s*$/)
+    private static final Pattern ENDSWITCH_EXACT_PATTERN = Pattern.compile(/^\s*endswitch\s*$/)
 
     private static final String START_KEYWORD = 'start'
     private static final String END_KEYWORD = 'end'
@@ -40,7 +40,7 @@ class PumlLineClassifier {
     private static final String ENDWHILE_KEYWORD = 'endwhile'
     private static final String SWITCH_KEYWORD = 'switch'
     private static final String CASE_KEYWORD = 'case'
-    private static final String ENDSWITCH_KEYWORD = 'endswitch'
+    private static final String OPEN_PAREN = '('
     private static final String STARTUML = '@startuml'
     private static final String ENDUML = '@enduml'
     private static final String COMMENT = '\''
@@ -78,7 +78,10 @@ class PumlLineClassifier {
         ClassifiedLine forkLine = tryFork(line, rawLine)
         if (forkLine != null) return forkLine
 
-        return tryRepeat(line, rawLine)
+        ClassifiedLine repeatLine = tryRepeat(line, rawLine)
+        if (repeatLine != null) return repeatLine
+
+        return trySwitch(line, rawLine)
     }
 
     private static ClassifiedLine ignored(String rawLine) {
@@ -96,7 +99,7 @@ class PumlLineClassifier {
     }
 
     private static ClassifiedLine tryConditional(String line, String rawLine) {
-        if (line == IF_KEYWORD || line.startsWith(IF_KEYWORD + SPACE) || line.startsWith(IF_KEYWORD + '(')) {
+        if (line == IF_KEYWORD || line.startsWith(IF_KEYWORD + SPACE) || line.startsWith(IF_KEYWORD + OPEN_PAREN)) {
             Matcher m = IF_PATTERN.matcher(line)
             if (m.matches()) return new ClassifiedLine(LineType.IF, rawLine, null, m.group(1).trim())
             return new ClassifiedLine(LineType.IF, rawLine)
@@ -111,9 +114,6 @@ class PumlLineClassifier {
         if (ELSEIF_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, ELSEIF_KEYWORD)
         if (WHILE_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, WHILE_KEYWORD)
         if (ENDWHILE_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, ENDWHILE_KEYWORD)
-        if (SWITCH_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, SWITCH_KEYWORD)
-        if (CASE_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, CASE_KEYWORD)
-        if (ENDSWITCH_PATTERN.matcher(line).matches()) return ClassifiedLine.unsupported(rawLine, ENDSWITCH_KEYWORD)
         return null
     }
 
@@ -148,6 +148,21 @@ class PumlLineClassifier {
         if (DETACH_PATTERN.matcher(line).matches() || line == DETACH_KEYWORD) {
             return new ClassifiedLine(LineType.DETACH, rawLine)
         }
+        return null
+    }
+
+    private static ClassifiedLine trySwitch(String line, String rawLine) {
+        if (line == SWITCH_KEYWORD || line.startsWith(SWITCH_KEYWORD + SPACE) || line.startsWith(SWITCH_KEYWORD + OPEN_PAREN)) {
+            Matcher m = SWITCH_EXPR_PATTERN.matcher(line)
+            if (m.matches()) return new ClassifiedLine(LineType.SWITCH, rawLine, null, m.group(1).trim())
+            return new ClassifiedLine(LineType.SWITCH, rawLine)
+        }
+        if (line == CASE_KEYWORD || line.startsWith(CASE_KEYWORD + SPACE) || line.startsWith(CASE_KEYWORD + OPEN_PAREN)) {
+            Matcher m = CASE_CONDITION_PATTERN.matcher(line)
+            if (m.matches()) return new ClassifiedLine(LineType.CASE, rawLine, null, m.group(1).trim())
+            return new ClassifiedLine(LineType.CASE, rawLine)
+        }
+        if (ENDSWITCH_EXACT_PATTERN.matcher(line).matches()) return new ClassifiedLine(LineType.ENDSWITCH, rawLine)
         return null
     }
 }

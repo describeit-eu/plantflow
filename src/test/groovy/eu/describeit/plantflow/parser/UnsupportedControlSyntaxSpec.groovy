@@ -5,7 +5,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 /**
- * Unsupported PlantUML control syntax (elseif, while/endwhile, switch/case/endswitch)
+ * Unsupported PlantUML control syntax (elseif, while/endwhile)
  * must be rejected explicitly as an unimplemented feature, never silently ignored.
  */
 class UnsupportedControlSyntaxSpec extends Specification {
@@ -29,14 +29,11 @@ class UnsupportedControlSyntaxSpec extends Specification {
         'elseif inside an if'       | 'elseif'    | 'elseif (g2) then (yes)' | '@startuml\nstart\nif (g1) then (yes)\n  :A;\nelseif (g2) then (yes)\n  :B;\nelse (no)\n  :C;\nendif\nend\n@enduml'
         'while loop'                | 'while'     | 'while (c1) is (yes)'    | '@startuml\nstart\nwhile (c1) is (yes)\n  :read;\nendwhile (no)\nend\n@enduml'
         'endwhile without while'    | 'endwhile'  | 'endwhile (no)'          | '@startuml\nstart\n  :A;\nendwhile (no)\nend\n@enduml'
-        'switch with cases'         | 'switch'    | 'switch (s?)'            | '@startuml\nstart\nswitch (s?)\ncase (a)\n  :A;\ncase (b)\n  :B;\nendswitch\nend\n@enduml'
-        'case without switch'       | 'case'      | 'case (a)'               | '@startuml\nstart\n  :A;\ncase (a)\n  :B;\nend\n@enduml'
-        'endswitch without switch'  | 'endswitch' | 'endswitch'             | '@startuml\nstart\n  :A;\nendswitch\nend\n@enduml'
     }
 
     def 'should list all offending lines of the same unsupported construct'() {
         given:
-        def puml = '@startuml\nstart\nswitch (s?)\ncase (a)\n  :A;\ncase (b)\n  :B;\nendswitch\nend\n@enduml'
+        def puml = '@startuml\nstart\nif (g1) then (yes)\n  :A;\nelseif (g2) then (yes)\n  :B;\nelseif (g3) then (yes)\n  :C;\nelse (no)\n  :D;\nendif\nend\n@enduml'
 
         when:
         parser.parse(puml)
@@ -44,12 +41,9 @@ class UnsupportedControlSyntaxSpec extends Specification {
         then:
         def ex = thrown(IllegalArgumentException)
         ex.message.contains('unimplemented feature')
-        ex.message.contains("'switch (s?)'")
-        ex.message.contains("'case (a)'")
-        ex.message.contains("'case (b)'")
-        ex.message.contains("'endswitch'")
-        ex.message.contains("'switch'")
-        ex.message.contains("'endswitch'")
+        ex.message.contains("'elseif (g2) then (yes)'")
+        ex.message.contains("'elseif (g3) then (yes)'")
+        ex.message.contains("'elseif'")
     }
 
     def 'should reject unsupported syntax even when no start/end present'() {

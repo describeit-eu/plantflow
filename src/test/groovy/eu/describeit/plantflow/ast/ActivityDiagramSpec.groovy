@@ -60,6 +60,56 @@ class ActivityDiagramSpec extends Specification {
         diagram.hasForkStructure()
     }
 
+    def 'hasSwitchStructure should return true when hasSwitch flag is set'() {
+        given:
+        def diagram = new ActivityDiagram().withSwitch()
+
+        expect:
+        diagram.hasSwitchStructure()
+    }
+
+    def 'hasSwitchStructure should return true when hasEndswitch flag is set'() {
+        given:
+        def diagram = new ActivityDiagram().withEndswitch()
+
+        expect:
+        diagram.hasSwitchStructure()
+    }
+
+    def 'hasSwitchStructure should return true when nodes contain a SwitchNode'() {
+        given:
+        def switchNode = new SwitchNode('test?', [new SwitchCase('cond', [new ActionNode('a')])])
+        def diagram = new ActivityDiagram(true, true, [switchNode])
+
+        expect:
+        diagram.hasSwitchStructure()
+    }
+
+    def 'hasSwitchStructure should return true when nodes contain a SwitchNode alongside other nodes'() {
+        given:
+        def switchNode = new SwitchNode('test?', [])
+        def diagram = new ActivityDiagram(true, true, [new ActionNode('before'), switchNode])
+
+        expect:
+        diagram.hasSwitchStructure()
+    }
+
+    def 'hasSwitchStructure should return false when no switch indicators are present'() {
+        given:
+        def diagram = new ActivityDiagram(true, true, [new ActionNode('action')])
+
+        expect:
+        !diagram.hasSwitchStructure()
+    }
+
+    def 'hasSwitchStructure should return false for empty diagram'() {
+        given:
+        def diagram = new ActivityDiagram()
+
+        expect:
+        !diagram.hasSwitchStructure()
+    }
+
     def 'isConditional should return true when hasIf flag is set'() {
         given:
         def diagram = new ActivityDiagram().withIf()
