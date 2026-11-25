@@ -32,8 +32,6 @@ class PlantFlowMalformedForkTerminatorSpec extends Specification {
         'fork with a single branch'                 | '@startuml\nstart\nfork\n  :a;\nend fork\nend\n@enduml'                                                     | 'at least 2 branches'
         'fork with empty branches'                  | '@startuml\nstart\nfork\nfork again\nend fork\nend\n@enduml'                                                | 'branch'
         'fork with one empty branch'                | '@startuml\nstart\nfork\n  :a;\nfork again\nend merge\nend\n@enduml'                                         | 'branch'
-        'mixed end merge and end fork'              | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  end merge\nfork again\n  :c;\nend fork\nend\n@enduml'     | 'Mismatched fork terminators'
-        'mixed end fork and end merge'              | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  end fork\nfork again\n  :c;\nend merge\nend\n@enduml'      | 'Mismatched fork terminators'
         'duplicate end fork after closed fork'      | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend fork\nend fork\nend\n@enduml'                        | 'end fork without active fork context'
         'duplicate end merge after closed fork'     | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend merge\nend merge\nend\n@enduml'                       | 'end merge without active fork context'
         'end fork misplaced after end merge closed' | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend merge\nend fork\nend\n@enduml'                        | 'end fork without active fork context'
@@ -121,5 +119,23 @@ class PlantFlowMalformedForkTerminatorSpec extends Specification {
         engine.isCompleted()
         engine.getEndTokens().size() == 1
         engine.getEndToken().payload == [initial: true, branch_a: true, after_merge: true]
+    }
+
+    @Unroll
+    def 'differing terminators across nested fork constructs parse successfully: #scenario'() {
+        when: 'an inner fork closed with one terminator sits inside an outer fork closed with the other'
+        def engine = PlantFlow.from(puml, payloadRegistry(['a', 'b', 'b2', 'c']))
+
+        then: 'the diagram parses and compiles without a mismatched-terminator error'
+        engine != null
+        engine.petriNet.transitions.find { it.actionKey == 'a' } != null
+        engine.petriNet.transitions.find { it.actionKey == 'b' } != null
+        engine.petriNet.transitions.find { it.actionKey == 'b2' } != null
+        engine.petriNet.transitions.find { it.actionKey == 'c' } != null
+
+        where:
+        scenario                            | puml
+        'inner end merge in outer end fork' | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  fork again\n    :b2;\n  end merge\nfork again\n  :c;\nend fork\nend\n@enduml'
+        'inner end fork in outer end merge' | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  fork again\n    :b2;\n  end fork\nfork again\n  :c;\nend merge\nend\n@enduml'
     }
 }

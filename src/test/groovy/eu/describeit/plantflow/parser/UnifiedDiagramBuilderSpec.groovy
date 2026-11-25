@@ -296,6 +296,55 @@ end
         DiagramValidator.validate(diagram)
     }
 
+    @Unroll
+    def 'should parse nested forks whose terminators differ across constructs: #scenario'() {
+        given:
+        def puml = """@startuml
+start
+fork
+  :outer 1;
+  fork
+    :inner 1;
+  fork again
+    :inner 2;
+  end ${innerTerminator}
+fork again
+  :outer 2;
+end ${outerTerminator}
+end
+@enduml
+"""
+
+        when:
+        ActivityDiagram diagram = parseAst(puml)
+
+        then: 'each fork construct keeps its own terminator: they may differ across constructs'
+        def outer = diagram.nodes[0] as ForkNode
+        outer.synchronizingJoin == (outerTerminator == 'fork')
+        outer.branches.size() == 2
+        def inner = outer.branches[0][1] as ForkNode
+        inner.synchronizingJoin == (innerTerminator == 'fork')
+        inner.branches*.action == [['inner 1'], ['inner 2']]
+        DiagramValidator.validate(diagram)
+
+        where:
+        scenario                            | innerTerminator | outerTerminator
+        'inner end merge in outer end fork' | 'merge'         | 'fork'
+        'inner end fork in outer end merge' | 'fork'          | 'merge'
+    }
+
+    def 'should still reject mixing end merge and end fork within one fork construct'() {
+        given: 'a fork construct closed by end merge and then terminated again by end fork at the same level'
+        def puml = '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend merge\nend fork\nend\n@enduml'
+
+        when:
+        parseAst(puml)
+
+        then: 'the second terminator is rejected instead of being silently accepted'
+        def ex = thrown(IllegalArgumentException)
+        ex.message.contains('end fork without active fork context')
+    }
+
     def 'should parse a fork inside a conditional branch and a repeat loop body'() {
         given:
         def puml = '''@startuml
@@ -378,7 +427,7 @@ end
         'end merge without active fork'   | '@startuml\nstart\nend merge\nend\n@enduml'                                                                   | 'end merge without active fork context'
         'end fork without active fork'    | '@startuml\nstart\nend fork\nend\n@enduml'                                                                    | 'end fork without active fork context'
         'unclosed fork'                   | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend\n@enduml'                                              | 'Unclosed fork'
-        'empty fork branch'               | '@startuml\nstart\nfork\n  :a;\nfork again\nend fork\nend\n@enduml'                                          | 'Fork branch must contain at least one action'
+        'empty fork branch'               | '@startuml\nstart\nfork\n  :a;\nfork again\nend fork\nend\n@enduml'                                          | 'Fork branch must contain at least one node'
         'fork again inside a conditional' | '@startuml\nstart\nif (g?) then (yes)\n  fork again\n  :a;\nelse (no)\n  :b;\nendif\nend\n@enduml'          | 'fork again without active fork context'
         'repeat while closing a fork'     | '@startuml\nstart\nfork\n  :a;\n  repeat while (c?) is (yes) not (no)\nfork again\n  :b;\nend fork\nend\n@enduml' | 'repeat while without active repeat'
         'else inside a fork branch'       | '@startuml\nstart\nfork\n  else (no)\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                        | 'else without active if'

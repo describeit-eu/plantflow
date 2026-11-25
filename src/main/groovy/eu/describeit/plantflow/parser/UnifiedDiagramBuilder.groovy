@@ -20,7 +20,7 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
     private static final String ERR_REPEAT_WHILE_NO_CONTEXT = 'repeat while without active repeat'
     private static final String ERR_UNCLOSED_REPEAT = 'Unclosed repeat - missing repeat while'
     private static final String ERR_DETACH_NO_CONTEXT = 'detach must directly follow a repeat while loop'
-    private static final String ERR_LOOP_BODY_EMPTY = 'Repeat loop body must contain at least one action'
+    private static final String ERR_LOOP_BODY_EMPTY = 'Repeat loop body must contain at least one node'
     private static final String ERR_UNCLOSED_IF = 'Unclosed if - missing endif'
     private static final String ERR_ELSE_NO_CONTEXT = 'else without active if'
     private static final String ERR_ENDIF_NO_CONTEXT = 'endif without active if'
@@ -28,7 +28,7 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
     private static final String ERR_END_MERGE_NO_CONTEXT = 'end merge without active fork context'
     private static final String ERR_END_FORK_NO_CONTEXT = 'end fork without active fork context'
     private static final String ERR_UNCLOSED_FORK = 'Unclosed fork - missing end merge or end fork'
-    private static final String ERR_FORK_BRANCH_EMPTY = 'Fork branch must contain at least one action'
+    private static final String ERR_FORK_BRANCH_EMPTY = 'Fork branch must contain at least one node'
     private static final String ERR_MISMATCHED_FORK_TERMINATORS = "Mismatched fork terminators within one fork construct: 'end merge' and 'end fork' cannot be mixed"
 
     private static final List<LineType> REPEAT_LINE_TYPES = [LineType.REPEAT, LineType.REPEAT_WHILE, LineType.DETACH]
@@ -191,9 +191,6 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
 
     private static void processFork(UnifiedState state) {
         state.hasFork = true
-        if (!state.stack.any { Object frame -> frame instanceof ForkFrame }) {
-            state.openConstructEndFork = null
-        }
         state.stack.push(new ForkFrame())
     }
 
@@ -210,16 +207,20 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
         if (!(top instanceof ForkFrame)) {
             throw new IllegalArgumentException(endFork ? ERR_END_FORK_NO_CONTEXT : ERR_END_MERGE_NO_CONTEXT)
         }
-        if (state.openConstructEndFork != null && state.openConstructEndFork != endFork) {
+        ForkFrame frame = (ForkFrame) top
+        // terminator consistency is tracked per fork construct: an inner fork may
+        // use end merge inside an outer end fork (and vice versa), but one frame
+        // must not mix both terminators
+        if (frame.terminator != null && frame.terminator != endFork) {
             throw new IllegalArgumentException(ERR_MISMATCHED_FORK_TERMINATORS)
         }
-        state.openConstructEndFork = endFork
+        frame.terminator = endFork
         if (endFork) {
             state.hasEndFork = true
         } else {
             state.hasEndMerge = true
         }
-        ForkFrame frame = (ForkFrame) state.stack.pop()
+        state.stack.pop()
         if (frame.branches.any { List<ActivityNode> branch -> branch.isEmpty() }) {
             throw new IllegalArgumentException(ERR_FORK_BRANCH_EMPTY)
         }
@@ -262,6 +263,7 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
 
     private static class ForkFrame {
         List<List<ActivityNode>> branches = [[]]
+        Boolean terminator = null
     }
 
     private static class UnifiedState {
@@ -279,6 +281,5 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
         List<ActivityNode> nodes = []
         Stack<Object> stack = [] as Stack<Object>
         RepeatNode lastLoop = null
-        Boolean openConstructEndFork = null
     }
 }
