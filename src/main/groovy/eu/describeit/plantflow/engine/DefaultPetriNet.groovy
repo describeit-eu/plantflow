@@ -43,6 +43,7 @@ class DefaultPetriNet implements PetriNetStructure {
         this.joinDescriptors = Collections.unmodifiableList(new ArrayList<>(descriptors))
     }
 
+    @Override
     List<SwitchDescriptor> getSwitchDescriptors() {
         return switchDescriptors
     }

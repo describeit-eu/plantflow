@@ -13,11 +13,11 @@ class SwitchSupport {
 
     private static final String ERR_NO_MATCHING_CASE = 'No matching case in switch '
 
+    private SwitchSupport() {
+    }
+
     static List<SwitchDescriptor> getSwitchDescriptors(PetriNetStructure net) {
-        if (net instanceof DefaultPetriNet defaultNet) {
-            return defaultNet.getSwitchDescriptors()
-        }
-        return Collections.emptyList()
+        return net.switchDescriptors
     }
 
     /**
@@ -40,7 +40,7 @@ class SwitchSupport {
 
     private static boolean hasEnabledCaseTransition(SwitchDescriptor descriptor, List<Transition> enabledTransitions) {
         for (Transition transition : enabledTransitions) {
-            if (descriptor.caseTransitionIndexes.contains(transition.index)) {
+            if (descriptor.isCaseTransition(transition.index)) {
                 return true
             }
         }

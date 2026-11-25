@@ -19,4 +19,8 @@ class SwitchDescriptor {
         this.switchExpression = switchExpression
         this.caseTransitionIndexes = Collections.unmodifiableList(new ArrayList<>(caseTransitionIndexes))
     }
+
+    boolean isCaseTransition(int transitionIndex) {
+        return caseTransitionIndexes.contains(transitionIndex)
+    }
 }
