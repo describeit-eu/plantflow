@@ -5,7 +5,7 @@
 **Date:** 2026-11-20
 **Reviewer:** code-review skill (two-axis: Standards + Spec)
 **Spec:** Issue #48 with child tickets #49-#52 (all closed)
-**Status:** ⚠️ OPEN — findings below are unaddressed; branch is green (949 tests, 0 failures; CodeNarc clean; JaCoCo pass; Pitest 96% kill / 95% strength) but has spec-conformance gaps worth fixing before merge
+**Status:** ⚠️ OPEN — spec findings a.1/a.2/a.3 and c.1/c.2/c.3 are RESOLVED on `fix/spec-48-review-findings`; remaining open items: a.4 (single test seam trade-off) and (b) scope-creep notes only; branch is green (955 tests, 0 failures; CodeNarc clean; JaCoCo pass)
 
 ## Diff Summary
 - 48 files changed, +1764/-3267 lines, 10 commits
@@ -32,9 +32,9 @@
 
 | # | Requirement | Status | Details |
 |---|---|---|---|
-| 1 | Stories 8/9: nested Fork Join/Merge per-activation semantics **at any depth** | ⚠️ PARTIAL | Fork inside another fork's branch compiles tag-transparent (`nestedInForkBranch`, no descriptors): inner `end fork` fires on first branch token, inner `end merge` can continue per branch — not all-branches / exactly-once. Forks in conditional branches and loop bodies are correct (covered by `PlantFlowForkCompositionSpec`). |
-| 2 | Story 14: mismatched terminators rejected only **within one construct** | ❌ VIOLATED | One shared `openConstructEndFork` field (reset only on outermost fork push) rejects an inner `end merge` inside an outer `end fork`. Terminator state should live on each `ForkFrame`. Legacy specs `PlantFlowForkJoinSpec:376-377`, `PlantFlowMalformedForkTerminatorSpec:35-36` currently assert the rejecting behavior and need updating. |
-| 3 | Zero-**nodes** emptiness rule (structure-only bodies valid) | ⚠️ PARTIAL | Behavior correct, but error messages still say "must contain at least one action" (`Repeat loop body…`, `Fork branch…`) — misdescribes the rule. |
+| 1 | Stories 8/9: nested Fork Join/Merge per-activation semantics **at any depth** | ✅ RESOLVED | Tag-transparent special case removed: every ForkNode registers its own ForkDescriptor/JoinDescriptor keyed by its own fork transition index; covered by new `PlantFlowNestedForkSpec` e2e tests. |
+| 2 | Story 14: mismatched terminators rejected only **within one construct** | ✅ RESOLVED | Terminator state moved onto each `ForkFrame`; inner `end merge` inside outer `end fork` (and vice versa) now parse; legacy specs updated plus new parser specs in `UnifiedDiagramBuilderSpec`/`ForkEndForkPumlParserSpec`. |
+| 3 | Zero-**nodes** emptiness rule (structure-only bodies valid) | ✅ RESOLVED | `Repeat loop body…` / `Fork branch…` messages now say "at least one node" in `UnifiedDiagramBuilder`, `ChainNetCompiler`, `DiagramValidator`, and all asserting specs. |
 | 4 | "Single public-API test seam; no new parser/compiler seams" | ⚠️ PARTIAL | New `ChainNetCompilerSpec`, `NamingContextSpec`, expanded `UnifiedDiagramBuilderSpec`, `UnsupportedControlSyntaxSpec` assert internal labels. The 11 acceptance scenarios are correctly at the public API. |
 | 5 | Full suite green + quality gates | ✅ MET | Verified outside the read-only review: 949 tests / 0 failures (all 11 `PlantFlowCompositionRegressionSpec` scenarios), CodeNarc 0 violations, JaCoCo verification passed, Pitest 1201/1255 killed (96%), 0 survived. |
 
@@ -46,13 +46,13 @@
 
 ### (c) Implemented but looks wrong
 
-1. **Tag-transparent fork-in-fork** (same as a.1) — openly documented in the `ChainNetCompiler` Javadoc as a deliberate divergence from the spec's per-activation-descriptor decision.
-2. **Shared `openConstructEndFork` global state** (same as a.2) — genuine logic smell beyond the spec wording: per-construct terminator tracking belongs on `ForkFrame`.
-3. **`PlantFlowExecutionSpec:1226` assertion weakened** — nested-fork payload check changed from asserting neither nested action ran to accepting either (a disjunction where a precise payload assertion belongs).
+1. **Tag-transparent fork-in-fork** (same as a.1) — ✅ RESOLVED: `nestedInForkBranch` logic and its Javadoc paragraph deleted; `connectJoin`/`connectMerge` always add descriptors.
+2. **Shared `openConstructEndFork` global state** (same as a.2) — ✅ RESOLVED: mismatched-terminator state now lives on each `ForkFrame` (`Boolean terminator`).
+3. **`PlantFlowExecutionSpec:1226` assertion weakened** — ✅ RESOLVED: restored the precise payload assertion (neither nested action in the end token, verified by running).
 
 ### Verified correct
 Detach scoping (innermost loop only, must directly follow `repeat while`); zero-node empty validation; `Unsupported control syntax '…' (unimplemented feature)` rejection distinct from malformed; strict written-order execution of sequential constructs; per-iteration fork-activation isolation by token identity; engine untouched; no public API changes.
 
 ---
 
-**Summary:** Standards — 0 hard violations, 4 judgement-call smells (worst: repeated type-switches across builder/compiler). Spec — 2 violated/partial requirements + 3 wrong-looking behaviors (worst: fork-in-fork Join/Merge semantics and the global mismatched-terminator check, both rooted in `UnifiedDiagramBuilder`/`ChainNetCompiler` fork handling).
+**Summary:** Standards — 0 hard violations, 4 judgement-call smells (worst: repeated type-switches across builder/compiler). Spec — a.1/a.2/a.3 and c.1/c.2/c.3 RESOLVED on `fix/spec-48-review-findings` (fork-in-fork per-activation descriptors, per-`ForkFrame` terminator tracking, zero-nodes error wording, precise nested-fork payload assertion); remaining open: a.4 (test-seam trade-off) and (b) scope-creep notes.
