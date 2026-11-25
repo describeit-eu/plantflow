@@ -69,16 +69,15 @@ class SwitchFrameSpec extends Specification {
         node.cases[1].actions*.actionKey == ['Action 2', 'Action 3']
     }
 
-    def 'toNode should materialize a SwitchNode without cases when no case was added'() {
+    def 'toNode should throw when no case was added'() {
         given:
         def frame = new SwitchFrame('test?')
 
         when:
-        def node = frame.toNode()
+        frame.toNode()
 
         then:
-        node instanceof SwitchNode
-        node.switchExpression == 'test?'
-        node.cases.isEmpty()
+        def ex = thrown(IllegalArgumentException)
+        ex.message == SwitchFrame.ERR_SWITCH_NO_CASES
     }
 }

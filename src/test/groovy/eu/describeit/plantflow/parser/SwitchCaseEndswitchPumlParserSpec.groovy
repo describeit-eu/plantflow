@@ -137,4 +137,51 @@ stop
         switchNode.cases[1].condition == 'conditionB'
         switchNode.cases[1].actions*.actionKey == ['Action 2', 'Action 3']
     }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for malformed switch construct: #scenario'() {
+        given:
+        def puml = (['@startuml', 'start'] + bodyLines + ['stop', '@enduml']).join('\n')
+        def lines = new PumlLineClassifier().classifyAll(puml.readLines())
+
+        when:
+        new UnifiedDiagramBuilder().build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario                             | bodyLines                                                                            | expectedMessage
+        'case without an active switch'      | ['case ( conditionA )', '  :Action 1;', 'endswitch']                                  | SwitchFrame.ERR_CASE_NO_CONTEXT
+        'case inside a non-switch construct' | ['if ( valid? ) then (yes)', '  case ( conditionA )', '    :Action 1;', 'endif']      | SwitchFrame.ERR_CASE_NO_CONTEXT
+        'endswitch without an active switch' | [':Action 1;', 'endswitch']                                                           | SwitchFrame.ERR_ENDSWITCH_NO_CONTEXT
+        'unclosed switch missing endswitch'  | ['switch ( test? )', 'case ( conditionA )', '  :Action 1;']                           | SwitchFrame.ERR_UNCLOSED_SWITCH
+        'empty switch with no cases'         | ['switch ( test? )', 'endswitch']                                                     | SwitchFrame.ERR_SWITCH_NO_CASES
+    }
+
+    def 'should allow an empty case body when the case has no actions'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+switch ( test? )
+case ( conditionA )
+case ( conditionB )
+  :Action 2;
+endswitch
+stop
+@enduml'''.readLines())
+
+        when:
+        def diagram = new UnifiedDiagramBuilder().build(lines)
+
+        then: 'no error and the empty case body stays empty'
+        noExceptionThrown()
+        def switchNode = diagram.nodes[0] as SwitchNode
+        switchNode.cases.size() == 2
+        switchNode.cases[0].condition == 'conditionA'
+        switchNode.cases[0].actions.isEmpty()
+        switchNode.cases[1].condition == 'conditionB'
+        switchNode.cases[1].actions*.actionKey == ['Action 2']
+    }
 }
