@@ -101,8 +101,8 @@ class SwitchCaseEndswitchPumlParserSpec extends Specification {
         def toEnd = net.transitions.find { it.label == 'T_switch_1_to_end' }
         verifyTransitionConnection(net, toEnd, endswitchPlace, net.endPlace)
 
-        where:
-        caseCount << [2, 3, 5]
+        where: 'the 5-case scenario is covered by the file-based test above'
+        caseCount << [2, 3]
     }
 
     def 'should build a SwitchNode AST with switch expression, case conditions, and actions'() {
