@@ -85,7 +85,7 @@ class PlantFlowCompositionRegressionSpec extends Specification {
               :A3;
             fork again
               :B;
-            end fork
+            end merge
             :after;
         '''), [:])
 

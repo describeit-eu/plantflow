@@ -183,12 +183,12 @@ class ChainNetCompilerSpec extends Specification {
         when:
         PetriNetStructure net = compiler.compile(diagram)
 
-        then: 'outer fork is id 1 with a join descriptor, inner fork is id 2 without one (tag-transparent)'
+        then: 'each fork registers its own join descriptor keyed by its own fork transition index'
         findTransitionByLabel(net, 'T_fork_1') != null
         findTransitionByLabel(net, 'T_fork_2') != null
         findTransitionByLabel(net, 'T_fork_2_join') != null
-        net.joinDescriptors.size() == 1
-        net.joinDescriptors[0].forkTransitionIndex == findTransitionByLabel(net, 'T_fork_1').index
+        net.joinDescriptors.size() == 2
+        net.joinDescriptors*.forkTransitionIndex.toSet() == [findTransitionByLabel(net, 'T_fork_1').index, findTransitionByLabel(net, 'T_fork_2').index].toSet()
         net.forkDescriptors.isEmpty()
         net.transitions*.actionKey.containsAll(['a', 'i1', 'i2', 'a3', 'b', 'after'])
 
@@ -210,6 +210,6 @@ class ChainNetCompilerSpec extends Specification {
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message == 'Fork branch must contain at least one action'
+        ex.message == 'Fork branch must contain at least one node'
     }
 }

@@ -1221,9 +1221,10 @@ class PlantFlowExecutionSpec extends Specification {
         engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken.payload.initial == true
-        endToken.payload.action_1 == true
-        !endToken.payload.containsKey('action_2')
-        (endToken.payload.containsKey('nested_action_1') || endToken.payload.containsKey('nested_action_2'))
+        endToken.payload.action_2 == true
+        !endToken.payload.containsKey('action_1')
+        !endToken.payload.containsKey('nested_action_1')
+        !endToken.payload.containsKey('nested_action_2')
     }
 
     def 'should update execution context from parallel branch actions'() {

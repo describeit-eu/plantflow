@@ -21,14 +21,13 @@ import groovy.transform.CompileStatic
  * a ForkNode's Parallel Branches are themselves compiled as chains. All labels are
  * drawn from one shared {@link NamingContext} so they stay unique at any depth.
  *
- * Forks reuse the per-activation ForkDescriptor/JoinDescriptor machinery: the
- * fork transition of a top-level fork (not nested inside another fork's branch)
- * registers one activation per firing, a Join (`end fork`) waits for all Parallel
- * Branches of that activation, and a Merge (`end merge`) continues once on the
- * first completed branch. A fork nested inside another fork's branch is compiled
- * tag-transparent (plain fork transition and plain terminator transitions, no
- * descriptors) so the tokens keep the enclosing fork's activation id and the
- * enclosing Join/Merge can still correlate its branch-end tokens.
+ * Forks reuse the per-activation ForkDescriptor/JoinDescriptor machinery at any
+ * depth: every fork transition registers one activation per firing keyed by its
+ * own transition index, a Join (`end fork`) waits for all Parallel Branches of
+ * that activation, and a Merge (`end merge`) continues once on the first
+ * completed branch. A fork nested inside another fork's branch registers its
+ * own descriptors, so nested activations stay isolated from the enclosing
+ * fork's activation automatically.
  */
 @CompileStatic
 class ChainNetCompiler {
@@ -36,8 +35,8 @@ class ChainNetCompiler {
     private static final String ERR_NO_ACTIONS = 'Diagram must contain at least one action transition'
     private static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
     private static final String ERR_ELSE_EMPTY = 'Else block must contain at least one action'
-    private static final String ERR_REPEAT_BODY_EMPTY = 'Repeat loop body must contain at least one action'
-    private static final String ERR_FORK_BRANCH_EMPTY = 'Fork branch must contain at least one action'
+    private static final String ERR_REPEAT_BODY_EMPTY = 'Repeat loop body must contain at least one node'
+    private static final String ERR_FORK_BRANCH_EMPTY = 'Fork branch must contain at least one node'
     private static final String ERR_UNSUPPORTED_NODE = 'Unsupported node type in chain: '
     private static final String BRANCH_PLACE_SEPARATOR = '_'
 
@@ -160,20 +159,15 @@ class ChainNetCompiler {
         validateForkBranches(node)
         int id = ctx.naming.nextConstructId()
         PetriNetBuilder builder = ctx.builder
-        // a fork nested inside another fork's branch is tag-transparent: it keeps
-        // the enclosing fork's activation on its tokens so the enclosing Join/Merge
-        // stays correlated; only top-level forks register their own activations
-        boolean nestedInForkBranch = ctx.enclosingForkTransitionIndex != null
         Transition forkTransition = builder.addTransition(ctx.naming.forkTransition(id))
         builder.connect(fromPlace, forkTransition)
 
-        Integer branchEnclosingFork = nestedInForkBranch ?
-            ctx.enclosingForkTransitionIndex : forkTransition.index
-        List<Place> branchEndPlaces = compileForkBranches(ctx, node, id, forkTransition, branchEnclosingFork)
+        // every fork's branches carry that fork's own activation, at any depth
+        List<Place> branchEndPlaces = compileForkBranches(ctx, node, id, forkTransition, forkTransition.index)
 
         Place continuationPlace = node.synchronizingJoin ?
-            connectJoin(ctx, id, forkTransition, branchEndPlaces, nestedInForkBranch) :
-            connectMerge(ctx, id, forkTransition, branchEndPlaces, nestedInForkBranch)
+            connectJoin(ctx, id, forkTransition, branchEndPlaces) :
+            connectMerge(ctx, id, forkTransition, branchEndPlaces)
 
         if (!last) {
             return continuationPlace
@@ -218,7 +212,7 @@ class ChainNetCompiler {
         return target
     }
 
-    private Place connectJoin(ChainContext ctx, int id, Transition forkTransition, List<Place> branchEndPlaces, boolean nestedInForkBranch) {
+    private Place connectJoin(ChainContext ctx, int id, Transition forkTransition, List<Place> branchEndPlaces) {
         PetriNetBuilder builder = ctx.builder
         Place joinPlace = builder.addPlace(ctx.naming.forkJoinPlace(id))
         Transition joinTransition = builder.addTransition(ctx.naming.forkJoinTransition(id))
@@ -226,13 +220,11 @@ class ChainNetCompiler {
             builder.connect(branchEnd, joinTransition)
         }
         builder.connect(joinTransition, joinPlace)
-        if (!nestedInForkBranch) {
-            builder.addJoinDescriptor(new JoinDescriptor(forkTransition.index, joinTransition.index, branchEndPlaces*.index))
-        }
+        builder.addJoinDescriptor(new JoinDescriptor(forkTransition.index, joinTransition.index, branchEndPlaces*.index))
         return joinPlace
     }
 
-    private Place connectMerge(ChainContext ctx, int id, Transition forkTransition, List<Place> branchEndPlaces, boolean nestedInForkBranch) {
+    private Place connectMerge(ChainContext ctx, int id, Transition forkTransition, List<Place> branchEndPlaces) {
         PetriNetBuilder builder = ctx.builder
         Place mergePlace = builder.addPlace(ctx.naming.forkMergePlace(id))
         List<Integer> mergeTransitionIndexes = []
@@ -244,9 +236,7 @@ class ChainNetCompiler {
             builder.connect(mergeTransition, mergePlace)
             mergeTransitionIndexes.add(mergeTransition.index)
         }
-        if (!nestedInForkBranch) {
-            builder.addForkDescriptor(new ForkDescriptor(forkTransition.index, mergeTransitionIndexes))
-        }
+        builder.addForkDescriptor(new ForkDescriptor(forkTransition.index, mergeTransitionIndexes))
         return mergePlace
     }
 
