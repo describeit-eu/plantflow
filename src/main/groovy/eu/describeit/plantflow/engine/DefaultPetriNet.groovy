@@ -13,6 +13,7 @@ class DefaultPetriNet implements PetriNetStructure {
 
     private List<ForkDescriptor> forkDescriptors = Collections.emptyList()
     private List<JoinDescriptor> joinDescriptors = Collections.emptyList()
+    private List<SwitchDescriptor> switchDescriptors = Collections.emptyList()
 
     DefaultPetriNet(List<Place> places, List<Transition> transitions, IncidenceMatrix incidenceMatrix, Place startPlace, Place endPlace) {
         this.places = Collections.unmodifiableList(new ArrayList<>(places))
@@ -40,5 +41,15 @@ class DefaultPetriNet implements PetriNetStructure {
     @PackageScope
     void setJoinDescriptors(List<JoinDescriptor> descriptors) {
         this.joinDescriptors = Collections.unmodifiableList(new ArrayList<>(descriptors))
+    }
+
+    @Override
+    List<SwitchDescriptor> getSwitchDescriptors() {
+        return switchDescriptors
+    }
+
+    @PackageScope
+    void setSwitchDescriptors(List<SwitchDescriptor> descriptors) {
+        this.switchDescriptors = Collections.unmodifiableList(new ArrayList<>(descriptors))
     }
 }

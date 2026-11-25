@@ -82,10 +82,7 @@ class PlantFlow {
     }
 
     boolean step() {
-        List<Transition> enabledTransitions = getEnabledTransitions()
-        log.info('step() - enabledTransitions:{}', enabledTransitions)
-        if (enabledTransitions) return fire(enabledTransitions.get(0))
-        return false
+        return petriNet.step(handlerRegistry, executionContext)
     }
 
     PlantFlow runUntilEnd(Token token = null, ExecutionContext context = null) {

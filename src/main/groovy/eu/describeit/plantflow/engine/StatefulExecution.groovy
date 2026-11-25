@@ -75,6 +75,7 @@ class StatefulExecution {
 
     boolean step(HandlerRegistry registry, ExecutionContext context) {
         List<Transition> enabled = getEnabledTransitions(registry, context)
+        SwitchSupport.assertNoStalledSwitchToken(structure, marking, enabled)
         if (enabled.isEmpty()) {
             return false
         }
