@@ -22,6 +22,8 @@ class NamingContext {
     private static final String TRANSITION_REPEAT_PREFIX = 'T_repeat_'
     private static final String PLACE_FORK_PREFIX = 'P_fork_'
     private static final String TRANSITION_FORK_PREFIX = 'T_fork_'
+    private static final String PLACE_SWITCH_PREFIX = 'P_switch_'
+    private static final String TRANSITION_SWITCH_PREFIX = 'T_switch_'
     private static final String DECISION_SUFFIX = '_decision'
     private static final String THEN_SUFFIX = '_then'
     private static final String ELSE_SUFFIX = '_else'
@@ -38,6 +40,8 @@ class NamingContext {
     private static final String BRANCH_END_SUFFIX = '_end'
     private static final String MERGE_SUFFIX = '_merge'
     private static final String JOIN_SUFFIX = '_join'
+    private static final String CASE_SUFFIX = '_case_'
+    private static final String ENDSWITCH_SUFFIX = '_endswitch'
     private static final String MERGE_TRANSITION_SUFFIX = '_merge_'
     private static final String NEGATION_PREFIX = '!('
     private static final String NEGATION_SUFFIX = ')'
@@ -138,5 +142,29 @@ class NamingContext {
 
     String forkToEndTransition(int forkId) {
         TRANSITION_FORK_PREFIX + forkId + TO_END_SUFFIX
+    }
+
+    String switchDecisionPlace(int switchId) {
+        PLACE_SWITCH_PREFIX + switchId + DECISION_SUFFIX
+    }
+
+    String switchCasePlace(int switchId, int caseNumber) {
+        PLACE_SWITCH_PREFIX + switchId + CASE_SUFFIX + caseNumber
+    }
+
+    String switchEndswitchPlace(int switchId) {
+        PLACE_SWITCH_PREFIX + switchId + ENDSWITCH_SUFFIX
+    }
+
+    String switchToDecisionTransition(int switchId) {
+        TRANSITION_SWITCH_PREFIX + switchId + TO_DECISION_SUFFIX
+    }
+
+    String switchCaseTransition(int switchId, int caseNumber) {
+        TRANSITION_SWITCH_PREFIX + switchId + CASE_SUFFIX + caseNumber
+    }
+
+    String switchToEndTransition(int switchId) {
+        TRANSITION_SWITCH_PREFIX + switchId + TO_END_SUFFIX
     }
 }
