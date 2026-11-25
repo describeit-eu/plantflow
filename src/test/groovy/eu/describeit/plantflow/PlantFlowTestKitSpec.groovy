@@ -668,7 +668,7 @@ class PlantFlowTestKitSpec extends Specification {
     def 'validateTransitionGuard should pass for correct guard'() {
         given:
         def net = parse(conditionalPuml('myGuard', 'then', 'else'))
-        def branchYes = net.transitions.find { it.label == 'T_branch_yes' }
+        def branchYes = net.transitions.find { it.label == 'T_if_1_yes' }
 
         when:
         validateTransitionGuard(net, 'myGuard', branchYes.index)

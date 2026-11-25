@@ -179,4 +179,45 @@ class PumlLineClassifierSpec extends Specification {
         classifier.classify('\t').type == LineType.IGNORED
         classifier.classify('').type == LineType.IGNORED
     }
+
+    @Unroll
+    def 'should classify unsupported control syntax "#line" as UNSUPPORTED carrying #construct'() {
+        when:
+        def result = classifier.classify(line)
+
+        then:
+        result.type == LineType.UNSUPPORTED
+        result.construct == construct
+        result.text == line
+
+        where:
+        line                            | construct
+        'elseif (g2) then (yes)'        | 'elseif'
+        'elseif (g2)'                   | 'elseif'
+        'elseif'                        | 'elseif'
+        '  elseif (g2) then (yes)  '    | 'elseif'
+        'while (c1) is (yes)'           | 'while'
+        'while (c1)'                    | 'while'
+        'while'                         | 'while'
+        'endwhile (no)'                 | 'endwhile'
+        'endwhile'                      | 'endwhile'
+        'switch (s?)'                   | 'switch'
+        'switch'                        | 'switch'
+        'case (a)'                      | 'case'
+        'case (some value)'             | 'case'
+        'endswitch'                     | 'endswitch'
+        '  endswitch  '                 | 'endswitch'
+    }
+
+    @Unroll
+    def 'should not classify "#line" as UNSUPPORTED'() {
+        when:
+        def result = classifier.classify(line)
+
+        then:
+        result.type != LineType.UNSUPPORTED
+
+        where:
+        line << ['else (no)', 'endif', 'end', 'end fork', 'end merge', 'if (c) then (yes)', 'casual text', 'switchboard (x)']
+    }
 }

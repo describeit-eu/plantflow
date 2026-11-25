@@ -13,6 +13,8 @@ class ClassifiedLine {
     final String action
     final String guard
     final String branchLabel
+    /** Name of the unsupported control construct; only set when type is {@link LineType#UNSUPPORTED}. */
+    String construct
 
     ClassifiedLine(LineType type, String text, String action = null, String guard = null, String branchLabel = null) {
         this.type = type
@@ -20,5 +22,11 @@ class ClassifiedLine {
         this.action = action
         this.guard = guard
         this.branchLabel = branchLabel
+    }
+
+    static ClassifiedLine unsupported(String text, String construct) {
+        ClassifiedLine line = new ClassifiedLine(LineType.UNSUPPORTED, text)
+        line.construct = construct
+        return line
     }
 }

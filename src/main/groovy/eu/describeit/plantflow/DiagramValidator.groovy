@@ -23,11 +23,11 @@ class DiagramValidator {
     public static final String ERR_DIAGRAM_NULL = 'Diagram cannot be null'
     public static final String ERR_NO_FORK = 'Diagram contains fork but no fork statement found'
     public static final String ERR_NO_END_MERGE = 'fork construct must be closed with an end merge or end fork'
-    public static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one action'
+    public static final String ERR_BRANCH_EMPTY = 'Fork branch must contain at least one node'
     public static final String ERR_MIN_BRANCHES = 'Fork must have at least 2 branches'
     public static final String ERR_NO_REPEAT = 'Diagram contains repeat while but no repeat statement found'
     public static final String ERR_NO_REPEAT_WHILE = 'repeat construct must be closed with a repeat while line'
-    public static final String ERR_LOOP_BODY_EMPTY = 'Repeat loop body must contain at least one action'
+    public static final String ERR_LOOP_BODY_EMPTY = 'Repeat loop body must contain at least one node'
     public static final String ERR_LOOP_CONDITION_EMPTY = 'Repeat loop must have a loop condition'
 
     static void validate(ActivityDiagram diagram) {
@@ -186,7 +186,11 @@ class DiagramValidator {
                 validateRepeatNode((RepeatNode) node)
                 break
             case ForkNode:
-                validateForkBranches(((ForkNode) node).branches)
+                ForkNode forkNode = (ForkNode) node
+                validateForkBranches(forkNode.branches)
+                for (List<ActivityNode> branch : forkNode.branches) {
+                    validateComposedChildren(branch)
+                }
                 break
             default:
                 break

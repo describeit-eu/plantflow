@@ -16,38 +16,38 @@ class IfThenElseEndifPumlParserSpec extends Specification {
         and:
         net.startPlace.index == 0
         net.startPlace.label == 'start'
-        net.endPlace.index == 5
+        net.endPlace.index == 1
         net.endPlace.label == 'end'
 
         and:
         // Check decision place
-        def decisionPlace = net.places.find { it.label == 'P_if_decision' }
+        def decisionPlace = net.places.find { it.label == 'P_if_1_decision' }
         decisionPlace != null
-        decisionPlace.index == 1
+        decisionPlace.index == 2
 
         // Check then branch place
-        def thenPlace = net.places.find { it.label == 'P_then' }
+        def thenPlace = net.places.find { it.label == 'P_if_1_then' }
         thenPlace != null
-        thenPlace.index == 2
+        thenPlace.index == 3
 
         // Check else branch place
-        def elsePlace = net.places.find { it.label == 'P_else' }
+        def elsePlace = net.places.find { it.label == 'P_if_1_else' }
         elsePlace != null
-        elsePlace.index == 3
+        elsePlace.index == 4
 
         // Check endif merge place
-        def endifPlace = net.places.find { it.label == 'P_endif' }
+        def endifPlace = net.places.find { it.label == 'P_if_1_endif' }
         endifPlace != null
-        endifPlace.index == 4
+        endifPlace.index == 5
 
         and:
         // Check transitions
-        def startToDecision = net.transitions.find { it.label == 'T_start_to_decision' }
-        def branchYesTransition = net.transitions.find { it.label == 'T_branch_yes' }
-        def branchNoTransition = net.transitions.find { it.label == 'T_branch_no' }
+        def startToDecision = net.transitions.find { it.label == 'T_if_1_to_decision' }
+        def branchYesTransition = net.transitions.find { it.label == 'T_if_1_yes' }
+        def branchNoTransition = net.transitions.find { it.label == 'T_if_1_no' }
         def actionThenTransition = net.transitions.find { it.label == 'process all' }
         def actionElseTransition = net.transitions.find { it.label == 'process none' }
-        def endifToEnd = net.transitions.find { it.label == 'T_endif_to_end' }
+        def endifToEnd = net.transitions.find { it.label == 'T_if_1_to_end' }
 
         startToDecision != null
         branchYesTransition != null
@@ -72,12 +72,12 @@ class IfThenElseEndifPumlParserSpec extends Specification {
 
         and:
         // Verify incidence matrix connections using verifyTransitionConnection
-        verifyTransitionConnection(net, startToDecision.index, 0, 1)
-        verifyTransitionConnection(net, branchYesTransition.index, 1, 2)
-        verifyTransitionConnection(net, branchNoTransition.index, 1, 3)
-        verifyTransitionConnection(net, actionThenTransition.index, 2, 4)
-        verifyTransitionConnection(net, actionElseTransition.index, 3, 4)
-        verifyTransitionConnection(net, endifToEnd.index, 4, 5)
+        verifyTransitionConnection(net, startToDecision.index, 0, 2)
+        verifyTransitionConnection(net, branchYesTransition.index, 2, 3)
+        verifyTransitionConnection(net, branchNoTransition.index, 2, 4)
+        verifyTransitionConnection(net, actionThenTransition.index, 3, 5)
+        verifyTransitionConnection(net, actionElseTransition.index, 4, 5)
+        verifyTransitionConnection(net, endifToEnd.index, 5, 1)
     }
 
     def 'should parse if-then-else-endif diagram from string'() {
@@ -330,7 +330,7 @@ class IfThenElseEndifPumlParserSpec extends Specification {
 
         then:
         net != null
-        def branchYes = net.transitions.find { it.label == 'T_branch_yes' }
+        def branchYes = net.transitions.find { it.label == 'T_if_1_yes' }
         branchYes != null
         branchYes.guardKey == "actions['process all'] == true"
     }

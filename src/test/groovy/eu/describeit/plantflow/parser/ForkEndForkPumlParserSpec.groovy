@@ -140,33 +140,47 @@ class ForkEndForkPumlParserSpec extends Specification {
             end
             @enduml
          '''                                                                | 'end merge without active fork context'
-        'mixed end merge and end fork within one fork' | '''
-            @startuml
+    }
+
+    @Unroll
+    def 'differing terminators across nested fork constructs parse successfully: #scenario'() {
+        when: 'an inner fork closed with one terminator sits inside an outer fork closed with the other'
+        def net = parse(puml)
+
+        then: 'the diagram parses and compiles without a mismatched-terminator error'
+        ['action 1', 'action 2', 'action 2b', 'action 3'].each { action ->
+            assert net.transitions.find { it.actionKey == action } != null
+        }
+
+        where:
+        scenario                            | puml
+        'inner end merge in outer end fork' | '''@startuml
             start
             fork
               :action 1;
               fork
                 :action 2;
+              fork again
+                :action 2b;
               end merge
             fork again
               :action 3;
             end fork
             end
-            @enduml
-        '''                                                                | 'Mismatched fork terminators'
-        'mixed end fork and end merge within one fork' | '''
-            @startuml
+            @enduml'''
+        'inner end fork in outer end merge' | '''@startuml
             start
             fork
               :action 1;
               fork
                 :action 2;
+              fork again
+                :action 2b;
               end fork
             fork again
               :action 3;
             end merge
             end
-            @enduml
-        '''                                                                | 'Mismatched fork terminators'
+            @enduml'''
     }
 }

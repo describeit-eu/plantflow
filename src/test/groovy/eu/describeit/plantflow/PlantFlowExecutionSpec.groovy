@@ -753,7 +753,7 @@ class PlantFlowExecutionSpec extends Specification {
         engine.seedToken(Token.of())
 
         // First, fire the initial transition to get token to decision place
-        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' }
         engine.fire(startTransition)
 
         def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
@@ -788,7 +788,7 @@ class PlantFlowExecutionSpec extends Specification {
         engine.seedToken(Token.of())
 
         // First, fire the initial transition to get token to decision place
-        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' }
         engine.fire(startTransition)
 
         when: 'querying enabled transitions'
@@ -821,7 +821,7 @@ class PlantFlowExecutionSpec extends Specification {
         engine.seedToken(Token.of())
 
         // First, fire the initial transition to get token to decision place
-        def startTransition = engine.petriNet.transitions.find { it.label == 'T_start_to_decision' }
+        def startTransition = engine.petriNet.transitions.find { it.label == 'T_if_1_to_decision' }
         engine.fire(startTransition)
 
         def transition = engine.petriNet.transitions.find { it.guardKey == 'unregistered guard' }
@@ -1217,12 +1217,12 @@ class PlantFlowExecutionSpec extends Specification {
         executionLog.size() == 4
         executionLog.containsAll(actions)
 
-        and: 'exactly one continuation carries the first completed branch payload only'
+        and: 'exactly one continuation carries only the first completed outer branch payload'
         engine.getEndTokens().size() == 1
         def endToken = engine.getEndToken()
         endToken.payload.initial == true
-        endToken.payload.action_1 == true
-        !endToken.payload.containsKey('action_2')
+        endToken.payload.action_2 == true
+        !endToken.payload.containsKey('action_1')
         !endToken.payload.containsKey('nested_action_1')
         !endToken.payload.containsKey('nested_action_2')
     }

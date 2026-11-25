@@ -1,6 +1,5 @@
 package eu.describeit.plantflow.compiler
 
-import eu.describeit.plantflow.ast.ActionNode
 import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
@@ -9,67 +8,46 @@ import eu.describeit.plantflow.ast.RepeatNode
 import eu.describeit.plantflow.engine.PetriNetStructure
 import groovy.transform.CompileStatic
 
+/**
+ * Facade compiler: every diagram is compiled by the single recursive
+ * {@link ChainNetCompiler}, which handles Action, Conditional, Repeat, and
+ * Fork nodes uniformly at any depth.
+ */
 @CompileStatic
 class DiagramCompiler {
 
     private static final String ERR_DIAGRAM_NULL = 'Diagram cannot be null'
     private static final String ERR_THEN_EMPTY = 'Then block must contain at least one action'
 
-    private final LinearNetCompiler linearCompiler = new LinearNetCompiler()
-    private final ConditionalNetCompiler conditionalCompiler = new ConditionalNetCompiler()
-    private final ForkNetCompiler forkCompiler = new ForkNetCompiler()
-    private final RepeatNetCompiler repeatCompiler = new RepeatNetCompiler()
+    private final ChainNetCompiler chainCompiler = new ChainNetCompiler()
+
     PetriNetStructure compile(ActivityDiagram diagram) {
         if (diagram == null) throw new IllegalArgumentException(ERR_DIAGRAM_NULL)
-        ConditionalNode cond = findConditionalNode(diagram)
-        if (cond != null) return conditionalCompiler.compile(cond)
-        ForkNode fork = findForkNode(diagram)
-        if (fork != null) return forkCompiler.compile(fork, extractPostForkActions(diagram, fork))
-        RepeatNode repeat = findRepeatNode(diagram)
-        if (repeat != null) {
-            return repeatCompiler.compile(repeat, extractPreRepeatActions(diagram, repeat), extractPostRepeatActions(diagram, repeat))
+        if (diagram.isConditional() && !containsNode(diagram.nodes, ConditionalNode) && !containsNode(diagram.nodes, RepeatNode) && !containsNode(diagram.nodes, ForkNode)) {
+            throw new IllegalArgumentException(ERR_THEN_EMPTY)
         }
-        if (diagram.isConditional()) throw new IllegalArgumentException(ERR_THEN_EMPTY)
-        return linearCompiler.compile(extractActionNodes(diagram))
+        return chainCompiler.compile(diagram)
     }
 
-    private static RepeatNode findRepeatNode(ActivityDiagram diagram) {
-        diagram.nodes.find { ActivityNode n -> n instanceof RepeatNode } as RepeatNode
+    private static boolean containsNode(List<ActivityNode> nodes, Class<? extends ActivityNode> type) {
+        return nodes.any { ActivityNode node -> type.isInstance(node) || containsNode(childrenOf(node), type) }
     }
 
-    private static ConditionalNode findConditionalNode(ActivityDiagram diagram) {
-        diagram.nodes.find { ActivityNode n -> n instanceof ConditionalNode } as ConditionalNode
-    }
-    private static ForkNode findForkNode(ActivityDiagram diagram) {
-        diagram.nodes.find { ActivityNode n -> n instanceof ForkNode } as ForkNode
-    }
-    private static List<ActionNode> extractPostForkActions(ActivityDiagram diagram, ForkNode forkNode) {
-        boolean forkFound = false
-        List<ActionNode> postForkActions = []
-        for (ActivityNode node : diagram.nodes) {
-            if (node.is(forkNode)) { forkFound = true; continue }
-            if (forkFound && node instanceof ActionNode) postForkActions.add((ActionNode) node)
+    private static List<ActivityNode> childrenOf(ActivityNode node) {
+        switch (node) {
+            case ConditionalNode:
+                ConditionalNode conditional = (ConditionalNode) node
+                return conditional.thenActions + conditional.elseActions
+            case RepeatNode:
+                return ((RepeatNode) node).body
+            case ForkNode:
+                List<ActivityNode> children = []
+                for (List<ActivityNode> branch : ((ForkNode) node).branches) {
+                    children.addAll(branch)
+                }
+                return children
+            default:
+                return []
         }
-        return postForkActions
-    }
-    private static List<ActionNode> extractPreRepeatActions(ActivityDiagram diagram, RepeatNode repeatNode) {
-        List<ActionNode> preRepeatActions = []
-        for (ActivityNode node : diagram.nodes) {
-            if (node.is(repeatNode)) break
-            if (node instanceof ActionNode) preRepeatActions.add((ActionNode) node)
-        }
-        return preRepeatActions
-    }
-    private static List<ActionNode> extractPostRepeatActions(ActivityDiagram diagram, RepeatNode repeatNode) {
-        boolean repeatFound = false
-        List<ActionNode> postRepeatActions = []
-        for (ActivityNode node : diagram.nodes) {
-            if (node.is(repeatNode)) { repeatFound = true; continue }
-            if (repeatFound && node instanceof ActionNode) postRepeatActions.add((ActionNode) node)
-        }
-        return postRepeatActions
-    }
-    private static List<ActionNode> extractActionNodes(ActivityDiagram diagram) {
-        diagram.nodes.findAll { ActivityNode n -> n instanceof ActionNode } as List<ActionNode>
     }
 }

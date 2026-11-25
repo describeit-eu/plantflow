@@ -149,20 +149,20 @@ class PlantFlowComposedRepeatConditionalSpec extends Specification {
         and: 'advance to the conditional decision place inside the loop body'
         def fetch = engine.petriNet.transitions.find { it.actionKey == 'fetch' }
         engine.fire(fetch, marking, context)
-        def toDecision = engine.petriNet.transitions.find { it.label == 'T_repeat_1_if_1_to_decision' }
+        def toDecision = engine.petriNet.transitions.find { it.label == 'T_if_2_to_decision' }
         engine.fire(toDecision, marking, context)
         def loopDecision = engine.petriNet.places.find { it.label == 'P_repeat_1_decision' }
-        def ifDecision = engine.petriNet.places.find { it.label == 'P_repeat_1_if_1_decision' }
+        def ifDecision = engine.petriNet.places.find { it.label == 'P_if_2_decision' }
 
         when: 'the marking is copied and both copies continue independently'
         def copy = marking.copy()
-        def branchYes = engine.petriNet.transitions.find { it.label == 'T_repeat_1_if_1_yes' }
+        def branchYes = engine.petriNet.transitions.find { it.label == 'T_if_2_yes' }
         engine.fire(branchYes, copy, context)
 
         then: 'the original marking still has its token at the if decision place and none on the then branch'
         marking.getTokenCount(ifDecision) == 1
         marking.getTokenCount(loopDecision) == 0
         copy.getTokenCount(ifDecision) == 0
-        copy.getTokenCount(engine.petriNet.places.find { it.label == 'P_repeat_1_if_1_then' }) == 1
+        copy.getTokenCount(engine.petriNet.places.find { it.label == 'P_if_2_then' }) == 1
     }
 }

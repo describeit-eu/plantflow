@@ -32,8 +32,6 @@ class PlantFlowMalformedForkTerminatorSpec extends Specification {
         'fork with a single branch'                 | '@startuml\nstart\nfork\n  :a;\nend fork\nend\n@enduml'                                                     | 'at least 2 branches'
         'fork with empty branches'                  | '@startuml\nstart\nfork\nfork again\nend fork\nend\n@enduml'                                                | 'branch'
         'fork with one empty branch'                | '@startuml\nstart\nfork\n  :a;\nfork again\nend merge\nend\n@enduml'                                         | 'branch'
-        'mixed end merge and end fork'              | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  end merge\nfork again\n  :c;\nend fork\nend\n@enduml'     | 'Mismatched fork terminators'
-        'mixed end fork and end merge'              | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  end fork\nfork again\n  :c;\nend merge\nend\n@enduml'      | 'Mismatched fork terminators'
         'duplicate end fork after closed fork'      | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend fork\nend fork\nend\n@enduml'                        | 'end fork without active fork context'
         'duplicate end merge after closed fork'     | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend merge\nend merge\nend\n@enduml'                       | 'end merge without active fork context'
         'end fork misplaced after end merge closed' | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nend merge\nend fork\nend\n@enduml'                        | 'end fork without active fork context'
@@ -46,9 +44,13 @@ class PlantFlowMalformedForkTerminatorSpec extends Specification {
         'end merge with trailing semicolon'         | '@startuml\nstart\n:action 1;\nend merge;\nend\n@enduml'                                                     | 'Malformed'
         'forkagain typo'                            | '@startuml\nstart\nfork\n  :a;\nforkagain\n  :b;\nend fork\nend\n@enduml'                                    | 'Malformed'
         'fork with unexpected suffix'               | '@startuml\nstart\nfork now\n  :a;\nend\n@enduml'                                                            | 'Malformed'
-        'end fork inside if-then-else diagram'      | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nend fork\nend\n@enduml'            | 'mixes if-then-else and fork'
-        'stray fork again inside if-then-else'      | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork again\nend\n@enduml'            | 'mixes if-then-else and fork'
-        'fork keyword inside if-then-else diagram'  | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork\nend\n@enduml'                 | 'mixes if-then-else and fork'
+        'end fork inside if-then-else diagram'      | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nend fork\nend\n@enduml'            | 'end fork without active fork context'
+        'stray fork again inside if-then-else'      | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork again\nend\n@enduml'            | 'fork again without active fork context'
+        'fork keyword inside if-then-else diagram'  | '@startuml\nstart\nif (cond) then (yes)\n  :a;\nelse (no)\n  :b;\nendif\nfork\nend\n@enduml'                 | 'Unclosed fork'
+         'fork again directly inside a conditional'  | '@startuml\nstart\nif (cond) then (yes)\n  fork again\n  :a;\nelse (no)\n  :b;\nendif\nend\n@enduml'    | 'fork again without active fork context'
+         'repeat while closing a fork'               | '@startuml\nstart\nfork\n  :a;\n  repeat while (c?) is (yes) not (no)\nfork again\n  :b;\nend fork\nend\n@enduml' | 'repeat while without active repeat'
+         'else inside a fork branch'                 | '@startuml\nstart\nfork\n  else (no)\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                     | 'else without active if'
+         'endif inside a fork branch'                | '@startuml\nstart\nfork\n  endif\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                        | 'endif without active if'
         'uppercase FORK keyword'                    | '@startuml\nstart\nFORK\n  :a;\nfork again\n  :b;\nend fork\nend\n@enduml'                                     | 'Malformed'
         'mixed-case End Fork terminator'            | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nEnd Fork\nend\n@enduml'                                     | 'Malformed'
         'uppercase END MERGE terminator'            | '@startuml\nstart\nfork\n  :a;\nfork again\n  :b;\nEND MERGE\nend\n@enduml'                                    | 'Malformed'
@@ -117,5 +119,23 @@ class PlantFlowMalformedForkTerminatorSpec extends Specification {
         engine.isCompleted()
         engine.getEndTokens().size() == 1
         engine.getEndToken().payload == [initial: true, branch_a: true, after_merge: true]
+    }
+
+    @Unroll
+    def 'differing terminators across nested fork constructs parse successfully: #scenario'() {
+        when: 'an inner fork closed with one terminator sits inside an outer fork closed with the other'
+        def engine = PlantFlow.from(puml, payloadRegistry(['a', 'b', 'b2', 'c']))
+
+        then: 'the diagram parses and compiles without a mismatched-terminator error'
+        engine != null
+        engine.petriNet.transitions.find { it.actionKey == 'a' } != null
+        engine.petriNet.transitions.find { it.actionKey == 'b' } != null
+        engine.petriNet.transitions.find { it.actionKey == 'b2' } != null
+        engine.petriNet.transitions.find { it.actionKey == 'c' } != null
+
+        where:
+        scenario                            | puml
+        'inner end merge in outer end fork' | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  fork again\n    :b2;\n  end merge\nfork again\n  :c;\nend fork\nend\n@enduml'
+        'inner end fork in outer end merge' | '@startuml\nstart\nfork\n  :a;\n  fork\n    :b;\n  fork again\n    :b2;\n  end fork\nfork again\n  :c;\nend merge\nend\n@enduml'
     }
 }

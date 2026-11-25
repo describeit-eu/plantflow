@@ -16,11 +16,11 @@ class ConditionalLoopNetCompilerSpec extends Specification {
 
         then:
         verifyConditionalStructure(net, 'run loop?')
-        verifyRepeatLoopStructure(net, 'more?', 1, 'P_then')
+        verifyRepeatLoopStructure(net, 'more?', 2, 'P_if_1_then')
 
         and: 'the loop exit transition leads to the conditional merge place'
-        def endif = findPlaceByLabel(net, 'P_endif')
-        def exit = findTransitionByLabel(net, 'T_repeat_1_exit')
+        def endif = findPlaceByLabel(net, 'P_if_1_endif')
+        def exit = findTransitionByLabel(net, 'T_repeat_2_exit')
         exit != null
         net.incidenceMatrix.getOutputWeight(endif.index, exit.index) == 1
 
@@ -34,11 +34,11 @@ class ConditionalLoopNetCompilerSpec extends Specification {
         PetriNetStructure net = parse(loopInElseBranchPuml())
 
         then:
-        verifyRepeatLoopStructure(net, 'more?', 1, 'P_else')
+        verifyRepeatLoopStructure(net, 'more?', 2, 'P_if_1_else')
 
         and:
-        def endif = findPlaceByLabel(net, 'P_endif')
-        def exit = findTransitionByLabel(net, 'T_repeat_1_exit')
+        def endif = findPlaceByLabel(net, 'P_if_1_endif')
+        def exit = findTransitionByLabel(net, 'T_repeat_2_exit')
         exit != null
         net.incidenceMatrix.getOutputWeight(endif.index, exit.index) == 1
     }

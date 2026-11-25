@@ -12,7 +12,7 @@ class DiagramCompilerSpec extends Specification {
 
     def compiler = new DiagramCompiler()
 
-    def 'should dispatch linear diagram to LinearNetCompiler'() {
+    def 'should compile linear diagram through the chain compiler'() {
         given:
         def diagram = diagram(true, true, [action('action 1'), action('action 2')])
 
@@ -24,7 +24,7 @@ class DiagramCompilerSpec extends Specification {
         verifyLinearChain(net, ['action 1', 'action 2'])
     }
 
-    def 'should dispatch conditional diagram to ConditionalNetCompiler'() {
+    def 'should compile conditional diagram through the chain compiler'() {
         given:
         def condNode = conditional('isValid', actions('then action'), actions('else action'))
         def diagram = diagram(true, true, [condNode]).withIf().withElse().withEndif()
@@ -37,7 +37,7 @@ class DiagramCompilerSpec extends Specification {
         verifyConditionalStructure(net, 'isValid')
     }
 
-    def 'should dispatch fork diagram to ForkNetCompiler'() {
+    def 'should compile fork diagram through the chain compiler'() {
         given:
         def branch1 = [action('branch 1')]
         def branch2 = [action('branch 2')]
@@ -53,7 +53,7 @@ class DiagramCompilerSpec extends Specification {
         findTransitionByLabel(net, 'T_fork_1_to_end') != null
     }
 
-    def 'should dispatch fork diagram with post-merge actions'() {
+    def 'should compile fork diagram with post-merge actions in the chain'() {
         given:
         def branch1 = [action('action 1')]
         def branch2 = [action('action 2')]
@@ -94,7 +94,7 @@ class DiagramCompilerSpec extends Specification {
         findTransitionByAction(net, 'post 2') != null
     }
 
-    def 'should handle fork followed by another fork (second fork ignored in post-fork extraction)'() {
+    def 'should compile fork followed by another fork in written order'() {
         given:
         def forkNode1 = new ForkNode([
             [action('branch 1')],
@@ -109,10 +109,14 @@ class DiagramCompilerSpec extends Specification {
         when:
         def net = compiler.compile(diagram)
 
-        then:
+        then: 'both sequential forks compile with all their branch actions'
         net != null
         findTransitionByAction(net, 'branch 1') != null
         findTransitionByAction(net, 'branch 2') != null
+        findTransitionByAction(net, 'branch 3') != null
+        findTransitionByAction(net, 'branch 4') != null
+        findTransitionByLabel(net, 'T_fork_1') != null
+        findTransitionByLabel(net, 'T_fork_2') != null
     }
 
     def 'should handle ActionNode before fork node'() {
@@ -151,7 +155,7 @@ class DiagramCompilerSpec extends Specification {
         findTransitionByLabel(net, 'T_fork_1_to_end') != null
     }
 
-    def 'should handle multiple non-ActionNodes after fork'() {
+    def 'should compile multiple sequential forks with all branches'() {
         given:
         def forkNode1 = new ForkNode([
             [action('branch 1')],
@@ -172,8 +176,8 @@ class DiagramCompilerSpec extends Specification {
 
         then:
         net != null
-        findTransitionByAction(net, 'branch 1') != null
-        findTransitionByAction(net, 'branch 2') != null
+        (1..6).each { int i -> assert findTransitionByAction(net, "branch ${i}") != null }
+        findTransitionByLabel(net, 'T_fork_3') != null
     }
 
     def 'should compile single-action linear diagram'() {
@@ -227,5 +231,42 @@ class DiagramCompilerSpec extends Specification {
         'null diagram'                                  | null                                                 | 'Diagram cannot be null'
         'empty linear diagram'                          | diagram(true, true, [])                              | 'Diagram must contain at least one action transition'
         'conditional diagram missing conditional node'  | diagram(true, true, []).withIf()                     | 'Then block must contain at least one action'
+    }
+
+    def 'should extract pre and post actions around a repeat loop'() {
+        given: 'a diagram with actions before and after a repeat node'
+        def repeat = new eu.describeit.plantflow.ast.RepeatNode('c', [action('in')])
+        def diagram = diagram(true, true, [action('pre'), repeat, action('post')])
+
+        when:
+        def net = compiler.compile(diagram)
+
+        then: 'all three actions are compiled into the net'
+        net.transitions*.actionKey.containsAll(['pre', 'in', 'post'])
+    }
+
+    def 'should extract post actions after a fork node'() {
+        given: 'a diagram with an action after a fork node'
+        def fork = new ForkNode([[action('b1')], [action('b2')]])
+        def diagram = diagram(true, true, [action('pre'), fork, action('post')])
+
+        when:
+        def net = compiler.compile(diagram)
+
+        then: 'branch and post-fork actions are compiled'
+        net.transitions*.actionKey.containsAll(['b1', 'b2', 'post'])
+    }
+
+    def 'should compile a second repeat node after the first in written order'() {
+        given: 'a diagram with two repeat nodes'
+        def diagram = diagram(true, true, [new eu.describeit.plantflow.ast.RepeatNode('c1', [action('a')]), new eu.describeit.plantflow.ast.RepeatNode('c2', [action('b')])])
+
+        when:
+        def net = compiler.compile(diagram)
+
+        then: 'both loops are compiled with distinct ids from the shared naming context'
+        net.transitions*.actionKey.containsAll(['a', 'b'])
+        findTransitionByLabel(net, 'T_repeat_1_loop_back') != null
+        findTransitionByLabel(net, 'T_repeat_2_loop_back') != null
     }
 }

@@ -93,11 +93,11 @@ A control structure that creates parallel execution branches in an activity diag
 _Avoid_: Parallel split, concurrent node, thread
 
 **Join**:
-A planned synchronizing control structure (`end fork`) that continues once all Parallel Branches of the same Fork activation have completed.
+A synchronizing control structure (`end fork`) that continues once all Parallel Branches of the same Fork activation have completed.
 _Avoid_: Merge, first-completion point
 
 **Merge**:
-A non-synchronizing control structure that routes the first completed Parallel Branch of a Fork activation onward once, using that branch's Token, while remaining branches finish independently without triggering another continuation.
+A non-synchronizing control structure (`end merge`) that routes the first completed Parallel Branch of a Fork activation onward once, using that branch's Token, while remaining branches finish independently without triggering another continuation.
 _Avoid_: Join, synchronization point, converge
 
 **Parallel Branch**:

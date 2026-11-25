@@ -12,24 +12,24 @@ class RepeatConditionalNetCompilerSpec extends Specification {
         PetriNetStructure net = parse(branchInLoopPuml())
 
         then:
-        def decision = findPlaceByLabel(net, 'P_repeat_1_if_1_decision')
+        def decision = findPlaceByLabel(net, 'P_if_2_decision')
         decision != null
 
         and: 'the preceding body action feeds the if decision place through a structural transition'
-        def toDecision = findTransitionByLabel(net, 'T_repeat_1_if_1_to_decision')
+        def toDecision = findTransitionByLabel(net, 'T_if_2_to_decision')
         verifyTransitionConnection(net, toDecision, findPlaceByLabel(net, 'P_repeat_1_body_1'), decision)
 
         and:
-        def branchYes = findTransitionByLabel(net, 'T_repeat_1_if_1_yes')
+        def branchYes = findTransitionByLabel(net, 'T_if_2_yes')
         branchYes != null
         branchYes.guardKey == 'valid?'
-        verifyTransitionConnection(net, branchYes, decision, findPlaceByLabel(net, 'P_repeat_1_if_1_then'))
+        verifyTransitionConnection(net, branchYes, decision, findPlaceByLabel(net, 'P_if_2_then'))
 
         and:
-        def branchNo = findTransitionByLabel(net, 'T_repeat_1_if_1_no')
+        def branchNo = findTransitionByLabel(net, 'T_if_2_no')
         branchNo != null
         branchNo.guardKey == '!(valid?)'
-        verifyTransitionConnection(net, branchNo, decision, findPlaceByLabel(net, 'P_repeat_1_if_1_else'))
+        verifyTransitionConnection(net, branchNo, decision, findPlaceByLabel(net, 'P_if_2_else'))
     }
 
     def 'should converge both conditional branches at the loop decision place'() {
@@ -40,15 +40,21 @@ class RepeatConditionalNetCompilerSpec extends Specification {
         def loopDecision = findPlaceByLabel(net, 'P_repeat_1_decision')
         loopDecision != null
 
-        and: 'the then branch action leads into the loop decision place'
+        and: 'the then branch action leads into the conditional merge place'
         def process = findTransitionByAction(net, 'process')
-        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_repeat_1_if_1_then').index, process.index) == 1
-        net.incidenceMatrix.getOutputWeight(loopDecision.index, process.index) == 1
+        def merge = findPlaceByLabel(net, 'P_if_2_endif')
+        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_if_2_then').index, process.index) == 1
+        net.incidenceMatrix.getOutputWeight(merge.index, process.index) == 1
 
-        and: 'the else branch action leads into the loop decision place'
+        and: 'the else branch action leads into the conditional merge place'
         def reject = findTransitionByAction(net, 'reject')
-        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_repeat_1_if_1_else').index, reject.index) == 1
-        net.incidenceMatrix.getOutputWeight(loopDecision.index, reject.index) == 1
+        net.incidenceMatrix.getInputWeight(findPlaceByLabel(net, 'P_if_2_else').index, reject.index) == 1
+        net.incidenceMatrix.getOutputWeight(merge.index, reject.index) == 1
+
+        and: 'the conditional exit leads from the merge place into the loop decision place'
+        def exit = findTransitionByLabel(net, 'T_if_2_to_end')
+        net.incidenceMatrix.getInputWeight(merge.index, exit.index) == 1
+        net.incidenceMatrix.getOutputWeight(loopDecision.index, exit.index) == 1
 
         and: 'the loop structure is intact'
         verifyRepeatLoopStructure(net, 'more?')
@@ -65,9 +71,9 @@ class RepeatConditionalNetCompilerSpec extends Specification {
 
         and: 'the loop and its inner conditional compiled'
         findPlaceByLabel(net, 'P_repeat_1_decision') != null
-        findPlaceByLabel(net, 'P_repeat_1_if_1_decision') != null
-        findTransitionByLabel(net, 'T_repeat_1_if_1_yes')?.guardKey == 'Record is valid?'
-        findTransitionByLabel(net, 'T_repeat_1_if_1_no')?.guardKey == '!(Record is valid?)'
+        findPlaceByLabel(net, 'P_if_2_decision') != null
+        findTransitionByLabel(net, 'T_if_2_yes')?.guardKey == 'Record is valid?'
+        findTransitionByLabel(net, 'T_if_2_no')?.guardKey == '!(Record is valid?)'
         findTransitionByLabel(net, 'T_repeat_1_loop_back')?.guardKey == 'More Records Available?'
 
         and: 'all diagram actions are present'
