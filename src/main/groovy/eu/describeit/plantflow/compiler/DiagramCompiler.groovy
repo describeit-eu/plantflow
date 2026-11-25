@@ -25,7 +25,11 @@ class DiagramCompiler {
 
     PetriNetStructure compile(ActivityDiagram diagram) {
         if (diagram == null) throw new IllegalArgumentException(ERR_DIAGRAM_NULL)
-        if (diagram.isConditional() && !containsNode(diagram.nodes, ConditionalNode) && !containsNode(diagram.nodes, RepeatNode) && !containsNode(diagram.nodes, ForkNode) && !containsNode(diagram.nodes, SwitchNode)) {
+        if (diagram.isConditional() &&
+            !containsNode(diagram.nodes, ConditionalNode) &&
+            !containsNode(diagram.nodes, RepeatNode) &&
+            !containsNode(diagram.nodes, ForkNode) &&
+            !containsNode(diagram.nodes, SwitchNode)) {
             throw new IllegalArgumentException(ERR_THEN_EMPTY)
         }
         return chainCompiler.compile(diagram)

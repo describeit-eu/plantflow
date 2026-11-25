@@ -260,12 +260,13 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
         if (state.stack.isEmpty()) {
             return state.nodes
         }
-        switch (state.stack.peek()) {
-            case LoopFrame: return ((LoopFrame) state.stack.peek()).body
-            case ForkFrame: return ((ForkFrame) state.stack.peek()).branches.last()
-            case SwitchFrame: return ((SwitchFrame) state.stack.peek()).currentCaseBody()
+        Object top = state.stack.peek()
+        switch (top) {
+            case LoopFrame: return ((LoopFrame) top).body
+            case ForkFrame: return ((ForkFrame) top).branches.last()
+            case SwitchFrame: return ((SwitchFrame) top).currentCaseBody()
             default:
-                ConditionalFrame frame = (ConditionalFrame) state.stack.peek()
+                ConditionalFrame frame = (ConditionalFrame) top
                 return frame.inElse ? frame.elseBranch : frame.thenBranch
         }
     }
