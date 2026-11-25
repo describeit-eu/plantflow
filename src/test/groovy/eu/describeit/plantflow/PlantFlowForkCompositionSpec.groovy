@@ -170,7 +170,7 @@ class PlantFlowForkCompositionSpec extends Specification {
         'end merge without active fork'   | ':x;\nend merge'                                                        | 'end merge without active fork context'
         'end fork without active fork'    | ':x;\nend fork'                                                         | 'end fork without active fork context'
         'unclosed fork'                   | 'fork\n  :a;\nfork again\n  :b;'                                        | 'Unclosed fork'
-        'empty fork branch'               | 'fork\n  :a;\nfork again\nend fork'                                    | 'Fork branch must contain at least one action'
+        'empty fork branch'               | 'fork\n  :a;\nfork again\nend fork'                                    | 'Fork branch must contain at least one node'
         'fork again inside conditional'   | 'if (g?) then (yes)\n  fork again\n  :a;\nelse (no)\n  :b;\nendif'      | 'fork again without active fork context'
         'repeat while closing a fork'     | 'fork\n  :a;\n  repeat while (c?) is (yes) not (no)\nfork again\n  :b;\nend fork' | 'repeat while without active repeat'
         'else inside a repeat'            | 'repeat\n  :a;\n  else (no)\nrepeat while (c?) is (yes) not (no)'       | 'else without active if'

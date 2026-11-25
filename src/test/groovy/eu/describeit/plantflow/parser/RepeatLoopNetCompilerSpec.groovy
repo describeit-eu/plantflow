@@ -273,6 +273,6 @@ end
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message == 'Repeat loop body must contain at least one action'
+        ex.message == 'Repeat loop body must contain at least one node'
     }
 }
