@@ -731,6 +731,18 @@ end
     }
 
     /**
+     * Verifies that all place and transition labels in the net are unique.
+     */
+    static void assertUniqueLabels(PetriNetStructure net) {
+        def placeLabels = net.places*.label
+        def transitionLabels = net.transitions*.label
+        assert placeLabels.toSet().size() == placeLabels.size() :
+            "Duplicate place labels: ${placeLabels.groupBy { it }.findAll { it.value.size() > 1 }.keySet()}"
+        assert transitionLabels.toSet().size() == transitionLabels.size() :
+            "Duplicate transition labels: ${transitionLabels.groupBy { it }.findAll { it.value.size() > 1 }.keySet()}"
+    }
+
+    /**
      * Verifies that a transition consumes from the expected input place and produces to the expected output place.
      */
     static void verifyTransitionConnection(PetriNetStructure net, Transition transition, Place inputPlace, Place outputPlace) {
