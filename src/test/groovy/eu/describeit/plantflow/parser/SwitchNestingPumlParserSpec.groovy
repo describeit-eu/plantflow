@@ -1,6 +1,5 @@
 package eu.describeit.plantflow.parser
 
-import eu.describeit.plantflow.engine.PetriNetStructure
 import spock.lang.Specification
 
 import static eu.describeit.plantflow.PlantFlowTestKit.*
@@ -323,12 +322,4 @@ end
             findPlaceByLabel(net, 'P_if_2_endif'), findPlaceByLabel(net, 'P_switch_1_endswitch'))
     }
 
-    private static void assertUniqueLabels(PetriNetStructure net) {
-        def placeLabels = net.places*.label
-        def transitionLabels = net.transitions*.label
-        assert placeLabels.toSet().size() == placeLabels.size() :
-            "Duplicate place labels: ${placeLabels.groupBy { it }.findAll { it.value.size() > 1 }.keySet()}"
-        assert transitionLabels.toSet().size() == transitionLabels.size() :
-            "Duplicate transition labels: ${transitionLabels.groupBy { it }.findAll { it.value.size() > 1 }.keySet()}"
-    }
 }
