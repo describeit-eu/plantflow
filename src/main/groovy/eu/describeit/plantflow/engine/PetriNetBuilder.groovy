@@ -16,6 +16,7 @@ class PetriNetBuilder {
     private static final String ERR_END_PLACE_MISSING = 'endPlace must be set'
     private static final String ERR_FORK_DESCRIPTOR_NULL = 'ForkDescriptor cannot be null'
     private static final String ERR_JOIN_DESCRIPTOR_NULL = 'JoinDescriptor cannot be null'
+    private static final String ERR_SWITCH_DESCRIPTOR_NULL = 'SwitchDescriptor cannot be null'
 
     private final List<Place> places = []
     private final List<Transition> transitions = []
@@ -23,6 +24,7 @@ class PetriNetBuilder {
     private final List<Arc> outputArcs = []
     private final List<ForkDescriptor> forkDescriptors = []
     private final List<JoinDescriptor> joinDescriptors = []
+    private final List<SwitchDescriptor> switchDescriptors = []
     private Place startPlace
     private Place endPlace
 
@@ -82,6 +84,14 @@ class PetriNetBuilder {
         return this
     }
 
+    PetriNetBuilder addSwitchDescriptor(SwitchDescriptor descriptor) {
+        if (descriptor == null) {
+            throw new IllegalArgumentException(ERR_SWITCH_DESCRIPTOR_NULL)
+        }
+        switchDescriptors.add(descriptor)
+        return this
+    }
+
     PetriNetBuilder setStartPlace(Place place) {
         if (place == null) {
             throw new IllegalArgumentException(ERR_START_PLACE_NULL)
@@ -137,6 +147,7 @@ class PetriNetBuilder {
         DefaultPetriNet net = new DefaultPetriNet(places, transitions, incidenceMatrix, startPlace, endPlace)
         net.setForkDescriptors(forkDescriptors)
         net.setJoinDescriptors(joinDescriptors)
+        net.setSwitchDescriptors(switchDescriptors)
         return net
     }
 

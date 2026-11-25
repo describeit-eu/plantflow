@@ -13,6 +13,7 @@ import eu.describeit.plantflow.engine.JoinDescriptor
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
+import eu.describeit.plantflow.engine.SwitchDescriptor
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
 
@@ -170,6 +171,7 @@ class ChainNetCompiler {
         builder.connect(toDecision, decisionPlace)
 
         Place endswitchPlace = builder.addPlace(ctx.naming.switchEndswitchPlace(id))
+        List<Integer> caseTransitionIndexes = []
         int caseNumber = 0
         for (SwitchCase switchCase : node.cases) {
             caseNumber++
@@ -177,9 +179,11 @@ class ChainNetCompiler {
             Place casePlace = builder.addPlace(ctx.naming.switchCasePlace(id, caseNumber))
             builder.connect(decisionPlace, caseTransition)
             builder.connect(caseTransition, casePlace)
+            caseTransitionIndexes.add(caseTransition.index)
             compileChain(ctx.withPlacePrefix(ctx.naming.switchCasePlace(id, caseNumber) + BRANCH_PLACE_SEPARATOR),
                 switchCase.actions, casePlace, endswitchPlace)
         }
+        builder.addSwitchDescriptor(new SwitchDescriptor(decisionPlace.index, node.switchExpression, caseTransitionIndexes))
 
         Transition exit = builder.addTransition(ctx.naming.switchToEndTransition(id))
         builder.connect(endswitchPlace, exit)
