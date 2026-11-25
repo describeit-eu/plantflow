@@ -119,3 +119,15 @@ _Avoid_: Endless loop, unconditional loop
 **Activity Diagram Parser**:
 The top-level parser and facade that transforms PlantUML activity diagram syntax into an executable Petri Net structure.
 _Avoid_: Diagram importer, workflow parser
+
+**SwitchNode**:
+The AST node for a `switch`/`case`/`endswitch` construct, holding the switch expression (documentation only, not compiled into a guard) and the ordered list of Case Branches.
+_Avoid_: Switch statement, case node
+
+**Case Branch**:
+One branch of a switch/case/endswitch construct: a case condition (carried verbatim as the guard key of the case's branch transition) paired with the ordered actions executed when that condition matches.
+_Avoid_: Case clause, match arm
+
+**Endswitch Merge Place**:
+The Place representing the convergence point (`endswitch`) where the Case Branch paths rejoin before continuing execution.
+_Avoid_: Switch join, endswitch node, case merge

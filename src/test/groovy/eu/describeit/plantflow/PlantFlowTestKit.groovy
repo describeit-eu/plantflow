@@ -7,6 +7,8 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.ast.SwitchCase
+import eu.describeit.plantflow.ast.SwitchNode
 import eu.describeit.plantflow.engine.DefaultPetriNet
 import eu.describeit.plantflow.engine.IncidenceMatrix
 import eu.describeit.plantflow.engine.Marking
@@ -333,6 +335,28 @@ end
     }
 
     /**
+     * Creates a switch/case/endswitch diagram PlantUML string with one single-action
+     * case per condition, optional post-switch actions, and a switch expression.
+     */
+    static String switchPuml(List<String> caseConditions, List<String> caseActions, List<String> postActions = [], String switchExpression = 'test?') {
+        def sb = new StringBuilder()
+        sb << '@startuml\n'
+        sb << 'start\n'
+        sb << "switch ( ${switchExpression} )\n"
+        caseConditions.eachWithIndex { String condition, int i ->
+            sb << "case ( ${condition} )\n"
+            sb << "  :${caseActions[i]};\n"
+        }
+        sb << 'endswitch\n'
+        postActions.each { String action ->
+            sb << ":${action};\n"
+        }
+        sb << 'end\n'
+        sb << '@enduml\n'
+        return sb.toString()
+    }
+
+    /**
      * Creates a composed diagram PlantUML string with a conditional inside a repeat loop body.
      */
     static String branchInLoopPuml() {
@@ -432,6 +456,27 @@ end
      */
     static ConditionalNode conditional(String guardCondition, String[] thenActionStrings, String[] elseActionStrings) {
         return new ConditionalNode(guardCondition, actions(*thenActionStrings) as List<ActivityNode>, actions(*elseActionStrings) as List<ActivityNode>)
+    }
+
+    /**
+     * Creates a SwitchCase with the given condition and action list.
+     */
+    static SwitchCase switchCase(String condition, List<ActivityNode> actions) {
+        return new SwitchCase(condition, actions)
+    }
+
+    /**
+     * Creates a SwitchCase with string-based action lists.
+     */
+    static SwitchCase switchCase(String condition, String[] actionStrings) {
+        return new SwitchCase(condition, actions(*actionStrings) as List<ActivityNode>)
+    }
+
+    /**
+     * Creates a SwitchNode with the given switch expression and cases.
+     */
+    static SwitchNode switchNode(String switchExpression, List<SwitchCase> cases) {
+        return new SwitchNode(switchExpression, cases)
     }
 
     /**
@@ -683,6 +728,18 @@ end
         assert net.transitions.size() > transitionIndex : "Not enough transitions"
         assert net.transitions[transitionIndex].guardKey == expectedGuard : \
             "Expected guard key '${expectedGuard}' but got '${net.transitions[transitionIndex].guardKey}'"
+    }
+
+    /**
+     * Verifies that all place and transition labels in the net are unique.
+     */
+    static void assertUniqueLabels(PetriNetStructure net) {
+        def placeLabels = net.places*.label
+        def transitionLabels = net.transitions*.label
+        assert placeLabels.toSet().size() == placeLabels.size() :
+            "Duplicate place labels: ${placeLabels.groupBy { it }.findAll { it.value.size() > 1 }.keySet()}"
+        assert transitionLabels.toSet().size() == transitionLabels.size() :
+            "Duplicate transition labels: ${transitionLabels.groupBy { it }.findAll { it.value.size() > 1 }.keySet()}"
     }
 
     /**

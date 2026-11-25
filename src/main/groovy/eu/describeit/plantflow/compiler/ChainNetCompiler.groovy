@@ -6,11 +6,14 @@ import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.ast.RepeatNode
+import eu.describeit.plantflow.ast.SwitchCase
+import eu.describeit.plantflow.ast.SwitchNode
 import eu.describeit.plantflow.engine.ForkDescriptor
 import eu.describeit.plantflow.engine.JoinDescriptor
 import eu.describeit.plantflow.engine.PetriNetBuilder
 import eu.describeit.plantflow.engine.PetriNetStructure
 import eu.describeit.plantflow.engine.Place
+import eu.describeit.plantflow.engine.SwitchDescriptor
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
 
@@ -85,6 +88,9 @@ class ChainNetCompiler {
                 case RepeatNode:
                     compileRepeat(ctx, (RepeatNode) node, currentPlace, nextPlace)
                     break
+                case SwitchNode:
+                    compileSwitch(ctx, (SwitchNode) node, currentPlace, nextPlace)
+                    break
                 default:
                     throw new IllegalArgumentException(ERR_UNSUPPORTED_NODE + node.getClass().getName())
             }
@@ -147,6 +153,41 @@ class ChainNetCompiler {
             builder.connect(decisionPlace, exit)
             builder.connect(exit, exitTarget)
         }
+    }
+
+    /**
+     * Compiles a SwitchNode at any depth: fromPlace -> to_decision -> decision
+     * place, one guarded case branch transition per case (the case condition is
+     * the guard key) into a per-case place, each case body compiled as a chain
+     * into the shared endswitch merge place, and an exit transition from the
+     * merge place to the chain continuation.
+     */
+    private void compileSwitch(ChainContext ctx, SwitchNode node, Place fromPlace, Place exitTarget) {
+        int id = ctx.naming.nextConstructId()
+        PetriNetBuilder builder = ctx.builder
+        Place decisionPlace = builder.addPlace(ctx.naming.switchDecisionPlace(id))
+        Transition toDecision = builder.addTransition(ctx.naming.switchToDecisionTransition(id))
+        builder.connect(fromPlace, toDecision)
+        builder.connect(toDecision, decisionPlace)
+
+        Place endswitchPlace = builder.addPlace(ctx.naming.switchEndswitchPlace(id))
+        List<Integer> caseTransitionIndexes = []
+        int caseNumber = 0
+        for (SwitchCase switchCase : node.cases) {
+            caseNumber++
+            Transition caseTransition = builder.addTransition(ctx.naming.switchCaseTransition(id, caseNumber), null, switchCase.condition)
+            Place casePlace = builder.addPlace(ctx.naming.switchCasePlace(id, caseNumber))
+            builder.connect(decisionPlace, caseTransition)
+            builder.connect(caseTransition, casePlace)
+            caseTransitionIndexes.add(caseTransition.index)
+            compileChain(ctx.withPlacePrefix(ctx.naming.switchCasePlace(id, caseNumber) + BRANCH_PLACE_SEPARATOR),
+                switchCase.actions, casePlace, endswitchPlace)
+        }
+        builder.addSwitchDescriptor(new SwitchDescriptor(decisionPlace.index, node.switchExpression, caseTransitionIndexes))
+
+        Transition exit = builder.addTransition(ctx.naming.switchToEndTransition(id))
+        builder.connect(endswitchPlace, exit)
+        builder.connect(exit, exitTarget)
     }
 
     /**

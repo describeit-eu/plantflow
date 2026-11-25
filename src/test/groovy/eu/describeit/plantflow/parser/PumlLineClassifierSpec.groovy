@@ -201,12 +201,29 @@ class PumlLineClassifierSpec extends Specification {
         'while'                         | 'while'
         'endwhile (no)'                 | 'endwhile'
         'endwhile'                      | 'endwhile'
-        'switch (s?)'                   | 'switch'
-        'switch'                        | 'switch'
-        'case (a)'                      | 'case'
-        'case (some value)'             | 'case'
-        'endswitch'                     | 'endswitch'
-        '  endswitch  '                 | 'endswitch'
+    }
+
+    @Unroll
+    def 'should classify "#line" as #expectedType with guard "#expectedGuard"'() {
+        when:
+        def result = classifier.classify(line)
+
+        then:
+        result.type == expectedType
+        result.guard == expectedGuard
+        result.text == line
+
+        where:
+        line                     | expectedType         | expectedGuard
+        'switch (test?)'         | LineType.SWITCH      | 'test?'
+        'switch ( x > 0 )'       | LineType.SWITCH      | 'x > 0'
+        'switch'                 | LineType.SWITCH      | null
+        '  switch (s?)  '        | LineType.SWITCH      | 's?'
+        'case ( conditionA )'    | LineType.CASE        | 'conditionA'
+        'case (some value)'      | LineType.CASE        | 'some value'
+        'case'                   | LineType.CASE        | null
+        'endswitch'              | LineType.ENDSWITCH   | null
+        '  endswitch  '          | LineType.ENDSWITCH   | null
     }
 
     @Unroll

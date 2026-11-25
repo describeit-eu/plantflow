@@ -20,6 +20,8 @@ class ActivityDiagram {
     boolean hasRepeat = false
     boolean hasRepeatWhile = false
     boolean hasDetach = false
+    boolean hasSwitch = false
+    boolean hasEndswitch = false
     final List<ActivityNode> nodes = []
 
     ActivityDiagram() {
@@ -98,6 +100,16 @@ class ActivityDiagram {
         return this
     }
 
+    ActivityDiagram withSwitch(boolean hasSwitch = true) {
+        this.hasSwitch = hasSwitch
+        return this
+    }
+
+    ActivityDiagram withEndswitch(boolean hasEndswitch = true) {
+        this.hasEndswitch = hasEndswitch
+        return this
+    }
+
     ActivityDiagram addNode(ActivityNode node) {
         if (node != null) {
             this.nodes.add(node)
@@ -119,5 +131,9 @@ class ActivityDiagram {
 
     boolean hasRepeatStructure() {
         return hasRepeat || hasRepeatWhile || hasDetach || nodes.any { ActivityNode node -> node instanceof RepeatNode }
+    }
+
+    boolean hasSwitchStructure() {
+        return hasSwitch || hasEndswitch || nodes.any { ActivityNode node -> node instanceof SwitchNode }
     }
 }

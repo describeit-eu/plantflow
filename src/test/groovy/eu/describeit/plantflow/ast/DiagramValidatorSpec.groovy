@@ -696,6 +696,65 @@ class DiagramValidatorSpec extends Specification {
         position << [0, 1]
     }
 
+    @Unroll
+    def 'should throw IllegalArgumentException for invalid switch structure: #scenario'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(hasStart)
+            .withEnd(hasEnd)
+            .withSwitch(hasSwitch)
+            .withEndswitch(hasEndswitch)
+        nodes.each { diagram.addNode(it) }
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario                    | hasStart | hasEnd | hasSwitch | hasEndswitch | nodes                                                        | expectedMessage
+        'endswitch without switch'  | true     | true   | false     | true         | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_NO_SWITCH
+        'switch without endswitch'  | true     | true   | true      | false        | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_NO_ENDSWITCH
+        'switch without start'      | false    | true   | true      | true         | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_MUST_CONTAIN_START
+        'switch without end'        | true     | false  | true      | true         | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_MUST_CONTAIN_END
+        'switch node without cases' | true     | true   | true      | true         | [switchNode('test?', [])]                                   | DiagramValidator.ERR_SWITCH_NO_CASES
+        'switch flags but no nodes' | true     | true   | true      | true         | []                                                          | DiagramValidator.ERR_SWITCH_NO_CASES
+    }
+
+    def 'should pass validation for valid switch ActivityDiagram including an empty case body'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withSwitch(true)
+            .withEndswitch(true)
+            .addNode(switchNode('test?', [
+                switchCase('condA', ['action a'] as String[]),
+                switchCase('condB', [] as List<ActivityNode>)
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for valid switch ActivityDiagram constructed without flags'() {
+        given:
+        def diagram = diagram(true, true, [
+            switchNode('test?', [switchCase('condA', ['action a'] as String[])])
+        ])
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
     def 'ActivityDiagram addNode should handle null node'() {
         given:
         def diagram = new ActivityDiagram()
@@ -728,5 +787,174 @@ class DiagramValidatorSpec extends Specification {
         diagram.hasEndMerge
         diagram.nodes.size() == 1
         diagram.nodes[0] == forkNode
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for switch case with invalid nested node: #scenario'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withSwitch(true)
+            .withEndswitch(true)
+            .addNode(switchNode('test?', [switchCase('condA', [nestedNode])]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario                               | nestedNode                                                            | expectedMessage
+        'conditional with empty then'          | conditional('c', [] as List<ActivityNode>, [action('b')])             | DiagramValidator.ERR_THEN_EMPTY
+        'conditional with empty else'          | conditional('c', [action('a')], [] as List<ActivityNode>)             | DiagramValidator.ERR_ELSE_EMPTY
+        'repeat with null condition'           | new RepeatNode(null, [action('a')])                                   | DiagramValidator.ERR_LOOP_CONDITION_EMPTY
+        'repeat with blank condition'          | new RepeatNode('   ', [action('a')])                                  | DiagramValidator.ERR_LOOP_CONDITION_EMPTY
+        'repeat with empty body'               | new RepeatNode('more?', [] as List<ActivityNode>)                     | DiagramValidator.ERR_LOOP_BODY_EMPTY
+        'fork with single branch'              | new ForkNode([[action('a')]] as List<List<ActivityNode>>)             | DiagramValidator.ERR_MIN_BRANCHES
+        'switch without cases'                 | switchNode('inner?', [])                                              | DiagramValidator.ERR_SWITCH_NO_CASES
+    }
+
+    @Unroll
+    def 'should pass validation for switch case with valid nested node: #scenario'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withSwitch(true)
+            .withEndswitch(true)
+            .addNode(switchNode('test?', [switchCase('condA', [nestedNode])]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        scenario               | nestedNode
+        'conditional node'     | conditional('c', [action('t')], [action('e')])
+        'repeat node'          | new RepeatNode('more?', [action('loop action')])
+        'fork node'            | fork([[action('b1')], [action('b2')]])
+        'nested switch node'   | switchNode('inner?', [switchCase('inner cond', ['inner action'] as String[])])
+    }
+
+    def 'should pass validation for switch with multiple cases and mixed case bodies'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withSwitch(true)
+            .withEndswitch(true)
+            .addNode(switchNode('test?', [
+                switchCase('condA', ['action a'] as String[]),
+                switchCase('condB', [action('action b'), conditional('c', ['t'], ['e'])] as List<ActivityNode>),
+                switchCase('condC', [] as List<ActivityNode>)
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for switch diagram with actions before and after the switch node'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withSwitch(true)
+            .withEndswitch(true)
+            .addNode(action('before switch'))
+            .addNode(switchNode('test?', [switchCase('condA', ['action a'] as String[])]))
+            .addNode(action('after switch'))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for fork with composed nodes inside branches'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndMerge(true)
+            .addNode(new ForkNode([
+                [action('plain branch action'), switchNode('q?', [switchCase('c', ['a'] as String[])])] as List<ActivityNode>,
+                [conditional('cond', ['then a'], ['else a'])] as List<ActivityNode>
+            ] as List<List<ActivityNode>>))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for conditional with a switch node inside the then branch'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withIf(true)
+            .withElse(true)
+            .withEndif(true)
+            .addNode(conditional('check', [
+                switchNode('q?', [switchCase('c', ['a'] as String[])]) as ActivityNode
+            ] as List<ActivityNode>, [action('else action')] as List<ActivityNode>))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    @Unroll
+    def 'should throw IllegalArgumentException for invalid end fork structure: #scenario'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(hasStart)
+            .withEnd(hasEnd)
+            .withFork(hasFork)
+            .withEndMerge(hasEndMerge)
+            .withEndFork(hasEndFork)
+        nodes.each { diagram.addNode(it) }
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario                    | hasStart | hasEnd | hasFork | hasEndMerge | hasEndFork | nodes                        | expectedMessage
+        'end fork without fork'     | true     | true   | false   | false       | true       | [fork([['a'], ['b']])]       | DiagramValidator.ERR_NO_FORK
+        'end fork without start'    | false    | true   | true    | false       | true       | [fork([['a'], ['b']])]       | DiagramValidator.ERR_MUST_CONTAIN_START
+        'end fork without end'      | true     | false  | true    | false       | true       | [fork([['a'], ['b']])]       | DiagramValidator.ERR_MUST_CONTAIN_END
+    }
+
+    def 'should pass validation for valid fork ActivityDiagram closed with end fork'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withFork(true)
+            .withEndFork(true)
+            .addNode(fork([['a'], ['b']]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
     }
 }

@@ -5,6 +5,8 @@ import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
 import eu.describeit.plantflow.ast.RepeatNode
+import eu.describeit.plantflow.ast.SwitchCase
+import eu.describeit.plantflow.ast.SwitchNode
 import groovy.transform.CompileStatic
 
 @CompileStatic
@@ -29,6 +31,9 @@ class DiagramValidator {
     public static final String ERR_NO_REPEAT_WHILE = 'repeat construct must be closed with a repeat while line'
     public static final String ERR_LOOP_BODY_EMPTY = 'Repeat loop body must contain at least one node'
     public static final String ERR_LOOP_CONDITION_EMPTY = 'Repeat loop must have a loop condition'
+    public static final String ERR_NO_SWITCH = 'Diagram contains switch but no switch statement found'
+    public static final String ERR_NO_ENDSWITCH = 'switch construct must be closed with an endswitch'
+    public static final String ERR_SWITCH_NO_CASES = 'Switch must contain at least one case'
 
     static void validate(ActivityDiagram diagram) {
         if (diagram == null) {
@@ -38,6 +43,7 @@ class DiagramValidator {
         boolean isConditional = diagram.isConditional()
         boolean isFork = diagram.hasForkStructure()
         boolean isRepeat = diagram.hasRepeatStructure()
+        boolean isSwitch = diagram.hasSwitchStructure()
 
         if (isConditional) {
             validateConditionalStructure(diagram)
@@ -48,11 +54,14 @@ class DiagramValidator {
         if (isRepeat) {
             validateRepeatStructure(diagram)
         }
-        if (!isConditional && !isFork && !isRepeat) {
+        if (isSwitch) {
+            validateSwitchStructure(diagram)
+        }
+        if (!isConditional && !isFork && !isRepeat && !isSwitch) {
             validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
         }
 
-        validateNodes(diagram, isConditional, isFork)
+        validateNodes(diagram, isConditional, isFork, isSwitch)
     }
 
     static void validateIfThenElseStructure(
@@ -150,6 +159,19 @@ class DiagramValidator {
         }
     }
 
+    private static void validateSwitchStructure(ActivityDiagram diagram) {
+        boolean hasSwitchFlags = diagram.hasSwitch || diagram.hasEndswitch
+        if (hasSwitchFlags) {
+            if (!diagram.hasSwitch) {
+                throw new IllegalArgumentException(ERR_NO_SWITCH)
+            }
+            if (!diagram.hasEndswitch) {
+                throw new IllegalArgumentException(ERR_NO_ENDSWITCH)
+            }
+        }
+        validateStartAndEnd(diagram.hasStart, diagram.hasEnd)
+    }
+
     private static void validateStartAndEnd(boolean hasStart, boolean hasEnd) {
         if (!hasStart) {
             throw new IllegalArgumentException(ERR_MUST_CONTAIN_START)
@@ -159,13 +181,16 @@ class DiagramValidator {
         }
     }
 
-    private static void validateNodes(ActivityDiagram diagram, boolean isConditional, boolean isFork) {
+    private static void validateNodes(ActivityDiagram diagram, boolean isConditional, boolean isFork, boolean isSwitch) {
         if (diagram.nodes.isEmpty()) {
             if (isConditional) {
                 throw new IllegalArgumentException(ERR_THEN_EMPTY)
             }
             if (isFork) {
                 throw new IllegalArgumentException(ERR_BRANCH_EMPTY)
+            }
+            if (isSwitch) {
+                throw new IllegalArgumentException(ERR_SWITCH_NO_CASES)
             }
             throw new IllegalArgumentException(ERR_MUST_CONTAIN_ACTION)
         }
@@ -192,6 +217,15 @@ class DiagramValidator {
                     validateComposedChildren(branch)
                 }
                 break
+            case SwitchNode:
+                SwitchNode switchNode = (SwitchNode) node
+                if (switchNode.cases.isEmpty()) {
+                    throw new IllegalArgumentException(ERR_SWITCH_NO_CASES)
+                }
+                for (SwitchCase switchCase : switchNode.cases) {
+                    validateComposedChildren(switchCase.actions)
+                }
+                break
             default:
                 break
         }
@@ -213,7 +247,7 @@ class DiagramValidator {
 
     private static void validateComposedChildren(List<ActivityNode> children) {
         for (Object child : children) {
-            if (child instanceof ConditionalNode || child instanceof RepeatNode || child instanceof ForkNode) {
+            if (child instanceof ConditionalNode || child instanceof RepeatNode || child instanceof ForkNode || child instanceof SwitchNode) {
                 validateNode((ActivityNode) child)
             }
         }

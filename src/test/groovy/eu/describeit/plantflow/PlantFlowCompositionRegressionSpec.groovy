@@ -124,12 +124,6 @@ class PlantFlowCompositionRegressionSpec extends Specification {
         'while'     | '''while (c1) is (yes)
                            :read;
                          endwhile (no)'''
-        'switch'    | '''switch (s?)
-                         case (a)
-                           :A;
-                         case (b)
-                           :B;
-                         endswitch'''
     }
 
     @CompileStatic

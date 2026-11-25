@@ -10,8 +10,8 @@ import groovy.transform.CompileStatic
 
 /**
  * Single stack-based diagram builder: one frame stack holds conditional,
- * Repeat Loop, and Fork frames, so any construct nests inside any other at
- * any depth. A nested fork becomes a real nested {@link ForkNode} inside the
+ * Repeat Loop, Fork, and Switch frames, so any construct nests inside any other
+ * at any depth. A nested fork becomes a real nested {@link ForkNode} inside the
  * enclosing branch, and actions after an inner terminator stay in that branch.
  */
 @CompileStatic
@@ -34,6 +34,7 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
     private static final List<LineType> REPEAT_LINE_TYPES = [LineType.REPEAT, LineType.REPEAT_WHILE, LineType.DETACH]
     private static final List<LineType> CONDITIONAL_LINE_TYPES = [LineType.IF, LineType.ELSE, LineType.ENDIF]
     private static final List<LineType> FORK_LINE_TYPES = [LineType.FORK, LineType.FORK_AGAIN, LineType.END_MERGE, LineType.END_FORK]
+    private static final List<LineType> SWITCH_LINE_TYPES = [LineType.SWITCH, LineType.CASE, LineType.ENDSWITCH]
 
     ActivityDiagram build(List<ClassifiedLine> lines) {
         UnifiedState state = new UnifiedState()
@@ -41,14 +42,12 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
             processLine(line, state)
         }
         if (!state.stack.isEmpty()) {
-            Object top = state.stack.peek()
-            if (top instanceof LoopFrame) {
-                throw new IllegalArgumentException(ERR_UNCLOSED_REPEAT)
+            switch (state.stack.peek()) {
+                case LoopFrame: throw new IllegalArgumentException(ERR_UNCLOSED_REPEAT)
+                case ForkFrame: throw new IllegalArgumentException(ERR_UNCLOSED_FORK)
+                case SwitchFrame: throw new IllegalArgumentException(SwitchFrame.ERR_UNCLOSED_SWITCH)
+                default: throw new IllegalArgumentException(ERR_UNCLOSED_IF)
             }
-            if (top instanceof ForkFrame) {
-                throw new IllegalArgumentException(ERR_UNCLOSED_FORK)
-            }
-            throw new IllegalArgumentException(ERR_UNCLOSED_IF)
         }
         return new ActivityDiagram(state.hasStart, state.hasEnd, state.nodes)
             .withIf(state.hasIf)
@@ -60,6 +59,8 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
             .withRepeat(state.hasRepeat)
             .withRepeatWhile(state.hasRepeatWhile)
             .withDetach(state.hasDetach)
+            .withSwitch(state.hasSwitch)
+            .withEndswitch(state.hasEndswitch)
     }
 
     private static void processLine(ClassifiedLine line, UnifiedState state) {
@@ -78,6 +79,9 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
                 break
             case FORK_LINE_TYPES:
                 processForkLine(line, state)
+                break
+            case SWITCH_LINE_TYPES:
+                processSwitchLine(line, state)
                 break
             case LineType.ACTION:
                 currentContainer(state).add(new ActionNode(line.action))
@@ -139,9 +143,30 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
         }
     }
 
+    private static void processSwitchLine(ClassifiedLine line, UnifiedState state) {
+        if (line.type == LineType.SWITCH) {
+            state.hasSwitch = true
+            state.stack.push(new SwitchFrame(line.guard))
+            return
+        }
+        Object top = topOf(state)
+        if (!(top instanceof SwitchFrame)) {
+            throw new IllegalArgumentException(line.type == LineType.CASE ?
+                SwitchFrame.ERR_CASE_NO_CONTEXT : SwitchFrame.ERR_ENDSWITCH_NO_CONTEXT)
+        }
+        SwitchFrame frame = (SwitchFrame) top
+        if (line.type == LineType.CASE) {
+            frame.addCase(line.guard)
+        } else {
+            state.hasEndswitch = true
+            state.stack.pop()
+            currentContainer(state).add(frame.toNode())
+        }
+    }
+
     private static void processRepeatWhile(ClassifiedLine line, UnifiedState state) {
         Object top = topOf(state)
-        if (top == null || top instanceof ConditionalFrame || top instanceof ForkFrame) {
+        if (!(top instanceof LoopFrame)) {
             throw new IllegalArgumentException(ERR_REPEAT_WHILE_NO_CONTEXT)
         }
         state.hasRepeatWhile = true
@@ -172,7 +197,7 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
 
     private static void processElse(UnifiedState state) {
         Object top = topOf(state)
-        if (top == null || top instanceof LoopFrame || top instanceof ForkFrame) {
+        if (!(top instanceof ConditionalFrame)) {
             throw new IllegalArgumentException(ERR_ELSE_NO_CONTEXT)
         }
         state.hasElse = true
@@ -181,7 +206,7 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
 
     private static void processEndif(UnifiedState state) {
         Object top = topOf(state)
-        if (top == null || top instanceof LoopFrame || top instanceof ForkFrame) {
+        if (!(top instanceof ConditionalFrame)) {
             throw new IllegalArgumentException(ERR_ENDIF_NO_CONTEXT)
         }
         state.hasEndif = true
@@ -236,14 +261,14 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
             return state.nodes
         }
         Object top = state.stack.peek()
-        if (top instanceof LoopFrame) {
-            return ((LoopFrame) top).body
+        switch (top) {
+            case LoopFrame: return ((LoopFrame) top).body
+            case ForkFrame: return ((ForkFrame) top).branches.last()
+            case SwitchFrame: return ((SwitchFrame) top).currentCaseBody()
+            default:
+                ConditionalFrame frame = (ConditionalFrame) top
+                return frame.inElse ? frame.elseBranch : frame.thenBranch
         }
-        if (top instanceof ForkFrame) {
-            return ((ForkFrame) top).branches.last()
-        }
-        ConditionalFrame frame = (ConditionalFrame) top
-        return frame.inElse ? frame.elseBranch : frame.thenBranch
     }
 
     private static class LoopFrame {
@@ -278,6 +303,8 @@ class UnifiedDiagramBuilder implements DiagramBuilder {
         boolean hasRepeat = false
         boolean hasRepeatWhile = false
         boolean hasDetach = false
+        boolean hasSwitch = false
+        boolean hasEndswitch = false
         List<ActivityNode> nodes = []
         Stack<Object> stack = [] as Stack<Object>
         RepeatNode lastLoop = null

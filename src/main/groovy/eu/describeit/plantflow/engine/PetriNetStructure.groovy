@@ -18,6 +18,10 @@ interface PetriNetStructure {
         return Collections.emptyList()
     }
 
+    default List<SwitchDescriptor> getSwitchDescriptors() {
+        return Collections.emptyList()
+    }
+
     default Place getPlaceByIndex(int index) {
         return getPlaces().find { Place place -> place.index == index }
     }
