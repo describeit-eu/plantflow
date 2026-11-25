@@ -138,93 +138,26 @@ stop
         switchNode.cases[1].actions*.actionKey == ['Action 2', 'Action 3']
     }
 
-    def 'should throw IllegalArgumentException for case without an active switch'() {
+    @Unroll
+    def 'should throw IllegalArgumentException for malformed switch construct: #scenario'() {
         given:
-        def lines = new PumlLineClassifier().classifyAll('''@startuml
-start
-case ( conditionA )
-  :Action 1;
-endswitch
-stop
-@enduml'''.readLines())
+        def puml = (['@startuml', 'start'] + bodyLines + ['stop', '@enduml']).join('\n')
+        def lines = new PumlLineClassifier().classifyAll(puml.readLines())
 
         when:
         new UnifiedDiagramBuilder().build(lines)
 
         then:
         def ex = thrown(IllegalArgumentException)
-        ex.message == SwitchFrame.ERR_CASE_NO_CONTEXT
-    }
+        ex.message == expectedMessage
 
-    def 'should throw IllegalArgumentException for case inside a non-switch construct'() {
-        given:
-        def lines = new PumlLineClassifier().classifyAll('''@startuml
-start
-if ( valid? ) then (yes)
-  case ( conditionA )
-    :Action 1;
-endif
-stop
-@enduml'''.readLines())
-
-        when:
-        new UnifiedDiagramBuilder().build(lines)
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message == SwitchFrame.ERR_CASE_NO_CONTEXT
-    }
-
-    def 'should throw IllegalArgumentException for endswitch without an active switch'() {
-        given:
-        def lines = new PumlLineClassifier().classifyAll('''@startuml
-start
-:Action 1;
-endswitch
-stop
-@enduml'''.readLines())
-
-        when:
-        new UnifiedDiagramBuilder().build(lines)
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message == SwitchFrame.ERR_ENDSWITCH_NO_CONTEXT
-    }
-
-    def 'should throw IllegalArgumentException for unclosed switch missing endswitch'() {
-        given:
-        def lines = new PumlLineClassifier().classifyAll('''@startuml
-start
-switch ( test? )
-case ( conditionA )
-  :Action 1;
-stop
-@enduml'''.readLines())
-
-        when:
-        new UnifiedDiagramBuilder().build(lines)
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message == SwitchFrame.ERR_UNCLOSED_SWITCH
-    }
-
-    def 'should throw IllegalArgumentException for empty switch with no cases'() {
-        given:
-        def lines = new PumlLineClassifier().classifyAll('''@startuml
-start
-switch ( test? )
-endswitch
-stop
-@enduml'''.readLines())
-
-        when:
-        new UnifiedDiagramBuilder().build(lines)
-
-        then:
-        def ex = thrown(IllegalArgumentException)
-        ex.message == SwitchFrame.ERR_SWITCH_NO_CASES
+        where:
+        scenario                             | bodyLines                                                                            | expectedMessage
+        'case without an active switch'      | ['case ( conditionA )', '  :Action 1;', 'endswitch']                                  | SwitchFrame.ERR_CASE_NO_CONTEXT
+        'case inside a non-switch construct' | ['if ( valid? ) then (yes)', '  case ( conditionA )', '    :Action 1;', 'endif']      | SwitchFrame.ERR_CASE_NO_CONTEXT
+        'endswitch without an active switch' | [':Action 1;', 'endswitch']                                                           | SwitchFrame.ERR_ENDSWITCH_NO_CONTEXT
+        'unclosed switch missing endswitch'  | ['switch ( test? )', 'case ( conditionA )', '  :Action 1;']                           | SwitchFrame.ERR_UNCLOSED_SWITCH
+        'empty switch with no cases'         | ['switch ( test? )', 'endswitch']                                                     | SwitchFrame.ERR_SWITCH_NO_CASES
     }
 
     def 'should allow an empty case body when the case has no actions'() {
