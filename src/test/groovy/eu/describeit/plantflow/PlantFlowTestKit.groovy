@@ -7,6 +7,8 @@ import eu.describeit.plantflow.ast.ActivityDiagram
 import eu.describeit.plantflow.ast.ActivityNode
 import eu.describeit.plantflow.ast.ConditionalNode
 import eu.describeit.plantflow.ast.ForkNode
+import eu.describeit.plantflow.ast.SwitchCase
+import eu.describeit.plantflow.ast.SwitchNode
 import eu.describeit.plantflow.engine.DefaultPetriNet
 import eu.describeit.plantflow.engine.IncidenceMatrix
 import eu.describeit.plantflow.engine.Marking
@@ -454,6 +456,27 @@ end
      */
     static ConditionalNode conditional(String guardCondition, String[] thenActionStrings, String[] elseActionStrings) {
         return new ConditionalNode(guardCondition, actions(*thenActionStrings) as List<ActivityNode>, actions(*elseActionStrings) as List<ActivityNode>)
+    }
+
+    /**
+     * Creates a SwitchCase with the given condition and action list.
+     */
+    static SwitchCase switchCase(String condition, List<ActivityNode> actions) {
+        return new SwitchCase(condition, actions)
+    }
+
+    /**
+     * Creates a SwitchCase with string-based action lists.
+     */
+    static SwitchCase switchCase(String condition, String[] actionStrings) {
+        return new SwitchCase(condition, actions(*actionStrings) as List<ActivityNode>)
+    }
+
+    /**
+     * Creates a SwitchNode with the given switch expression and cases.
+     */
+    static SwitchNode switchNode(String switchExpression, List<SwitchCase> cases) {
+        return new SwitchNode(switchExpression, cases)
     }
 
     /**

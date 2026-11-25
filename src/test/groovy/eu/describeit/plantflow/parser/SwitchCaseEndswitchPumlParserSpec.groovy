@@ -137,4 +137,118 @@ stop
         switchNode.cases[1].condition == 'conditionB'
         switchNode.cases[1].actions*.actionKey == ['Action 2', 'Action 3']
     }
+
+    def 'should throw IllegalArgumentException for case without an active switch'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+case ( conditionA )
+  :Action 1;
+endswitch
+stop
+@enduml'''.readLines())
+
+        when:
+        new UnifiedDiagramBuilder().build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == SwitchFrame.ERR_CASE_NO_CONTEXT
+    }
+
+    def 'should throw IllegalArgumentException for case inside a non-switch construct'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+if ( valid? ) then (yes)
+  case ( conditionA )
+    :Action 1;
+endif
+stop
+@enduml'''.readLines())
+
+        when:
+        new UnifiedDiagramBuilder().build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == SwitchFrame.ERR_CASE_NO_CONTEXT
+    }
+
+    def 'should throw IllegalArgumentException for endswitch without an active switch'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+:Action 1;
+endswitch
+stop
+@enduml'''.readLines())
+
+        when:
+        new UnifiedDiagramBuilder().build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == SwitchFrame.ERR_ENDSWITCH_NO_CONTEXT
+    }
+
+    def 'should throw IllegalArgumentException for unclosed switch missing endswitch'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+switch ( test? )
+case ( conditionA )
+  :Action 1;
+stop
+@enduml'''.readLines())
+
+        when:
+        new UnifiedDiagramBuilder().build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == SwitchFrame.ERR_UNCLOSED_SWITCH
+    }
+
+    def 'should throw IllegalArgumentException for empty switch with no cases'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+switch ( test? )
+endswitch
+stop
+@enduml'''.readLines())
+
+        when:
+        new UnifiedDiagramBuilder().build(lines)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == SwitchFrame.ERR_SWITCH_NO_CASES
+    }
+
+    def 'should allow an empty case body when the case has no actions'() {
+        given:
+        def lines = new PumlLineClassifier().classifyAll('''@startuml
+start
+switch ( test? )
+case ( conditionA )
+case ( conditionB )
+  :Action 2;
+endswitch
+stop
+@enduml'''.readLines())
+
+        when:
+        def diagram = new UnifiedDiagramBuilder().build(lines)
+
+        then: 'no error and the empty case body stays empty'
+        noExceptionThrown()
+        def switchNode = diagram.nodes[0] as SwitchNode
+        switchNode.cases.size() == 2
+        switchNode.cases[0].condition == 'conditionA'
+        switchNode.cases[0].actions.isEmpty()
+        switchNode.cases[1].condition == 'conditionB'
+        switchNode.cases[1].actions*.actionKey == ['Action 2']
+    }
 }

@@ -696,6 +696,65 @@ class DiagramValidatorSpec extends Specification {
         position << [0, 1]
     }
 
+    @Unroll
+    def 'should throw IllegalArgumentException for invalid switch structure: #scenario'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(hasStart)
+            .withEnd(hasEnd)
+            .withSwitch(hasSwitch)
+            .withEndswitch(hasEndswitch)
+        nodes.each { diagram.addNode(it) }
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        def ex = thrown(IllegalArgumentException)
+        ex.message == expectedMessage
+
+        where:
+        scenario                    | hasStart | hasEnd | hasSwitch | hasEndswitch | nodes                                                        | expectedMessage
+        'endswitch without switch'  | true     | true   | false     | true         | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_NO_SWITCH
+        'switch without endswitch'  | true     | true   | true      | false        | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_NO_ENDSWITCH
+        'switch without start'      | false    | true   | true      | true         | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_MUST_CONTAIN_START
+        'switch without end'        | true     | false  | true      | true         | [switchNode('test?', [switchCase('c', ['a'])])]             | DiagramValidator.ERR_MUST_CONTAIN_END
+        'switch node without cases' | true     | true   | true      | true         | [switchNode('test?', [])]                                   | DiagramValidator.ERR_SWITCH_NO_CASES
+        'switch flags but no nodes' | true     | true   | true      | true         | []                                                          | DiagramValidator.ERR_SWITCH_NO_CASES
+    }
+
+    def 'should pass validation for valid switch ActivityDiagram including an empty case body'() {
+        given:
+        def diagram = new ActivityDiagram()
+            .withStart(true)
+            .withEnd(true)
+            .withSwitch(true)
+            .withEndswitch(true)
+            .addNode(switchNode('test?', [
+                switchCase('condA', ['action a'] as String[]),
+                switchCase('condB', [] as List<ActivityNode>)
+            ]))
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def 'should pass validation for valid switch ActivityDiagram constructed without flags'() {
+        given:
+        def diagram = diagram(true, true, [
+            switchNode('test?', [switchCase('condA', ['action a'] as String[])])
+        ])
+
+        when:
+        DiagramValidator.validate(diagram)
+
+        then:
+        noExceptionThrown()
+    }
+
     def 'ActivityDiagram addNode should handle null node'() {
         given:
         def diagram = new ActivityDiagram()
