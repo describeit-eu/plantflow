@@ -134,10 +134,10 @@ class EngineModelCoverageGapSpec extends Specification {
         structure.forkDescriptors.isEmpty()
     }
 
-    def 'StatefulExecution reports a non-empty net once a token is seeded'() {
+    def 'MarkedPetriNet reports a non-empty net once a token is seeded'() {
         given: 'an execution on a linear net'
         def net = simpleLinearNet()
-        def execution = new StatefulExecution(net, new DefaultPetriNetEngine())
+        def execution = new MarkedPetriNet(net, new DefaultPetriNetEngine())
 
         expect:
         execution.isNetEmpty()

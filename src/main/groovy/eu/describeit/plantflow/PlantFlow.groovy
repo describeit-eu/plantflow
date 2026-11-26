@@ -4,7 +4,7 @@ import eu.describeit.plantflow.engine.DefaultPetriNetEngine
 import eu.describeit.plantflow.engine.Marking
 import eu.describeit.plantflow.engine.PetriNetEngine
 import eu.describeit.plantflow.engine.PetriNetStructure
-import eu.describeit.plantflow.engine.StatefulExecution
+import eu.describeit.plantflow.engine.MarkedPetriNet
 import eu.describeit.plantflow.engine.Token
 import eu.describeit.plantflow.engine.Transition
 import groovy.transform.CompileStatic
@@ -15,7 +15,7 @@ import groovy.util.logging.Slf4j
 @CompileStatic
 class PlantFlow {
 
-    final StatefulExecution petriNet
+    final MarkedPetriNet petriNet
     final HandlerRegistry handlerRegistry
     ExecutionContext executionContext
 
@@ -26,7 +26,7 @@ class PlantFlow {
 
     @NullCheck
     PlantFlow(PetriNetStructure structure, PetriNetEngine engine, HandlerRegistry handlerRegistry = new HandlerRegistry(), ExecutionContext executionContext = new ExecutionContext()) {
-        this.petriNet = new StatefulExecution(structure, engine)
+        this.petriNet = new MarkedPetriNet(structure, engine)
         this.handlerRegistry = handlerRegistry
         this.executionContext = executionContext
     }

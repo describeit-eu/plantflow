@@ -5,12 +5,12 @@ import eu.describeit.plantflow.HandlerRegistry
 import groovy.transform.CompileStatic
 
 @CompileStatic
-class StatefulExecution {
+class MarkedPetriNet {
     final PetriNetStructure structure
     final PetriNetEngine engine
     final Marking marking
 
-    StatefulExecution(PetriNetStructure structure, PetriNetEngine engine) {
+    MarkedPetriNet(PetriNetStructure structure, PetriNetEngine engine) {
         this.structure = structure
         this.engine = engine
         this.marking = new Marking(structure.places.size())

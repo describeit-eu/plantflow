@@ -6,16 +6,16 @@ import spock.lang.Specification
 
 import static eu.describeit.plantflow.PlantFlowTestKit.*
 
-class StatefulExecutionSpec extends Specification {
+class MarkedPetriNetSpec extends Specification {
 
     def engine = new DefaultPetriNetEngine()
 
-    def 'should create StatefulExecution with structure and engine'() {
+    def 'should create MarkedPetriNet with structure and engine'() {
         given:
         def net = simpleLinearNet('start', 'end', 'action', 'action', null)
 
         when:
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
 
         then:
         execution.structure.is(net)
@@ -27,7 +27,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should expose topology from structure'() {
         given:
         def net = simpleLinearNet('start', 'end', 'action', 'action', null)
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
 
         expect:
         execution.places == net.places
@@ -42,7 +42,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should seed token with default token when null'() {
         given:
         def net = simpleLinearNet()
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
 
         when:
         execution.seedToken(null)
@@ -55,7 +55,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should seed token with explicit token'() {
         given:
         def net = simpleLinearNet()
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def token = Token.of([seeded: true])
 
         when:
@@ -69,7 +69,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should delegate isEnabled to engine with internal marking'() {
         given:
         def net = simpleLinearNet('start', 'end', 'action', 'myAction', null)
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry().registerAction('myAction') { ctx, tok -> tok }
         def context = new ExecutionContext()
         def transition = net.transitions[0]
@@ -87,7 +87,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should delegate getEnabledTransitions to engine with internal marking'() {
         given:
         def net = simpleLinearNet('start', 'end', 'action', 'myAction', null)
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry().registerAction('myAction') { ctx, tok -> tok }
         def context = new ExecutionContext()
 
@@ -104,7 +104,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should fire transition through engine with internal marking'() {
         given:
         def net = simpleLinearNet('start', 'end', 'action', 'myAction', null)
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry().registerAction('myAction') { ctx, tok -> tok.withPayload(tok.payload + [done: true]) }
         def context = new ExecutionContext()
         def transition = net.transitions[0]
@@ -139,7 +139,7 @@ class StatefulExecutionSpec extends Specification {
         def matrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [t1, t2], matrix, pStart, pEnd)
 
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry()
         registry.registerAction('action1') { ctx, tok -> tok }
         registry.registerAction('action2') { ctx, tok -> tok }
@@ -188,7 +188,7 @@ class StatefulExecutionSpec extends Specification {
         def matrix = new IncidenceMatrix(inputMatrix, outputMatrix)
         def net = new DefaultPetriNet([pStart, pMid, pEnd], [t1, t2], matrix, pStart, pEnd)
 
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry()
         registry.registerAction('action1') { ctx, tok -> tok.withPayload(tok.payload + [s1: true]) }
         registry.registerAction('action2') { ctx, tok -> tok.withPayload(tok.payload + [s2: true]) }
@@ -208,7 +208,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should auto-seed token when runUntilEnd is called on empty net with null token'() {
         given:
         def net = simpleLinearNet('start', 'end', 'action', 'myAction', null)
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry().registerAction('myAction') { ctx, tok -> tok }
         def context = new ExecutionContext()
 
@@ -226,7 +226,7 @@ class StatefulExecutionSpec extends Specification {
         def matrix = new IncidenceMatrix(null, null)
         def net = new DefaultPetriNet([pStart, pEnd], [], matrix, pStart, pEnd)
 
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def registry = new HandlerRegistry()
         def context = new ExecutionContext()
 
@@ -247,7 +247,7 @@ class StatefulExecutionSpec extends Specification {
         def pEnd = new Place(1, 'end')
         def matrix = new IncidenceMatrix(null, null)
         def net = new DefaultPetriNet([pStart, pEnd], [], matrix, pStart, pEnd)
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
 
         expect: 'initially empty'
         execution.isNetEmpty()
@@ -268,7 +268,7 @@ class StatefulExecutionSpec extends Specification {
     def 'should manage tokens via marking operations'() {
         given:
         def net = simpleLinearNet()
-        def execution = new StatefulExecution(net, engine)
+        def execution = new MarkedPetriNet(net, engine)
         def pStart = net.startPlace
 
         expect: 'initially empty'
@@ -294,7 +294,7 @@ class StatefulExecutionSpec extends Specification {
         given: 'a mock engine that tracks calls'
         def net = simpleLinearNet('start', 'end', 'action', 'myAction', null)
         def trackingEngine = new TrackingEngine()
-        def execution = new StatefulExecution(net, trackingEngine)
+        def execution = new MarkedPetriNet(net, trackingEngine)
         def registry = new HandlerRegistry()
         def context = new ExecutionContext()
         def transition = net.transitions[0]
