@@ -15,4 +15,5 @@ fork again
   -[hidden]->
   detach
 end fork
+end
 @enduml
