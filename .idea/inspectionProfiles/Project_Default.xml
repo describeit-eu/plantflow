@@ -58,6 +58,9 @@
     <inspection_tool class="CodeNarc.ExplicitCallToAndMethod" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="CodeNarc.ExplicitCallToCompareToMethod" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="CodeNarc.ExplicitCallToOrMethod" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="CodeNarc.FactoryMethodName" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="doNotApplyToClassNames" value="*Spec" />
+    </inspection_tool>
     <inspection_tool class="CodeNarc.FieldTypeRequired" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.FileEndsWithoutNewline" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.ForStatementBraces" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -139,6 +142,9 @@
     <inspection_tool class="CodeNarc.NoDef" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.NoScriptBindings" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.ParameterCount" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CodeNarc.PublicMethodsBeforeNonPublicMethods" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="doNotApplyToClassNames" value="*Spec" />
+    </inspection_tool>
     <inspection_tool class="CodeNarc.RequiredRegex" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.RequiredString" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CodeNarc.SpaceAfterCatch" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
